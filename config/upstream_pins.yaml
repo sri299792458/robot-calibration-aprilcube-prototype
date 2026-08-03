@@ -1,0 +1,13 @@
+schema_version: 1
+
+# Read-only reference implementation for the official G1 arm_sdk command path.
+xr_teleoperate:
+  url: https://github.com/unitreerobotics/xr_teleoperate.git
+  revision: 64ed45b4177e6297936940866df623b72621643a
+
+# This is the exact fork/revision already used by the pinned G1Pilot checkout.
+# It remains outside the prototype package so importing offline modules never
+# imports CycloneDDS or opens a robot channel.
+unitree_sdk2_python:
+  url: https://github.com/lnotspotl/unitree_sdk2_python.git
+  revision: 7c661d27f4ae064ffd0dd633fd9d5b518ef0b508

@@ -1,0 +1,18 @@
+# Upstream repositories remain independent Git worktrees.
+/robot_calibration/
+/aprilcube/
+/unitree_ros/
+/raiden/
+/g1pilot/
+/spark-data-collection/
+/xr_teleoperate/
+/external/
+/deps/
+
+# Common local experiment output.
+/build/
+/install/
+/log/
+__pycache__/
+*.pyc
+/.venv/

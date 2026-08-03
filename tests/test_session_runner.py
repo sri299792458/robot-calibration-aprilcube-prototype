@@ -1,0 +1,176 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+import numpy as np
+import pytest
+
+from g1_aprilcube_calibration.clock import ManualClock
+from g1_aprilcube_calibration.executor_state_machine import ExecutorConfig, PoseExecutor
+from g1_aprilcube_calibration.pose_schema import PoseAuditEvent, PoseRecord, PoseSet
+from g1_aprilcube_calibration.pose_validator import (
+    DirectedEdgeResult,
+    ValidationReport,
+)
+from g1_aprilcube_calibration.session_runner import (
+    ApprovedSessionOrchestrator,
+    CaptureSessionRunner,
+    ScheduledFrameSource,
+    SessionExecutionPlan,
+)
+from g1_aprilcube_calibration.transports.fake import FakeArmTransport
+
+UTC = "2026-08-02T12:00:00Z"
+
+
+def make_pose(pose_id: str, value: float) -> PoseRecord:
+    full = np.zeros(29)
+    full[15:22] = value
+    return PoseRecord(
+        id=pose_id,
+        group="dryrun",
+        measured_calibration_q=(value,) * 7,
+        measured_full_q=tuple(full),
+        calibration_q_spread=(0.0,) * 7,
+        recorded_at_utc=UTC,
+        recorded_monotonic_s=1.0,
+        head_witness_ack=True,
+    )
+
+
+def make_pose_set() -> PoseSet:
+    result = PoseSet("g1_29dof_rev_1_0", 5, "a" * 64, "left", (0.0,) * 7)
+    for pose in (make_pose("home", 0), make_pose("near", 0.04), make_pose("far", 0.08)):
+        result = result.with_pose(pose, PoseAuditEvent("add", pose.id, UTC))
+    return result
+
+
+def edge(source: str, target: str) -> DirectedEdgeResult:
+    return DirectedEdgeResult(
+        from_pose_id=source,
+        to_pose_id=target,
+        passed=True,
+        sample_count=3,
+        path_length_rad=0.1,
+        estimated_duration_s=0.5,
+        minimum_clearance_m=0.1,
+        minimum_clearance_pair=("hand", "torso"),
+        failures=(),
+    )
+
+
+def report(pose_set: PoseSet) -> ValidationReport:
+    return ValidationReport(
+        pose_set_sha256=pose_set.content_sha256,
+        urdf_sha256=pose_set.urdf_sha256,
+        collision_config_sha256="b" * 64,
+        reference_full_q_sha256="c" * 64,
+        config={},
+        edges=(edge("home", "near"), edge("near", "far"), edge("far", "home")),
+    )
+
+
+@dataclass
+class StoredCapture:
+    capture_id: str
+    pose_id: str
+    outcome: str
+    frames: tuple
+
+
+class Store:
+    def __init__(self):
+        self.captures = []
+        self.finalized = False
+
+    def append_capture(self, *, capture_id, pose_id, outcome, reason, frames=(), **_):
+        assert reason
+        self.captures.append(StoredCapture(capture_id, pose_id, outcome, tuple(frames)))
+
+    def finalize(self):
+        self.finalized = True
+
+
+def make_subject(*, initial_left=0.0):
+    pose_set = make_pose_set()
+    validation = report(pose_set)
+    clock = ManualClock(1.0)
+    initial = np.zeros(29)
+    initial[15:22] = initial_left
+    transport = FakeArmTransport(
+        clock=clock,
+        initial_full_q=initial,
+        tracking_velocity_rad_s=1,
+    )
+    executor = PoseExecutor(
+        transport=transport,
+        clock=clock,
+        pose_set=pose_set,
+        approved_validation_report_sha256=validation.content_sha256,
+        config=ExecutorConfig(
+            maximum_joint_velocity_rad_s=0.2,
+            coarse_arrival_tolerance_rad=0.02,
+            settled_position_tolerance_rad=0.005,
+            settled_velocity_tolerance_rad_s=0.03,
+            settle_dwell_s=0.04,
+            state_freshness_timeout_s=0.1,
+            maximum_tick_gap_s=0.05,
+            acquisition_ramp_s=0.04,
+            release_ramp_s=0.04,
+            motion_timeout_s=2,
+        ),
+    )
+    store = Store()
+    runner = CaptureSessionRunner(executor=executor, store=store)
+    source = ScheduledFrameSource({"home": ("h",), "near": ("n",), "far": ("f",)})
+
+    def step():
+        transport.step(0.02)
+        executor.tick()
+
+    orchestrator = ApprovedSessionOrchestrator(
+        executor=executor,
+        validation_report=validation,
+        capture_runner=runner,
+        frame_source=source,
+        control_step=step,
+        confirm_move=lambda _source, _target: True,
+        plan=SessionExecutionPlan("home", ("home", "near", "far")),
+    )
+    return transport, executor, store, orchestrator
+
+
+def test_fake_end_to_end_plan_captures_returns_home_and_releases():
+    transport, executor, store, orchestrator = make_subject()
+    orchestrator.run(confirm_acquisition=True, confirm_release=True)
+    assert [capture.pose_id for capture in store.captures] == ["home", "near", "far"]
+    assert [capture.frames for capture in store.captures] == [("h",), ("n",), ("f",)]
+    assert store.finalized
+    assert transport.closed
+    assert transport.commands[-1].weight == 0
+    assert executor.current_pose_id == "home"
+
+
+def test_known_home_acquisition_rejects_measured_mismatch_before_publish():
+    transport, _, store, orchestrator = make_subject(initial_left=0.02)
+    with pytest.raises(ValueError, match="differs from initial pose"):
+        orchestrator.run(confirm_acquisition=True, confirm_release=True)
+    assert transport.commands == []
+    assert transport.closed
+    assert not store.finalized
+
+
+def test_move_confirmation_refusal_emergency_releases():
+    transport, executor, store, orchestrator = make_subject()
+    orchestrator.confirm_move = lambda _source, _target: False
+    with pytest.raises(ValueError, match="operator confirmation"):
+        orchestrator.run(confirm_acquisition=True, confirm_release=True)
+    assert transport.commands[-1].weight == 0
+    assert transport.commands[-1].emergency_release
+    assert executor.fault_reason == "session orchestration failed"
+    assert not store.finalized
+
+
+def test_plan_allows_revisiting_an_anchor_pose():
+    plan = SessionExecutionPlan("home", ("home", "near", "home"))
+    assert plan.capture_pose_ids.count("home") == 2

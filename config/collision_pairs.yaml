@@ -1,0 +1,46 @@
+schema_version: 1
+
+# The 40 mm cube is modeled directly on the left rigid palm, matching the
+# supplied photograph.  The hand-frame-aligned envelope includes the cube,
+# the visible double-sided tape footprint, and at least 5 mm placement/model
+# allowance on each side of its approximately 50 x 2.5 x 50 mm footprint.
+# Cube nominal: center [0.040, -0.033, 0.000] m, size 0.040 m.
+# Envelope bounds: X [0.010, 0.070], Y [-0.063, -0.005], Z [-0.030, 0.030] m.
+hardware_ready: true
+blocking_reasons: []
+required_attached_boxes:
+  - aprilcube_envelope
+attached_boxes:
+  - name: aprilcube_envelope
+    parent_link: left_rubber_hand
+    size_m: [0.060, 0.058, 0.060]
+    xyz_m: [0.040, -0.034, 0.000]
+    rpy_rad: [0.0, 0.0, 0.0]
+
+# Deliberately selected non-adjacent pairs for the left-arm calibration path.
+# Dummy-hand links have visual but no collision geometry.
+visual_fallback_links:
+  - left_rubber_hand
+  - right_rubber_hand
+
+pairs:
+  - [left_elbow_link, torso_link]
+  - [left_wrist_roll_link, torso_link]
+  - [left_wrist_pitch_link, torso_link]
+  - [left_wrist_yaw_link, torso_link]
+  - [left_rubber_hand, torso_link]
+  - [left_rubber_hand, head_link]
+  - [left_rubber_hand, pelvis_contour_link]
+  - [left_elbow_link, left_hip_yaw_link]
+  - [left_rubber_hand, left_hip_yaw_link]
+  - [left_rubber_hand, right_hip_yaw_link]
+  - [aprilcube_envelope, torso_link]
+  - [aprilcube_envelope, head_link]
+  - [aprilcube_envelope, pelvis_contour_link]
+  - [aprilcube_envelope, left_elbow_link]
+  - [aprilcube_envelope, left_shoulder_yaw_link]
+  - [aprilcube_envelope, left_hip_yaw_link]
+  - [aprilcube_envelope, right_hip_yaw_link]
+  - [aprilcube_envelope, right_elbow_link]
+  - [aprilcube_envelope, right_wrist_yaw_link]
+  - [aprilcube_envelope, right_rubber_hand]

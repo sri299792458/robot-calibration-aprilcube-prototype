@@ -1,0 +1,76 @@
+robot:
+  manufacturer: unitree
+  model: g1
+  mode_machine: 5
+  dof: 29
+  urdf: unitree_ros/robots/g1_description/g1_29dof_rev_1_0.urdf
+  calibration_reference_frame: torso_link
+  available_hands:
+    - dex3
+    - rubber_hand
+  calibration_hand: rubber_hand
+  calibration_arm: left
+  dummy_hand_rigid: true
+  calibration_target_mount: ordered_scotch_foam_mounting_tape_on_rigid_dummy_palm
+  calibration_target_tape_candidate: already_purchased_exact_sku_to_record
+  calibration_target_mount_policy: qualify_by_repeated_anchor_measurement
+  calibration_target_modeled_pose_on_hand_m: [0.040, -0.033, 0.000]
+  calibration_target_modeled_rpy_rad: [-1.57079632679, 0.0, 0.0]
+  calibration_target_collision_envelope_m: [0.060, 0.058, 0.060]
+  calibration_wrist_policy: record_and_replay_all_three_measured_wrist_joints
+
+control:
+  implementation: project_local_lightweight_executor
+  upstream_reference: unitreerobotics/xr_teleoperate_G1_29_ArmController
+  command_topic: rt/arm_sdk
+  state_topic: rt/lowstate
+  required_mode_machine: 5
+  right_arm_motor_indices: [22, 23, 24, 25, 26, 27, 28]
+  left_arm_motor_indices: [15, 16, 17, 18, 19, 20, 21]
+  calibration_arm: left
+  opposite_arm_policy: hold_measured_activation_pose
+  command_rate_hz: 250
+  # Initial commissioning values only; hardware tests must tune/approve them.
+  max_joint_velocity_rad_s: 0.2
+  coarse_arrival_tolerance_rad: 0.05
+  position_tolerance_rad: 0.02
+  velocity_tolerance_rad_s: 0.03
+  settle_dwell_s: 0.75
+  lowstate_timeout_s: 0.1
+  maximum_control_tick_gap_s: 0.05
+  acquisition_weight_ramp_s: 1.0
+  release_weight_ramp_s: 1.0
+  motion_timeout_s: 30.0
+  clean_release_policy: move_to_approved_home_then_ramp_weight_to_zero
+  emergency_release_policy: ramp_weight_to_zero_without_home_move
+
+pose_recording:
+  # Separate from the replay executor's target-error dwell gate. Manual teaching
+  # has no commanded target, so recording uses measured velocity and spread.
+  stationary_duration_s: 0.5
+  minimum_state_samples: 5
+  maximum_state_gap_s: 0.1
+  maximum_calibration_velocity_rad_s: 0.03
+  maximum_calibration_position_spread_rad: 0.01
+  maximum_hold_velocity_rad_s: 0.03
+  maximum_hold_position_spread_rad: 0.01
+  maximum_image_state_delta_s: 0.05
+  maximum_image_state_bracket_s: 0.1
+
+camera:
+  manufacturer: intel_realsense
+  model: null  # Confirm D435/D435i/D455 and serial number.
+  serial_number: null
+  calibration_frame: null  # Exact color optical frame_id from CameraInfo.
+  mount:
+    pitch_adjustment: manual
+    pitch_measured: false
+    mechanically_fixed: true
+    witness_marked: true
+    calibration_policy: lock_before_calibration
+    # A shifted witness mark or loosened mount invalidates the extrinsic.
+
+ros:
+  image_topic: null
+  camera_info_topic: null
+  joint_states_topic: null

@@ -1,0 +1,44 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "g1-camera-calibration-prototype"
+version = "0.1.0"
+description = "Unitree G1 RealSense to AprilCube calibration prototype"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "aprilcube",
+  "jsonschema>=4.23",
+  "manifold3d>=3.5.2",
+  "matplotlib>=3.11.1",
+  "numpy>=1.26,<2",
+  "opencv-contrib-python>=4.8",
+  "pillow>=12.3.0",
+  "python-fcl>=0.7.0.10",
+  "pyyaml>=6.0",
+  "scipy>=1.13,<1.15",
+  "trimesh>=5.0.0",
+]
+
+[project.scripts]
+g1-calib = "g1_aprilcube_calibration.cli:main"
+
+[dependency-groups]
+dev = [
+  "pytest>=8.0",
+  "ruff>=0.12",
+]
+
+[tool.uv]
+package = true
+
+[tool.uv.sources]
+aprilcube = { path = "aprilcube", editable = true }
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/g1_aprilcube_calibration"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
