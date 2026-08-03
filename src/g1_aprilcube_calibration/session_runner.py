@@ -10,6 +10,7 @@ from g1_aprilcube_calibration.executor_state_machine import (
     ExecutorState,
     PoseExecutor,
 )
+from g1_aprilcube_calibration.pose_schema import HANDOFF_POSE_ID
 from g1_aprilcube_calibration.pose_validator import ValidationReport
 from g1_aprilcube_calibration.session_store import CaptureFrameInput
 
@@ -37,13 +38,10 @@ class FrameSource(Protocol):
 
 @dataclass(frozen=True, slots=True)
 class SessionExecutionPlan:
-    home_pose_id: str
     capture_pose_ids: tuple[str, ...]
     maximum_control_steps_per_transition: int = 10_000
 
     def __post_init__(self) -> None:
-        if not self.home_pose_id:
-            raise ValueError("home_pose_id must be non-empty")
         if not self.capture_pose_ids:
             raise ValueError("capture plan must contain at least one pose")
         if self.maximum_control_steps_per_transition <= 0:
@@ -144,7 +142,7 @@ class ApprovedSessionOrchestrator:
         if not validation_report.passed:
             raise ValueError("cannot execute a failed validation report")
         pose_ids = {pose.id for pose in executor.pose_set.poses}
-        missing = set(plan.capture_pose_ids) | {plan.home_pose_id}
+        missing = set(plan.capture_pose_ids)
         missing -= pose_ids
         if missing:
             raise ValueError(
@@ -162,7 +160,6 @@ class ApprovedSessionOrchestrator:
         try:
             self.executor.acquire(
                 operator_confirmed=confirm_acquisition,
-                initial_pose_id=self.plan.home_pose_id,
             )
             self._drive_until(ExecutorState.READY)
             for index, pose_id in enumerate(self.plan.capture_pose_ids, start=1):
@@ -177,10 +174,9 @@ class ApprovedSessionOrchestrator:
                     pose_id=pose_id,
                     frames=frames,
                 )
-            if self.executor.current_pose_id != self.plan.home_pose_id:
-                self._move_to(self.plan.home_pose_id)
+            if self.executor.current_pose_id != HANDOFF_POSE_ID:
+                self._move_to(HANDOFF_POSE_ID)
             self.executor.begin_clean_release(
-                approved_home_pose_id=self.plan.home_pose_id,
                 operator_confirmed=confirm_release,
             )
             self._drive_until(ExecutorState.STOPPED)

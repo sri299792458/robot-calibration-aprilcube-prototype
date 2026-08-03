@@ -80,3 +80,6 @@ class FakeArmTransport:
 
     def close(self) -> None:
         self.closed = True
+
+    def close_after_external_damping(self) -> None:
+        self.closed = True

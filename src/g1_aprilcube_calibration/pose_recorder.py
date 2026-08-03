@@ -31,7 +31,6 @@ class PoseRecordingRequest:
     group: str
     image_timing: ImageTiming
     visual_report: QualityReport
-    head_witness_ack: bool
     anchor: bool = False
     preview_path: str | Path | None = None
     yellow_override_reason: str | None = None
@@ -71,8 +70,6 @@ class PoseRecorder:
     ) -> PoseRecordingAssessment:
         failures: list[str] = []
         warnings: list[str] = []
-        if not request.head_witness_ack:
-            failures.append("head-pitch witness mark has not been acknowledged")
         if request.visual_report.grade is QualityGrade.RED:
             failures.extend(
                 f"visual: {reason}" for reason in request.visual_report.hard_failures
@@ -126,18 +123,6 @@ class PoseRecorder:
                     "limit is "
                     f"{self.gate_config.maximum_hold_position_spread_rad:.4f}rad"
                 )
-            hold_error = float(
-                np.max(
-                    np.abs(
-                        np.median(hold_positions, axis=0) - np.asarray(pose_set.hold_q)
-                    )
-                )
-            )
-            if hold_error > self.gate_config.maximum_hold_position_spread_rad:
-                failures.append(
-                    f"measured {hold_arm} arm differs from pose-set hold by "
-                    f"{hold_error:.4f}rad"
-                )
         if failures:
             return PoseRecordingAssessment(
                 allowed=False,
@@ -171,7 +156,6 @@ class PoseRecorder:
             recorded_at_utc=request.image_timing.receipt_utc,
             recorded_monotonic_s=request.image_timing.receipt_monotonic_s,
             anchor=request.anchor,
-            head_witness_ack=request.head_witness_ack,
             preview_path=(
                 None if request.preview_path is None else str(request.preview_path)
             ),

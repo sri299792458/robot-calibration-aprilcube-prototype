@@ -31,9 +31,11 @@ For the first experiment:
 - attach it with the Scotch foam mounting tape already purchased;
 - physically fix and witness-mark the manual camera/head pitch;
 - manually guide the left arm through useful camera-visible configurations and
-  record the complete measured seven-joint arm vector from `rt/lowstate`; and
-- replay those recorded configurations in joint space through one exclusive
-  `rt/arm_sdk` owner, one operator-confirmed pose at a time.
+  record the complete measured seven-joint arm vector from `rt/lowstate` while
+  capturing the synchronized calibration image burst; and
+- retain replay through one exclusive `rt/arm_sdk` owner as an optional path
+  for repeatability experiments and future camera configurations, not as a
+  prerequisite for the first calibration dataset.
 
 Wrist positions may vary naturally between recorded poses. They are measured and
 included in FK, so this does not require inverse kinematics and is not a
@@ -271,24 +273,27 @@ many nearly identical front-facing poses does not add the missing information.
 
 ```mermaid
 flowchart TB
-    TEACH["Verified manual-teaching mode"] --> REC["Read-only pose recorder\nrt/lowstate"]
-    REC --> POSES["Versioned measured pose set"]
-    POSES --> VALIDATE["Offline joint-limit and\nself-collision path validator"]
-    VALIDATE --> SESSION["Interactive session runner"]
-
-    subgraph CONTROL["Robot-facing process: one rt/arm_sdk owner"]
-      TRANSPORT["Safe Unitree arm transport"] --> EXEC["Move / settle state machine"]
-    end
-    SESSION --> EXEC
-    EXEC --> CAPTURE["Capture coordinator"]
-
+    TEACH["Verified manual-teaching mode"] --> CAPTURE["Read-only teach + capture\nno command publisher"]
     RS["RealSense ROS 2\nrectified color + CameraInfo"] --> CAPTURE
-    LOW["rt/lowstate receipt-stamped adapter"] --> EXEC
-    LOW --> CAPTURE
+    LOW["rt/lowstate receipt-stamped adapter"] --> CAPTURE
     APRIL["Stateless AprilCube correspondences"] --> CAPTURE
+    CAPTURE --> POSES["Versioned measured pose set"]
+    CAPTURE --> RAW["Lossless raw session + manifest"]
 
-    CAPTURE --> RAW["Immutable raw rosbag2 + session manifest"]
+    subgraph OPTIONAL["Optional replay path: one rt/arm_sdk owner"]
+      POSES --> VALIDATE["Offline joint-limit and\nself-collision path validator"]
+      TRANSPORT["Safe Unitree arm transport"] --> EXEC["Move / settle state machine"]
+      VALIDATE --> EXEC
+      EXEC --> REPLAY["Replay capture coordinator"]
+      RS --> REPLAY
+      LOW --> EXEC
+      LOW --> REPLAY
+      APRIL --> REPLAY
+      REPLAY --> RAW2["Separate replay raw session"]
+    end
+
     RAW --> DERIVE["Deterministic dataset builder"]
+    RAW2 --> DERIVE
     DERIVE --> DATA["CalibrationData + train/holdout split"]
     URDF["Mode-5 URDF + optical-frame overlay"] --> SOLVE["robot_calibration / Ceres"]
     DATA --> SOLVE
@@ -364,17 +369,18 @@ The first command-line surface is deliberately small:
 
 ```text
 g1-calib inspect-hardware       # read only; topics, mode, motor mapping
-g1-calib record-poses          # read only; live camera/detector + measured poses
+g1-calib teach-poses           # read only; measured poses + synchronized raw data
 g1-calib validate-poses        # offline joint/path/collision report
-g1-calib run-session           # sole rt/arm_sdk owner; move/settle/capture
+g1-calib collect-session       # optional rt/arm_sdk replay + capture
 g1-calib build-dataset         # raw session -> CalibrationData
 g1-calib solve                 # train solve, holdout evaluation, export
 g1-calib report                # regenerate diagnostics without re-solving
 ```
 
-Avoid custom ROS actions/services in the MVP. `run-session` is one interactive
-process containing the control state machine and ROS camera subscriptions. This
-keeps the motion/capture transition atomic and avoids a second process sending
+Avoid custom ROS actions/services in the MVP. `teach-poses` owns the read-only
+camera/state capture lifecycle. The optional `collect-session` command contains
+the control state machine and ROS camera subscriptions in one process, keeping
+motion/capture transitions atomic and avoiding a second process sending
 arbitrary joint goals. A standard trajectory-action adapter can replace only
 `transports/unitree_arm_sdk.py` later.
 
@@ -409,14 +415,15 @@ operator checklist and refuses unattended acquisition.
 stateDiagram-v2
     [*] --> Observing
     Observing --> Acquiring: operator acquire
-    Acquiring --> Holding: weight=1 at measured pose
+    Acquiring --> Ready: weight=1 at per-run measured handoff
     Holding --> Moving: confirmed validated pose
+    Ready --> Moving: confirmed validated pose
     Moving --> Settling: target reached coarsely
-    Settling --> Ready: q/dq within limits for dwell
+    Settling --> Ready: q error/spread within limits for dwell
     Ready --> Capturing: automatic stationary burst
     Capturing --> Holding: accepted or retry recorded
-    Holding --> Releasing: clean finish
-    Releasing --> Stopped: approved home then weight=0
+    Ready --> Releasing: per-run handoff then weight ramp
+    Releasing --> Stopped: weight=0
     Observing --> Stopped: exit without acquisition
     Acquiring --> Fault
     Holding --> Fault
@@ -428,9 +435,11 @@ stateDiagram-v2
 ```
 
 Transitions are explicit and logged. Capture is impossible in `Moving`; motion
-is impossible while `Capturing`. Clean release first moves to one approved home
-configuration and then ramps the blend weight to zero. Emergency release skips
-the home motion and ramps weight out immediately; the onboard controller may
+is impossible while `Capturing`. Before publisher creation, a subscriber-only
+preflight selects a stationary measured handoff and validates the exact entry
+and return routes. Clean release returns to that run's handoff and then ramps
+the blend weight to zero.
+Emergency release skips the handoff motion and ramps weight out immediately; the onboard controller may
 then move the arms toward its own command, so the operator must keep the area
 clear.
 
@@ -439,9 +448,10 @@ Initial hardware-commissioning values are conservative and configurable:
 - command rate: 250 Hz;
 - maximum joint speed: 0.2 rad/s;
 - coarse position arrival: 0.05 rad;
-- settled position error: 0.02 rad;
-- settled velocity: 0.03 rad/s;
-- continuous dwell: 0.75 s; and
+- target position error: 0.05 rad, matching Unitree's G1 home-arrival check;
+- activation and held-arm position error: 0.02 rad;
+- settled measured-position spread: 0.01 rad;
+- continuous dwell: 0.5 s, matching the pose-recording stationarity window; and
 - `LowState` freshness timeout: 0.1 s.
 
 These are starting values, not claimed G1 performance. Hardware commissioning
@@ -463,7 +473,7 @@ The executor rejects or faults unless all relevant invariants hold:
 | State remains fresh | stale state triggers fault and emergency blend ramp |
 | Left arm is deterministic | capture its measured safe pose at acquisition and hold it for the session |
 | Operator controls each move | one confirmation per pose; no autonomous multi-pose run on first hardware version |
-| Capture is stationary | measured q/dq dwell gate, not a fixed sleep |
+| Capture is stationary | measured q-spread dwell gate, not a fixed sleep; raw `dq` is diagnostic only |
 | Shutdown is explicit | signal handlers, joined threads, terminal weight-zero publish, outcome logged |
 
 ### 4.4 Laptop preview and pose-quality guidance
@@ -495,15 +505,18 @@ self-collision, path, and operator-clearance validation passes. The preview must
 show these as separate statuses rather than implying that detector success
 authorizes replay.
 
-`record-poses` uses the preview while the operator manually teaches the arm.
-Pressing Space on green records the median measured seven-joint vector over a
-stationary window, the complete 29-joint snapshot, a rectified preview image,
-detection metrics, and coverage metadata. Yellow requires a second explicit
-confirmation and a recorded reason; red cannot be saved. Undo removes only the
-last candidate through the pose-store API and retains its audit event.
+`teach-poses` uses the preview while the operator manually teaches the arm.
+Pressing `S` records a seven-frame stationary lossless burst and the measured
+pose as one operation. Every image retains its centered complete 29-joint state
+window, exact `CameraInfo`, receipt/header timestamps, pairing, detection,
+quality report, and hashes. One medoid frame becomes the derived calibration
+sample. Yellow requires a recorded override reason; red cannot be saved. Undo
+removes the active pose through the pose-store API and marks the corresponding
+raw capture rejected rather than deleting evidence.
 
-`run-session` shows the same preview during replay. After a validated target is
-reached and the measured dwell gate passes, it records a short stationary burst.
+`collect-session` shows the same preview during optional replay. After a
+validated target is reached and the measured dwell gate passes, it records a
+short stationary burst.
 The best/median correspondence becomes one calibration sample for that pose;
 all raw frames remain stored. A red result is rejected and retried or skipped,
 never silently counted. This prevents a long dwell or repeated frames at one
@@ -528,7 +541,7 @@ artifact, never the only copy of a measurement.
 `capture_poses.yaml` is versioned and schema-validated:
 
 ```yaml
-schema_version: 1
+schema_version: 2
 robot:
   model: g1_29dof_rev_1_0
   mode_machine: 5
@@ -542,6 +555,7 @@ joint_order:
   - left_wrist_pitch_joint
   - left_wrist_yaw_joint
 calibration_arm: left
+handoff_q: [0, 0, 0, 0, 0, 0, 0]  # measured left arm, naturally down
 hold_q: [0, 0, 0, 0, 0, 0, 0]  # right arm
 poses:
   - id: pose_001
@@ -553,8 +567,9 @@ poses:
     anchor: false
 ```
 
-The recorder obtains a short stationary state window, rejects excessive `dq`,
-and saves the median q plus spread rather than one potentially noisy sample.
+The recorder obtains a short stationary state window, rejects excessive
+measured-position spread, records raw `dq` only as diagnostic evidence, and
+saves the median q plus spread rather than one potentially noisy sample.
 Every edit changes the pose-set content hash and invalidates the old transition
 validation report.
 
@@ -564,13 +579,16 @@ Each session directory contains:
 
 ```text
 sessions/<session_id>/
-  raw/                         # rosbag2: rectified image, CameraInfo, JointState/LowState
+  raw/images/                  # lossless rectified PNG burst frames
+  raw/states/                  # complete state window for every image
   manifest.json               # pose/capture outcomes and all timestamps
-  pose_set.yaml               # exact immutable copy used
+  pose_set.yaml               # evolving copy while teaching; immutable at finalize
   hardware.yaml               # resolved non-secret hardware configuration
   target.json                 # measured target geometry and hash
-  validation_report.json      # exact approved transitions
-  preview/                    # optional annotated JPEGs, never solver input
+  collision_pairs.yaml        # exact collision geometry policy
+  capture_quality.yaml        # exact image/state acceptance policy
+  validation_report.json      # replay sessions only: approved transitions
+  preview/                    # annotated PNGs, never solver input
 ```
 
 For each image, store the ROS header stamp and local receipt timestamp. Unitree
@@ -679,7 +697,7 @@ Tasks:
    scale differs materially from the 30/40 mm design.
 9. Verify the robot's manual-teaching/compliant mode on the installed firmware
    and verify read-only `rt/lowstate` acquisition for mode 5 and left-arm motor
-   indices 22 through 28. Do not implement compliance by simply zeroing gains.
+   indices 15 through 21. Do not implement compliance by simply zeroing gains.
 
 Gate:
 
@@ -727,7 +745,7 @@ Gate:
 ### Phase 2A — Joint mapping, schemas, and read-only pose recording
 
 Implement and test the explicit mode-5 mapping for all 29 motors, with left-arm
-indices 22 through 28. If a trustworthy `sensor_msgs/JointState` already exists,
+indices 15 through 21. If a trustworthy `sensor_msgs/JointState` already exists,
 validate it against raw `LowState`; otherwise publish a receipt-stamped adapter
 with equal-length name, position, and velocity arrays.
 
@@ -735,20 +753,21 @@ The recorder never creates an `rt/arm_sdk` publisher. When the operator records
 a pose, it:
 
 1. verifies `mode_machine == 5` and fresh state;
-2. requires the left arm to remain below a recording velocity threshold for a
-   short window;
-3. saves median and spread for the seven selected left-arm joints;
-4. saves the complete 29-joint snapshot and right-arm hold state;
-5. records UTC and monotonic receipt times, a pose ID/group, visible tag preview,
-   and head-witness acknowledgement; and
-6. atomically rewrites a schema-valid pose file, retaining a backup.
+2. requires the left arm to remain within a measured-position spread threshold
+   for a short window;
+3. captures a short burst only after every image has a future state bracket;
+4. saves median and spread for the seven selected left-arm joints;
+5. losslessly saves every image and its complete 29-joint state window;
+6. records UTC and monotonic receipt times, `CameraInfo`, pairing, a pose
+   ID/group, detections, quality, and preview; and
+7. updates the schema-valid pose snapshot and raw-session manifest.
 
 Tests cover wrong mode, short motor arrays, NaN/Inf, joint-order swaps, duplicate
 pose IDs, nonstationary recording, and schema migration rejection.
 
-Gate: a read-only hardware session records and reloads at least ten poses with
-the expected indices, while a DDS capture confirms that the process never
-publishes `rt/arm_sdk` or `rt/lowcmd`.
+Gate: a read-only hardware session records and reloads at least ten poses and
+their raw bursts with the expected indices, can pause/resume/finalize, rebuilds
+the dataset deterministically, and never publishes `rt/arm_sdk` or `rt/lowcmd`.
 
 ### Phase 2B — Safe transport and blocking move/settle executor
 
@@ -761,14 +780,14 @@ state machine must pass deterministic fake-clock tests for:
 - measured arrival and continuous settle dwell;
 - timeout, wrong mode, stale state, invalid target, and loop overrun faults;
 - operator cancellation during every active state;
-- clean home/release and emergency release; and
+- clean handoff/release and emergency release; and
 - Ctrl-C/SIGTERM thread shutdown.
 
 The executor controls a fourteen-joint target because `rt/arm_sdk` is dual-arm.
 It captures a safe measured right-arm pose during acquisition and keeps that
 target fixed while replaying only the recorded left-arm seven-vector.
 
-Do not accept arbitrary live joint arrays from a network topic. `run-session`
+Do not accept arbitrary live joint arrays from a network topic. `collect-session`
 loads a content-hashed pose set and a matching validation report, displays the
 exact next target, and requires one operator confirmation for each transition.
 
@@ -779,7 +798,7 @@ Hardware commissioning is deliberately incremental:
 3. ramp weight 0 -> 1 while commanding the current measured q;
 4. hold for several seconds and verify no discontinuity;
 5. execute one prevalidated small shoulder/elbow displacement at 0.1 rad/s;
-6. return to the approved home pose; and
+6. return to that run's measured activation pose; and
 7. ramp weight to zero and confirm command publication stops.
 
 Each step is a separate supervised run with the physical area clear and the
@@ -800,7 +819,8 @@ samples. Required checks are:
 - selected arm-versus-torso, arm-versus-leg, and hand-versus-body collisions;
 - right-arm hold pose included in every configuration;
 - configured maximum path length and estimated duration; and
-- explicit start/home/anchor transitions, not only neighboring pose-list order.
+- explicit neighboring taught-pose transitions; live handoff/entry/return
+  transitions are generated from the stationary activation window.
 
 The validation layer may use Pinocchio/hpp-fcl or an offline G1Pilot environment,
 but it emits a small implementation-independent JSON report containing the
@@ -809,17 +829,19 @@ clearance, and pass/fail for every directed edge. MuJoCo is an optional dynamic
 sanity check, not a runtime dependency or substitute for operator clearance from
 external obstacles.
 
-Gate: `run-session` refuses a missing, failed, or hash-mismatched validation
+Gate: `collect-session` refuses a missing, failed, or hash-mismatched validation
 report, and deliberately colliding synthetic poses are rejected in tests.
 
 ### Phase 2D — Stationary capture and immutable session recording
 
-The session runner maintains bounded ring buffers for rectified images,
-`CameraInfo`, measured joint states, and both header/receipt timestamps. After
-the executor reaches `Ready`, it records a short stationary burst and:
+Both the read-only teacher and optional replay runner maintain bounded ring
+buffers for rectified images, `CameraInfo`, measured joint states, and both
+header/receipt timestamps. The teacher captures when the operator presses `S`;
+the replay runner captures after the executor reaches `Ready`. Each burst:
 
 1. requires fresh joint samples bracketing every candidate image;
-2. verifies q and dq remain within the configured window for the entire burst;
+2. verifies measured q spread remains within the configured window for the
+   entire burst and records raw `dq` as diagnostic evidence;
 3. verifies camera serial/profile/frame and `CameraInfo` are unchanged;
 4. runs the stateless detector for live quality feedback;
 5. requires adequate corner size, image margin, and no duplicate tag IDs;
@@ -1118,7 +1140,7 @@ unless the operator explicitly marks it experimental.
 | AprilCube inferred corners used as data | unrealistically smooth or history-dependent observations | stateless decoded current-frame corners only |
 | Too little motion diversity | different transforms with similar cost | pose-design coverage, multi-start, Jacobian SVD, subset bootstrap |
 | Missing/incorrect Unitree joint mapping | discontinuous or nonsensical FK | mode-5 adapter tests and hard rejection of incomplete states |
-| One pose over-weighted by frame bursts | fit favors slow/repeated poses | one aggregate observation per pose; retain raw burst separately |
+| One pose over-weighted by frame bursts | fit favors slow/repeated poses | one selected medoid observation per pose; retain raw burst separately |
 | Another process owns `rt/arm_sdk` | conflicting commands or unexpected arm motion | one local process lock, startup checklist, never run G1Pilot/XR teleop concurrently |
 | Unsafe zero target during controller startup | arm moves immediately on acquisition | seed targets from fresh measured q at weight zero before starting ramp |
 | State loss during motion | executor commands from stale feedback | freshness watchdog, bounded command, emergency blend ramp and logged fault |

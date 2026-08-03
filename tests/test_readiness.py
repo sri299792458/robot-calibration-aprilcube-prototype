@@ -29,7 +29,6 @@ def config() -> RecordingGateConfig:
         state_freshness_timeout_s=0.1,
         stationary_duration_s=0.4,
         maximum_state_gap_s=0.06,
-        maximum_calibration_velocity_rad_s=0.03,
         maximum_calibration_position_spread_rad=0.01,
         minimum_samples=5,
     )
@@ -53,10 +52,6 @@ def test_centered_stationary_window_is_ready() -> None:
     [
         (lambda index, time_s: sample(time_s, mode=4 if index == 4 else 5), "mode"),
         (
-            lambda index, time_s: sample(time_s, dq=0.04 if index == 4 else 0.0),
-            "velocity",
-        ),
-        (
             lambda index, time_s: sample(time_s, q_offset=0.02 if index == 4 else 0.0),
             "spread",
         ),
@@ -75,6 +70,18 @@ def test_stale_state_and_large_gap_are_rejected() -> None:
     assert not report.ready
     assert any("stale" in reason for reason in report.hard_failures)
     assert any("gap" in reason for reason in report.hard_failures)
+
+
+def test_raw_dq_spike_is_diagnostic_when_position_is_stationary() -> None:
+    samples = [
+        sample(10.0 + index * 0.05, dq=10.0 if index == 4 else 0.0)
+        for index in range(9)
+    ]
+
+    report = evaluate_recording_window(samples, now_monotonic_s=10.41, config=config())
+
+    assert report.ready
+    assert report.maximum_calibration_velocity_rad_s == pytest.approx(10.0)
 
 
 def test_buffer_rejects_non_monotonic_receipt_times() -> None:

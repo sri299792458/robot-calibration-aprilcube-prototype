@@ -26,7 +26,7 @@ def report(grade: QualityGrade) -> QualityReport:
     )
 
 
-def recorder(tmp_path) -> PoseRecorder:
+def recorder(tmp_path, *, hold_offset_rad: float = 0.0) -> PoseRecorder:
     store = PoseStore(tmp_path / "poses.yaml")
     store.initialize(
         PoseSet(
@@ -34,6 +34,7 @@ def recorder(tmp_path) -> PoseRecorder:
             mode_machine=5,
             urdf_sha256="a" * 64,
             calibration_arm="left",
+            handoff_q=tuple(np.arange(15, 22) / 100.0),
             hold_q=tuple(np.arange(22, 29) / 100.0),
         )
     )
@@ -41,6 +42,7 @@ def recorder(tmp_path) -> PoseRecorder:
     for index, time_s in enumerate(np.arange(9.7, 10.31, 0.05)):
         q = np.arange(29, dtype=float) / 100.0
         q[15:22] += (index % 3 - 1) * 0.0005
+        q[22:29] += hold_offset_rad
         buffer.add(RobotStateSample(time_s, UTC, 5, q, np.zeros(29)))
     return PoseRecorder(
         store=store,
@@ -50,7 +52,6 @@ def recorder(tmp_path) -> PoseRecorder:
             state_freshness_timeout_s=0.1,
             stationary_duration_s=0.4,
             maximum_state_gap_s=0.06,
-            maximum_calibration_velocity_rad_s=0.03,
             maximum_calibration_position_spread_rad=0.01,
             minimum_samples=5,
         ),
@@ -64,7 +65,6 @@ def request(grade: QualityGrade = QualityGrade.GREEN, **kwargs):
         "group": "center",
         "image_timing": ImageTiming(10.1, UTC, 123),
         "visual_report": report(grade),
-        "head_witness_ack": True,
         "preview_path": "previews/pose_001.png",
     }
     defaults.update(kwargs)
@@ -84,12 +84,21 @@ def test_green_pose_records_measured_median_and_evidence(tmp_path) -> None:
     assert subject.store.load().content_sha256 == pose_set.content_sha256
 
 
+def test_stationary_hold_arm_may_settle_away_from_ready_handoff(tmp_path) -> None:
+    subject = recorder(tmp_path, hold_offset_rad=0.25)
+
+    assessment = subject.assess(request(), now_monotonic_s=10.31)
+
+    assert assessment.allowed
+    assert assessment.readiness is not None
+    assert assessment.readiness.maximum_hold_position_spread_rad == pytest.approx(0)
+
+
 @pytest.mark.parametrize(
     ("pose_request", "message"),
     [
         (request(QualityGrade.RED), "visual"),
         (request(QualityGrade.YELLOW), "override reason"),
-        (request(head_witness_ack=False), "witness"),
     ],
 )
 def test_hard_gates_do_not_write_pose(tmp_path, pose_request, message: str) -> None:
@@ -120,5 +129,5 @@ def test_nonstationary_or_unpaired_state_cannot_be_recorded(tmp_path) -> None:
     )
     assert not assessment.allowed
     assert any(
-        "window" in reason or "velocity" in reason for reason in assessment.failures
+        "window" in reason or "spread" in reason for reason in assessment.failures
     )

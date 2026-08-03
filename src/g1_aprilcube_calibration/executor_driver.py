@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import threading
 import time
+from collections.abc import Callable
 from typing import Any
 
-from g1_aprilcube_calibration.executor_state_machine import PoseExecutor
+from g1_aprilcube_calibration.executor_state_machine import ExecutorState, PoseExecutor
 
 
 class SynchronizedPoseExecutor:
@@ -62,6 +63,9 @@ class SynchronizedPoseExecutor:
     def emergency_stop(self, reason: str) -> None:
         self._call("emergency_stop", reason)
 
+    def confirm_external_damping(self, reason: str) -> None:
+        self._call("confirm_external_damping", reason)
+
     def tick(self):
         return self._call("tick")
 
@@ -78,11 +82,13 @@ class ExecutorControlDriver:
         executor: SynchronizedPoseExecutor,
         *,
         rate_hz: float = 250.0,
+        safety_heartbeat: Callable[[], None] | None = None,
     ) -> None:
         if rate_hz <= 0:
             raise ValueError("control rate must be positive")
         self.executor = executor
         self.period_s = 1.0 / rate_hz
+        self.safety_heartbeat = safety_heartbeat
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
         self.error: BaseException | None = None
@@ -116,7 +122,15 @@ class ExecutorControlDriver:
         deadline = time.monotonic()
         while not self._stop.is_set():
             try:
-                self.executor.tick()
+                state = self.executor.tick()
+                if state is ExecutorState.FAULT:
+                    raise RuntimeError(
+                        "executor entered fault: "
+                        f"{self.executor.fault_reason or 'unknown reason'}; "
+                        "PC2 heartbeat intentionally stopped"
+                    )
+                if self.safety_heartbeat is not None:
+                    self.safety_heartbeat()
             except (RuntimeError, TypeError, ValueError) as error:
                 self.error = error
                 self._stop.set()

@@ -44,15 +44,17 @@ from g1_aprilcube_calibration.timestamp_pairing import (
     pair_state_to_image,
 )
 
-REQUIRED_SESSION_ARTIFACTS = frozenset(
+BASE_SESSION_ARTIFACTS = frozenset(
     {
         "pose_set.yaml",
         "hardware.yaml",
         "target.json",
         "collision_pairs.yaml",
-        "validation_report.json",
+        "capture_quality.yaml",
     }
 )
+REPLAY_SESSION_ARTIFACTS = BASE_SESSION_ARTIFACTS | {"validation_report.json"}
+COLLECTION_METHODS = frozenset({"replay", "manual_teaching"})
 _ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$")
 
 
@@ -115,18 +117,32 @@ class SessionStore:
         pairing_config: PairingConfig,
         recording_gate_config: RecordingGateConfig,
         provenance: dict,
+        collection_method: str = "replay",
     ) -> SessionManifest:
         if self.directory.exists():
             raise FileExistsError(f"session directory already exists: {self.directory}")
-        if set(artifacts) != REQUIRED_SESSION_ARTIFACTS:
+        if collection_method not in COLLECTION_METHODS:
+            raise ValueError(f"unsupported collection method: {collection_method}")
+        expected_artifacts = (
+            REPLAY_SESSION_ARTIFACTS
+            if collection_method == "replay"
+            else BASE_SESSION_ARTIFACTS
+        )
+        if set(artifacts) != expected_artifacts:
             raise ValueError(
                 "session artifacts must be exactly: "
-                + ", ".join(sorted(REQUIRED_SESSION_ARTIFACTS))
+                + ", ".join(sorted(expected_artifacts))
             )
         self._validate_source_artifacts(
             artifacts,
             expected_pose_set_content_sha256=pose_set_content_sha256,
+            collection_method=collection_method,
         )
+        resolved_provenance = dict(provenance)
+        existing_method = resolved_provenance.get("collection_method")
+        if existing_method is not None and existing_method != collection_method:
+            raise ValueError("provenance collection method is inconsistent")
+        resolved_provenance["collection_method"] = collection_method
         self.directory.mkdir(parents=True)
         (self.directory / "raw" / "images").mkdir(parents=True)
         (self.directory / "raw" / "states").mkdir(parents=True)
@@ -151,7 +167,7 @@ class SessionStore:
                 name: getattr(recording_gate_config, name)
                 for name in recording_gate_config.__dataclass_fields__
             },
-            provenance=provenance,
+            provenance=resolved_provenance,
         )
         self._write_manifest(manifest, first=True)
         return manifest
@@ -222,7 +238,7 @@ class SessionStore:
                 for frame in frame_inputs
             ):
                 raise ValueError("accepted capture contains an invalid/red raw frame")
-            selected_frame_id = self._select_medoid_frame(frame_inputs).frame_id
+            selected_frame_id = self.select_medoid_frame(frame_inputs).frame_id
 
         existing_frame_ids = {
             frame.frame_id for capture in manifest.captures for frame in capture.frames
@@ -250,12 +266,92 @@ class SessionStore:
         manifest = self.load()
         if manifest.finalized:
             return manifest
+        if manifest.provenance.get("collection_method") == "manual_teaching":
+            pose_set = PoseSet.from_dict(
+                yaml.safe_load((self.directory / "pose_set.yaml").read_bytes())
+            )
+            self._validate_manual_alignment(manifest, pose_set)
         updated = replace(manifest, finalized=True)
         self._write_manifest(updated)
         for path in self.directory.rglob("*"):
             if path.is_file():
                 path.chmod(0o444)
         return updated
+
+    def update_manual_pose_set(self, pose_set: PoseSet) -> SessionManifest:
+        """Replace the evolving pose snapshot of an unfinalized manual session."""
+
+        manifest = self.load()
+        self._require_manual_session(manifest)
+        self._validate_pose_set_identity(pose_set)
+        accepted_pose_ids = {
+            capture.pose_id
+            for capture in manifest.captures
+            if capture.outcome == "accepted"
+        }
+        recorded_pose_ids = {pose.id for pose in pose_set.poses}
+        missing = sorted(accepted_pose_ids - recorded_pose_ids)
+        if missing:
+            raise ValueError(
+                "manual pose update would orphan accepted captures: "
+                + ", ".join(missing)
+            )
+        return self._replace_manual_pose_set(manifest, pose_set)
+
+    def validate_manual_alignment(self, pose_set: PoseSet) -> None:
+        """Require a one-to-one active-pose/accepted-capture relationship."""
+
+        manifest = self.load()
+        self._require_manual_session(manifest)
+        self._validate_pose_set_identity(pose_set)
+        self._validate_manual_alignment(manifest, pose_set)
+
+    def undo_manual_capture(
+        self,
+        *,
+        capture_id: str,
+        updated_pose_set: PoseSet,
+        reason: str,
+    ) -> SessionManifest:
+        """Reject one accepted manual capture while replacing its pose snapshot."""
+
+        if not reason.strip():
+            raise ValueError("manual capture undo reason must be non-empty")
+        manifest = self.load()
+        self._require_manual_session(manifest)
+        self._validate_pose_set_identity(updated_pose_set)
+        matches = [
+            index
+            for index, capture in enumerate(manifest.captures)
+            if capture.capture_id == capture_id
+        ]
+        if len(matches) != 1:
+            raise ValueError("manual capture ID is not present exactly once")
+        index = matches[0]
+        capture = manifest.captures[index]
+        if capture.outcome != "accepted":
+            raise ValueError("only an accepted manual capture can be undone")
+        replacement = replace(
+            capture,
+            outcome="rejected",
+            reason=reason.strip(),
+            selected_frame_id=None,
+        )
+        captures = list(manifest.captures)
+        captures[index] = replacement
+        accepted_pose_ids = {
+            item.pose_id for item in captures if item.outcome == "accepted"
+        }
+        recorded_pose_ids = {pose.id for pose in updated_pose_set.poses}
+        missing = sorted(accepted_pose_ids - recorded_pose_ids)
+        if missing:
+            raise ValueError(
+                "manual undo would orphan other accepted captures: "
+                + ", ".join(missing)
+            )
+        return self._replace_manual_pose_set(
+            replace(manifest, captures=tuple(captures)), updated_pose_set
+        )
 
     def find_orphans(self) -> tuple[str, ...]:
         manifest = self.load()
@@ -318,6 +414,7 @@ class SessionStore:
         artifacts: Mapping[str, bytes],
         *,
         expected_pose_set_content_sha256: str,
+        collection_method: str,
     ) -> None:
         try:
             pose_document = yaml.safe_load(artifacts["pose_set.yaml"])
@@ -332,32 +429,107 @@ class SessionStore:
             hardware = yaml.safe_load(artifacts["hardware.yaml"])
             target = json.loads(artifacts["target.json"])
             collision_document = yaml.safe_load(artifacts["collision_pairs.yaml"])
-            validation_document = json.loads(artifacts["validation_report.json"])
+            quality_document = yaml.safe_load(artifacts["capture_quality.yaml"])
         except Exception as error:
             raise ValueError(
                 "one or more frozen session artifacts cannot be parsed"
             ) from error
-        if not isinstance(hardware, dict) or not isinstance(target, dict):
-            raise TypeError("hardware and target artifacts must contain mappings")
-        if not isinstance(validation_document, dict):
-            raise TypeError("validation report artifact must contain a mapping")
-        validation = ValidationReport.from_dict(validation_document)
+        if (
+            not isinstance(hardware, dict)
+            or not isinstance(target, dict)
+            or not isinstance(quality_document, dict)
+        ):
+            raise TypeError(
+                "hardware, target, and capture-quality artifacts must contain mappings"
+            )
         collision = CollisionConfig.from_mapping(collision_document)
-        if validation.pose_set_sha256 != pose_set.content_sha256:
-            raise ValueError("validation report belongs to a different pose set")
-        if validation.urdf_sha256 != pose_set.urdf_sha256:
-            raise ValueError("validation report belongs to a different URDF")
-        if not validation.passed:
-            raise ValueError("session cannot freeze a failed transition report")
         if not collision.hardware_ready:
             raise ValueError("session cannot freeze an unready collision config")
-        if validation.collision_config_sha256 != collision.content_sha256:
-            raise ValueError(
-                "validation report belongs to a different collision configuration"
-            )
+        if collection_method == "replay":
+            try:
+                validation_document = json.loads(
+                    artifacts["validation_report.json"]
+                )
+            except Exception as error:
+                raise ValueError(
+                    "validation report artifact cannot be parsed"
+                ) from error
+            if not isinstance(validation_document, dict):
+                raise TypeError("validation report artifact must contain a mapping")
+            validation = ValidationReport.from_dict(validation_document)
+            if validation.pose_set_sha256 != pose_set.content_sha256:
+                raise ValueError("validation report belongs to a different pose set")
+            if validation.urdf_sha256 != pose_set.urdf_sha256:
+                raise ValueError("validation report belongs to a different URDF")
+            if not validation.passed:
+                raise ValueError("session cannot freeze a failed transition report")
+            if validation.collision_config_sha256 != collision.content_sha256:
+                raise ValueError(
+                    "validation report belongs to a different collision configuration"
+                )
+
+    def _require_manual_session(self, manifest: SessionManifest) -> None:
+        if manifest.finalized:
+            raise RuntimeError("cannot modify a finalized session")
+        if manifest.provenance.get("collection_method") != "manual_teaching":
+            raise RuntimeError("pose-set updates require a manual-teaching session")
+        if set(manifest.artifact_sha256) != BASE_SESSION_ARTIFACTS:
+            raise RuntimeError("manual session artifact set is inconsistent")
+
+    def _validate_pose_set_identity(self, pose_set: PoseSet) -> None:
+        existing = PoseSet.from_dict(
+            yaml.safe_load((self.directory / "pose_set.yaml").read_bytes())
+        )
+        identity_fields = (
+            "robot_model",
+            "mode_machine",
+            "urdf_sha256",
+            "calibration_arm",
+            "handoff_q",
+            "hold_q",
+        )
+        if any(
+            getattr(existing, field) != getattr(pose_set, field)
+            for field in identity_fields
+        ):
+            raise ValueError("manual pose update changed the robot/session identity")
 
     @staticmethod
-    def _select_medoid_frame(
+    def _validate_manual_alignment(
+        manifest: SessionManifest, pose_set: PoseSet
+    ) -> None:
+        accepted_pose_ids = [
+            capture.pose_id
+            for capture in manifest.captures
+            if capture.outcome == "accepted"
+        ]
+        active_pose_ids = [pose.id for pose in pose_set.poses]
+        if accepted_pose_ids != active_pose_ids:
+            raise ValueError(
+                "manual session poses and accepted captures are not aligned: "
+                f"poses={active_pose_ids}, captures={accepted_pose_ids}"
+            )
+
+    def _replace_manual_pose_set(
+        self, manifest: SessionManifest, pose_set: PoseSet
+    ) -> SessionManifest:
+        pose_bytes = yaml.safe_dump(
+            pose_set.to_dict(), sort_keys=False, allow_unicode=True
+        ).encode()
+        pose_hash = _sha256(pose_bytes)
+        artifact_hashes = dict(manifest.artifact_sha256)
+        artifact_hashes["pose_set.yaml"] = pose_hash
+        updated = replace(
+            manifest,
+            pose_set_content_sha256=pose_set.content_sha256,
+            artifact_sha256=artifact_hashes,
+        )
+        self._replace_file(self.directory / "pose_set.yaml", pose_bytes)
+        self._write_manifest(updated)
+        return updated
+
+    @staticmethod
+    def select_medoid_frame(
         frames: tuple[CaptureFrameInput, ...],
     ) -> CaptureFrameInput:
         signatures: dict[tuple[int, ...], list[CaptureFrameInput]] = {}

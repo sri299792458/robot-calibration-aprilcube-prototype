@@ -22,7 +22,7 @@ from g1_aprilcube_calibration.readiness import (
     evaluate_recording_window,
 )
 from g1_aprilcube_calibration.ros.camera_adapter import ROSFrameBuffer, ROSImageFrame
-from g1_aprilcube_calibration.session_store import CaptureFrameInput
+from g1_aprilcube_calibration.session_store import CaptureFrameInput, SessionStore
 from g1_aprilcube_calibration.timestamp_pairing import (
     PairingConfig,
     pair_state_to_image,
@@ -60,6 +60,7 @@ class LiveBurstFrameSource:
         accept_yellow: Callable[[ROSImageFrame], bool] | None = None,
         preview: Callable[[ROSImageFrame, object, object], None] | None = None,
         cancelled: Callable[[], bool] | None = None,
+        history: tuple[ViewSignature, ...] = (),
     ) -> None:
         self.camera_frames = camera_frames
         self.robot_states = robot_states
@@ -73,7 +74,7 @@ class LiveBurstFrameSource:
         self.accept_yellow = accept_yellow or (lambda _frame: False)
         self.preview = preview
         self.cancelled = cancelled or (lambda: False)
-        self._history: list[ViewSignature] = []
+        self._history = list(history)
 
     def capture_burst(
         self, *, pose_id: str, capture_id: str
@@ -95,6 +96,20 @@ class LiveBurstFrameSource:
                 key = self._frame_key(frame)
                 if key in seen:
                     continue
+                latest_state = self.robot_states.latest
+                required_state_time = (
+                    frame.timing.receipt_monotonic_s
+                    + self.recording_config.stationary_duration_s / 2.0
+                )
+                if (
+                    latest_state is None
+                    or latest_state.receipt_monotonic_s < required_state_time
+                ):
+                    # Keep the image eligible until its centered state window
+                    # has a post-exposure bracket.  Marking it seen here would
+                    # reject every genuinely live frame before future states
+                    # can arrive.
+                    continue
                 seen.add(key)
                 try:
                     candidate = self._evaluate_frame(
@@ -109,10 +124,16 @@ class LiveBurstFrameSource:
                     break
             if len(accepted) < self.config.frame_count:
                 self.wait_once(self.config.poll_interval_s)
-        signature = accepted[-1].quality.signature
+        selected = SessionStore.select_medoid_frame(tuple(accepted))
+        signature = selected.quality.signature
         if signature is not None:
             self._history.append(signature)
         return tuple(accepted)
+
+    def undo_last_signature(self) -> None:
+        if not self._history:
+            raise ValueError("cannot undo an empty live-capture history")
+        self._history.pop()
 
     def _evaluate_frame(
         self, frame: ROSImageFrame, *, frame_id: str

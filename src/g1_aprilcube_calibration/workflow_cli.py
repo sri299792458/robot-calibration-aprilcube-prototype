@@ -81,7 +81,7 @@ def add_workflow_subparsers(
 
     initialize = subparsers.add_parser(
         "init-pose-set",
-        help="initialize an empty pose set from a complete measured-state JSON",
+        help="initialize measured handoff and an empty taught-pose set",
     )
     initialize.add_argument("--state-json", type=Path, required=True)
     initialize.add_argument("--output", type=Path, required=True)
@@ -230,12 +230,16 @@ def run_init_pose_set(args: argparse.Namespace) -> int:
     state = _load_state(args.state_json)
     if not state.is_mode5:
         raise ValueError("state JSON is not mode_machine=5")
+    maximum_arm_velocity = float(np.max(np.abs(state.velocity[15:29])))
     model = URDFModel(args.urdf)
     pose_set = PoseSet(
         robot_model="g1_29dof_rev_1_0",
         mode_machine=5,
         urdf_sha256=model.sha256,
         calibration_arm=args.calibration_arm,
+        handoff_q=tuple(
+            state.position[np.asarray(arm_indices(args.calibration_arm))]
+        ),
         hold_q=tuple(
             state.position[np.asarray(arm_indices(opposite_arm(args.calibration_arm)))]
         ),
@@ -248,6 +252,9 @@ def run_init_pose_set(args: argparse.Namespace) -> int:
             "content_sha256": pose_set.content_sha256,
             "urdf_sha256": model.sha256,
             "calibration_arm": pose_set.calibration_arm,
+            "handoff_q": list(pose_set.handoff_q),
+            "hold_q": list(pose_set.hold_q),
+            "maximum_measured_arm_velocity_rad_s": maximum_arm_velocity,
         }
     )
     return 0
@@ -264,9 +271,8 @@ def run_pose_summary(args: argparse.Namespace) -> int:
             "content_sha256": pose_set.content_sha256,
             "urdf_sha256": pose_set.urdf_sha256,
             "calibration_arm": pose_set.calibration_arm,
-            "head_witness_all_acknowledged": all(
-                pose.head_witness_ack for pose in pose_set.poses
-            ),
+            "handoff_q": list(pose_set.handoff_q),
+            "hold_q": list(pose_set.hold_q),
         }
     )
     return 0

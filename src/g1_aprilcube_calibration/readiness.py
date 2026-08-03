@@ -19,9 +19,7 @@ class RecordingGateConfig:
     state_freshness_timeout_s: float = 0.1
     stationary_duration_s: float = 0.5
     maximum_state_gap_s: float = 0.1
-    maximum_calibration_velocity_rad_s: float = 0.03
     maximum_calibration_position_spread_rad: float = 0.01
-    maximum_hold_velocity_rad_s: float = 0.03
     maximum_hold_position_spread_rad: float = 0.01
     minimum_samples: int = 5
 
@@ -33,9 +31,7 @@ class RecordingGateConfig:
             "state_freshness_timeout_s",
             "stationary_duration_s",
             "maximum_state_gap_s",
-            "maximum_calibration_velocity_rad_s",
             "maximum_calibration_position_spread_rad",
-            "maximum_hold_velocity_rad_s",
             "maximum_hold_position_spread_rad",
         ):
             if getattr(self, name) <= 0:
@@ -195,11 +191,6 @@ def evaluate_recording_window(
         [sample.arm_dq(config.calibration_arm) for sample in ordered]
     )
     maximum_velocity = float(np.max(np.abs(calibration_velocity)))
-    if maximum_velocity > config.maximum_calibration_velocity_rad_s:
-        failures.append(
-            f"{config.calibration_arm}-arm velocity is {maximum_velocity:.4f}rad/s; "
-            f"limit is {config.maximum_calibration_velocity_rad_s:.4f}rad/s"
-        )
 
     calibration_position = np.vstack(
         [sample.arm_q(config.calibration_arm) for sample in ordered]
@@ -215,11 +206,6 @@ def evaluate_recording_window(
     hold_arm = opposite_arm(config.calibration_arm)
     hold_velocity = np.vstack([sample.arm_dq(hold_arm) for sample in ordered])
     maximum_hold_velocity = float(np.max(np.abs(hold_velocity)))
-    if maximum_hold_velocity > config.maximum_hold_velocity_rad_s:
-        failures.append(
-            f"held {hold_arm}-arm velocity is {maximum_hold_velocity:.4f}rad/s; "
-            f"limit is {config.maximum_hold_velocity_rad_s:.4f}rad/s"
-        )
     hold_position = np.vstack([sample.arm_q(hold_arm) for sample in ordered])
     maximum_hold_spread = float(np.max(np.ptp(hold_position, axis=0)))
     if maximum_hold_spread > config.maximum_hold_position_spread_rad:

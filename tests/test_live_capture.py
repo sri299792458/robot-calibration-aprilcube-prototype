@@ -75,7 +75,6 @@ def test_live_source_waits_for_new_stationary_confirmed_frames():
             state_freshness_timeout_s=0.1,
             stationary_duration_s=0.5,
             maximum_state_gap_s=0.1,
-            maximum_calibration_velocity_rad_s=0.03,
             maximum_calibration_position_spread_rad=0.01,
             minimum_samples=5,
         ),
@@ -92,3 +91,48 @@ def test_live_source_waits_for_new_stationary_confirmed_frames():
     ]
     assert all(frame.correspondences.valid for frame in burst)
     assert all(len(frame.state_window) >= 25 for frame in burst)
+
+
+def test_live_source_keeps_frame_until_future_state_bracket_arrives():
+    frames = ROSFrameBuffer()
+    states = StateSampleBuffer()
+    for time_s in np.arange(0.5, 1.01, 0.02):
+        states.add(RobotStateSample(time_s, UTC, 5, np.zeros(29), np.zeros(29)))
+    clock = ManualClock()
+    frame_added = [False]
+
+    def wait_once(duration):
+        clock.advance(duration)
+        if not frame_added[0]:
+            frames.add(
+                ROSImageFrame(marker_image(), ImageTiming(1.0, UTC, 1), info())
+            )
+            frame_added[0] = True
+            return
+        next_time = states.latest.receipt_monotonic_s + 0.02
+        states.add(
+            RobotStateSample(next_time, UTC, 5, np.zeros(29), np.zeros(29))
+        )
+
+    source = LiveBurstFrameSource(
+        camera_frames=frames,
+        robot_states=states,
+        detector=CorrespondenceDetector(TARGET),
+        quality_evaluator=PoseQualityEvaluator(thresholds()),
+        recording_config=RecordingGateConfig(
+            calibration_arm="left",
+            state_freshness_timeout_s=0.1,
+            stationary_duration_s=0.5,
+            maximum_state_gap_s=0.1,
+            maximum_calibration_position_spread_rad=0.01,
+            minimum_samples=5,
+        ),
+        pairing_config=PairingConfig(0.05, 0.1),
+        config=LiveBurstConfig(frame_count=1, timeout_s=1, poll_interval_s=0.01),
+        clock=clock,
+        wait_once=wait_once,
+        accept_yellow=lambda _frame: True,
+    )
+    burst = source.capture_burst(pose_id="pose", capture_id="capture_001")
+    assert burst[0].frame_id == "capture_001_000"
+    assert burst[0].state_window[-1].receipt_monotonic_s >= 1.25

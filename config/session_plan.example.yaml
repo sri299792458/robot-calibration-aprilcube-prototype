@@ -1,11 +1,10 @@
-schema_version: 1
-home_pose_id: home
+schema_version: 2
 
-# Replace with the exact manually recorded order. The path-validation edge file
-# must contain every adjacent directed edge plus the final return-to-home edge.
+# Replace with the exact manually recorded order. The policy edge file contains
+# adjacent taught-pose edges. Live __handoff__ entry/return edges are added and
+# validated automatically for each run.
 capture_pose_ids:
-  - home
   - pose_001
   - pose_002
   # Revisit anchors throughout the run to detect camera/cube mount movement.
-  - home
+  - pose_001

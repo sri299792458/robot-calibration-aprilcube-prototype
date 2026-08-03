@@ -6,7 +6,11 @@ import numpy as np
 from aprilcube.generate import DICT_MAP
 
 from g1_aprilcube_calibration.cli import main
-from g1_aprilcube_calibration.hardware_cli import _next_pose_id
+from g1_aprilcube_calibration.hardware_cli import (
+    _load_session_plan,
+    _next_pose_id,
+    _unique_route_edges,
+)
 from g1_aprilcube_calibration.models import RobotStateSample
 from g1_aprilcube_calibration.pose_schema import PoseRecord
 from g1_aprilcube_calibration.pose_store import PoseStore
@@ -87,6 +91,7 @@ def test_pose_set_cli_initializes_and_summarizes_measured_state(tmp_path, capsys
     capsys.readouterr()
     initialized = PoseStore(pose_path).load()
     assert initialized.calibration_arm == "left"
+    assert np.allclose(initialized.handoff_q, state.position[15:22])
     assert np.allclose(initialized.hold_q, state.position[22:29])
     assert main(["pose-summary", "--pose-set", str(pose_path)]) == 0
     output = json.loads(capsys.readouterr().out)
@@ -122,7 +127,67 @@ def test_pose_set_cli_can_select_right_calibration_arm(tmp_path, capsys):
     capsys.readouterr()
     initialized = PoseStore(pose_path).load()
     assert initialized.calibration_arm == "right"
+    assert np.allclose(initialized.handoff_q, state.position[22:29])
     assert np.allclose(initialized.hold_q, state.position[15:22])
+
+
+def test_pose_set_initialization_keeps_raw_dq_as_diagnostic(tmp_path, capsys):
+    state_path = tmp_path / "state.json"
+    pose_path = tmp_path / "poses.yaml"
+    velocity = np.zeros(29)
+    velocity[15] = 0.04
+    state = RobotStateSample(
+        1.0,
+        "2026-08-02T12:00:00Z",
+        5,
+        np.zeros(29),
+        velocity,
+    )
+    state_path.write_text(json.dumps(state.to_dict()))
+    assert (
+        main(
+            [
+                "init-pose-set",
+                "--state-json",
+                str(state_path),
+                "--output",
+                str(pose_path),
+            ]
+        )
+        == 0
+    )
+    result = json.loads(capsys.readouterr().out)
+    assert result["maximum_measured_arm_velocity_rad_s"] == 0.04
+    assert pose_path.is_file()
+
+
+def test_session_plan_contains_only_camera_capture_poses(tmp_path):
+    path = tmp_path / "session_plan.yaml"
+    path.write_text("schema_version: 2\ncapture_pose_ids: [pose_001, pose_002]\n")
+    plan = _load_session_plan(path)
+    assert plan.capture_pose_ids == ("pose_001", "pose_002")
+
+
+def test_dynamic_route_edges_preserve_order_and_remove_repeated_traversals():
+    assert _unique_route_edges(
+        [
+            "__handoff__",
+            "pose_001",
+            "pose_004",
+            "pose_005",
+            "pose_001",
+            "pose_004",
+            "pose_005",
+            "pose_001",
+            "__handoff__",
+        ]
+    ) == (
+        ("__handoff__", "pose_001"),
+        ("pose_001", "pose_004"),
+        ("pose_004", "pose_005"),
+        ("pose_005", "pose_001"),
+        ("pose_001", "__handoff__"),
+    )
 
 
 def test_artifact_inspection_reports_hardware_ready_left_arm_mount(capsys):
@@ -146,7 +211,7 @@ def test_commissioning_acknowledgement_fails_before_sdk_import(capsys):
     assert "must exactly equal" in capsys.readouterr().err
 
 
-def test_pose_teacher_allocates_home_then_next_available_number(tmp_path):
+def test_pose_teacher_allocates_first_calibration_pose_then_next_number(tmp_path):
     state_path = tmp_path / "state.json"
     pose_path = tmp_path / "poses.yaml"
     state = RobotStateSample(
@@ -170,28 +235,26 @@ def test_pose_teacher_allocates_home_then_next_available_number(tmp_path):
         == 0
     )
     store = PoseStore(pose_path)
-    assert _next_pose_id(store, "home") == "home"
+    assert _next_pose_id(store, "pose_001") == "pose_001"
     full = np.zeros(29)
     pose = PoseRecord(
-        "home",
+        "pose_001",
         "calibration",
         (0.0,) * 7,
         tuple(full),
         (0.0,) * 7,
         "2026-08-02T12:00:00Z",
         1.0,
-        head_witness_ack=True,
     )
     store.append(pose, details={})
     second = PoseRecord(
-        "pose_002",
+        "pose_003",
         "calibration",
         (0.0,) * 7,
         tuple(full),
         (0.0,) * 7,
         "2026-08-02T12:00:00Z",
         2.0,
-        head_witness_ack=True,
     )
     store.append(second, details={})
-    assert _next_pose_id(store, "home") == "pose_001"
+    assert _next_pose_id(store, "pose_001") == "pose_002"

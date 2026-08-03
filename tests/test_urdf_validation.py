@@ -10,7 +10,12 @@ from g1_aprilcube_calibration.collision import (
     FCLCollisionChecker,
 )
 from g1_aprilcube_calibration.joint_map import G1_29_JOINT_NAMES
-from g1_aprilcube_calibration.pose_schema import PoseAuditEvent, PoseRecord, PoseSet
+from g1_aprilcube_calibration.pose_schema import (
+    HANDOFF_POSE_ID,
+    PoseAuditEvent,
+    PoseRecord,
+    PoseSet,
+)
 from g1_aprilcube_calibration.pose_validator import (
     PathValidationConfig,
     PosePathValidator,
@@ -35,7 +40,6 @@ def make_pose(pose_id: str, calibration_q: np.ndarray, urdf_sha: str) -> PoseRec
         calibration_q_spread=(0.0,) * 7,
         recorded_at_utc=UTC,
         recorded_monotonic_s=1.0,
-        head_witness_ack=True,
     )
 
 
@@ -45,12 +49,10 @@ def make_pose_set(model: URDFModel, target: np.ndarray) -> PoseSet:
         mode_machine=5,
         urdf_sha256=model.sha256,
         calibration_arm="left",
+        handoff_q=(0.0,) * 7,
         hold_q=(0.0,) * 7,
     )
-    for item in (
-        make_pose("home", np.zeros(7), model.sha256),
-        make_pose("target", target, model.sha256),
-    ):
+    for item in (make_pose("target", target, model.sha256),):
         result = result.with_pose(item, PoseAuditEvent("add", item.id, UTC))
     return result
 
@@ -176,14 +178,14 @@ def test_path_validator_samples_by_increment_and_emits_approval() -> None:
     )
     report = validator.validate(
         pose_set,
-        directed_edges=(("home", "target"),),
+        directed_edges=((HANDOFF_POSE_ID, "target"),),
         reference_full_q=np.zeros(29),
     )
-    edge = report.edge("home", "target")
+    edge = report.edge(HANDOFF_POSE_ID, "target")
     assert report.passed
     assert edge.sample_count == 6
     assert edge.estimated_duration_s == pytest.approx(0.5)
-    approval = report.approval("home", "target")
+    approval = report.approval(HANDOFF_POSE_ID, "target")
     assert approval.passed
     assert approval.pose_set_sha256 == pose_set.content_sha256
     assert approval.validation_report_sha256 == report.content_sha256
@@ -206,7 +208,7 @@ def test_path_validator_rejects_joint_limit_and_stale_urdf() -> None:
     )
     report = validator.validate(
         pose_set,
-        directed_edges=(("home", "target"),),
+        directed_edges=((HANDOFF_POSE_ID, "target"),),
         reference_full_q=np.zeros(29),
     )
     assert not report.passed
@@ -217,6 +219,7 @@ def test_path_validator_rejects_joint_limit_and_stale_urdf() -> None:
         mode_machine=5,
         urdf_sha256="d" * 64,
         calibration_arm=pose_set.calibration_arm,
+        handoff_q=pose_set.handoff_q,
         hold_q=pose_set.hold_q,
     )
     with pytest.raises(ValueError, match="different URDF"):
@@ -229,7 +232,7 @@ def test_modeled_aprilcube_envelope_allows_hardware_approval() -> None:
     pose_set = make_pose_set(model, np.full(7, 0.01))
     report = PosePathValidator(model=model, collision_checker=checker).validate(
         pose_set,
-        directed_edges=(("home", "target"),),
+        directed_edges=((HANDOFF_POSE_ID, "target"),),
         reference_full_q=np.zeros(29),
     )
     assert report.passed

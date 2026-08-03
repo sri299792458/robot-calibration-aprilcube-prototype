@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://example.invalid/g1-calibration/pose-set-v1.schema.json",
+  "$id": "https://example.invalid/g1-calibration/pose-set-v2.schema.json",
   "title": "G1 calibration pose set",
   "type": "object",
   "additionalProperties": false,
@@ -10,13 +10,14 @@
     "calibration_arm",
     "joint_order",
     "full_joint_order",
+    "handoff_q",
     "hold_q",
     "poses",
     "audit_log",
     "content_sha256"
   ],
   "properties": {
-    "schema_version": {"const": 1},
+    "schema_version": {"const": 2},
     "robot": {
       "type": "object",
       "additionalProperties": false,
@@ -40,6 +41,7 @@
       "items": {"type": "string"}
     },
     "calibration_arm": {"enum": ["left", "right"]},
+    "handoff_q": {"$ref": "#/$defs/vector7"},
     "hold_q": {"$ref": "#/$defs/vector7"},
     "poses": {
       "type": "array",
@@ -78,7 +80,6 @@
         "recorded_monotonic_s",
         "source",
         "anchor",
-        "head_witness_ack",
         "preview_path",
         "visual_quality"
       ],
@@ -92,7 +93,6 @@
         "recorded_monotonic_s": {"type": "number", "minimum": 0},
         "source": {"type": "string", "minLength": 1},
         "anchor": {"type": "boolean"},
-        "head_witness_ack": {"type": "boolean"},
         "preview_path": {"type": ["string", "null"]},
         "visual_quality": {"type": "object"}
       }

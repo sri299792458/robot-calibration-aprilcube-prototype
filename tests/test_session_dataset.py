@@ -1,4 +1,5 @@
 import json
+from dataclasses import replace
 from pathlib import Path
 
 import cv2
@@ -17,7 +18,7 @@ from g1_aprilcube_calibration.dataset_builder import (
     deterministic_holdout_split,
 )
 from g1_aprilcube_calibration.models import RobotStateSample
-from g1_aprilcube_calibration.pose_schema import PoseSet
+from g1_aprilcube_calibration.pose_schema import PoseAuditEvent, PoseRecord, PoseSet
 from g1_aprilcube_calibration.pose_validator import (
     DirectedEdgeResult,
     ValidationReport,
@@ -34,6 +35,7 @@ from g1_aprilcube_calibration.timestamp_pairing import (
 ROOT = Path(__file__).parents[1]
 TARGET = ROOT / "aprilcube" / "models" / "dex3_safe_cube" / "config.json"
 COLLISIONS = ROOT / "config" / "collision_pairs.yaml"
+QUALITY = ROOT / "config" / "capture_quality.yaml"
 UTC = "2026-08-02T12:00:00Z"
 
 
@@ -104,6 +106,7 @@ def create_store(tmp_path) -> SessionStore:
         mode_machine=5,
         urdf_sha256="a" * 64,
         calibration_arm="left",
+        handoff_q=(0.0,) * 7,
         hold_q=(0.0,) * 7,
     )
     collision = CollisionConfig.from_yaml(COLLISIONS)
@@ -115,7 +118,7 @@ def create_store(tmp_path) -> SessionStore:
         config={},
         edges=(
             DirectedEdgeResult(
-                from_pose_id="home",
+                from_pose_id="__handoff__",
                 to_pose_id="pose_001",
                 passed=True,
                 sample_count=2,
@@ -139,6 +142,7 @@ def create_store(tmp_path) -> SessionStore:
             "hardware.yaml": b"robot: test\n",
             "target.json": TARGET.read_bytes(),
             "collision_pairs.yaml": COLLISIONS.read_bytes(),
+            "capture_quality.yaml": QUALITY.read_bytes(),
             "validation_report.json": json.dumps(validation.to_dict()).encode(),
         },
         pairing_config=PairingConfig(0.05, 0.11),
@@ -147,13 +151,64 @@ def create_store(tmp_path) -> SessionStore:
             state_freshness_timeout_s=0.1,
             stationary_duration_s=0.1,
             maximum_state_gap_s=0.06,
-            maximum_calibration_velocity_rad_s=0.03,
             maximum_calibration_position_spread_rad=0.01,
             minimum_samples=3,
         ),
         provenance={"git_commit": "test", "head_witness_ack": True},
     )
     return store
+
+
+def manual_pose(pose_id: str = "pose_001") -> PoseRecord:
+    full_q = tuple(float(value) / 100.0 for value in range(29))
+    return PoseRecord(
+        id=pose_id,
+        group="calibration",
+        measured_calibration_q=full_q[15:22],
+        measured_full_q=full_q,
+        calibration_q_spread=(0.001,) * 7,
+        recorded_at_utc=UTC,
+        recorded_monotonic_s=1.0,
+    )
+
+
+def create_manual_store(tmp_path) -> tuple[SessionStore, PoseSet]:
+    store = SessionStore(tmp_path / "manual_session")
+    pose_set = PoseSet(
+        robot_model="g1_29dof_rev_1_0",
+        mode_machine=5,
+        urdf_sha256="a" * 64,
+        calibration_arm="left",
+        handoff_q=(0.0,) * 7,
+        hold_q=(0.0,) * 7,
+    )
+    store.create(
+        session_id="manual_session",
+        created_at_utc=UTC,
+        camera_info=camera_info(),
+        pose_set_content_sha256=pose_set.content_sha256,
+        artifacts={
+            "pose_set.yaml": yaml.safe_dump(
+                pose_set.to_dict(), sort_keys=False
+            ).encode(),
+            "hardware.yaml": b"robot: test\n",
+            "target.json": TARGET.read_bytes(),
+            "collision_pairs.yaml": COLLISIONS.read_bytes(),
+            "capture_quality.yaml": QUALITY.read_bytes(),
+        },
+        pairing_config=PairingConfig(0.05, 0.11),
+        recording_gate_config=RecordingGateConfig(
+            calibration_arm="left",
+            state_freshness_timeout_s=0.1,
+            stationary_duration_s=0.1,
+            maximum_state_gap_s=0.06,
+            maximum_calibration_position_spread_rad=0.01,
+            minimum_samples=3,
+        ),
+        provenance={"git_commit": "test"},
+        collection_method="manual_teaching",
+    )
+    return store, pose_set
 
 
 def test_raw_first_manifest_second_and_offline_rebuild(tmp_path) -> None:
@@ -187,6 +242,63 @@ def test_raw_first_manifest_second_and_offline_rebuild(tmp_path) -> None:
     assert len(sample.image_points_px) == len(sample.object_points_m) == 4
     assert max(abs(value) for point in sample.object_points_m for value in point) < 0.1
     assert json.loads(output.read_text())["content_sha256"] == dataset.content_sha256
+
+
+def test_manual_session_updates_undoes_resumes_and_builds(tmp_path) -> None:
+    store, empty = create_manual_store(tmp_path)
+    first_pose = manual_pose()
+    with_first = empty.with_pose(
+        first_pose,
+        PoseAuditEvent("add", first_pose.id, UTC, {"source": "test"}),
+    )
+    store.update_manual_pose_set(with_first)
+    with pytest.raises(ValueError, match="not aligned"):
+        store.finalize()
+    store.append_capture(
+        capture_id="capture_001",
+        pose_id=first_pose.id,
+        outcome="accepted",
+        reason="manual stationary burst passed",
+        frames=(frame("capture_001_000", 1.0),),
+        recorded_at_utc=UTC,
+    )
+    store.validate_manual_alignment(with_first)
+
+    without_first = with_first.without_last_pose(
+        PoseAuditEvent("undo", first_pose.id, UTC, {"reason": "operator undo"})
+    )
+    store.undo_manual_capture(
+        capture_id="capture_001",
+        updated_pose_set=without_first,
+        reason="operator undo",
+    )
+    store.validate_manual_alignment(without_first)
+
+    replacement_pose = replace(first_pose, recorded_monotonic_s=2.0)
+    final_poses = without_first.with_pose(
+        replacement_pose,
+        PoseAuditEvent("add", replacement_pose.id, UTC, {"source": "test"}),
+    )
+    store.update_manual_pose_set(final_poses)
+    store.append_capture(
+        capture_id="capture_002",
+        pose_id=replacement_pose.id,
+        outcome="accepted",
+        reason="manual stationary burst passed",
+        frames=(frame("capture_002_000", 2.0),),
+        recorded_at_utc=UTC,
+    )
+
+    resumed = SessionStore(store.directory)
+    resumed.validate_manual_alignment(final_poses)
+    manifest = resumed.finalize()
+    dataset = DatasetBuilder(resumed.directory).build()
+    assert manifest.provenance["collection_method"] == "manual_teaching"
+    assert [capture.outcome for capture in manifest.captures] == [
+        "rejected",
+        "accepted",
+    ]
+    assert [sample.capture_id for sample in dataset.samples] == ["capture_002"]
 
 
 def test_finalized_session_rejects_append(tmp_path) -> None:

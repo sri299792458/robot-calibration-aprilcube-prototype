@@ -202,16 +202,27 @@ class UnitreeArmSDKTransport:
         clock: MonotonicClock | None = None,
         utc_now: Callable[[], str] = utc_now_iso,
         on_sample: Callable[[RobotStateSample], None] | None = None,
+        observer: UnitreeLowStateObserver | None = None,
     ) -> None:
         self.config = config
-        self.bindings = bindings or UnitreeSDKBindings.load()
-        self._observer = UnitreeLowStateObserver(
-            config,
-            bindings=self.bindings,
-            clock=clock,
-            utc_now=utc_now,
-            on_sample=on_sample,
-        )
+        if observer is not None:
+            if observer.config != config:
+                raise ValueError("existing observer configuration does not match")
+            if bindings is not None or clock is not None or on_sample is not None:
+                raise ValueError(
+                    "bindings, clock, and on_sample cannot accompany an observer"
+                )
+            self.bindings = observer.bindings
+            self._observer = observer
+        else:
+            self.bindings = bindings or UnitreeSDKBindings.load()
+            self._observer = UnitreeLowStateObserver(
+                config,
+                bindings=self.bindings,
+                clock=clock,
+                utc_now=utc_now,
+                on_sample=on_sample,
+            )
         self._publisher = self.bindings.publisher_type(
             config.command_topic, self.bindings.low_command_type
         )
@@ -274,6 +285,15 @@ class UnitreeArmSDKTransport:
                 "refusing to close after a non-zero blend weight; executor must "
                 "publish a terminal weight-zero command"
             )
+        self._closed = True
+        self._publisher.Close()
+        self._observer.close()
+
+    def close_after_external_damping(self) -> None:
+        """Close without weight zero only after G1 LocoClient accepted Damp()."""
+
+        if self._closed:
+            return
         self._closed = True
         self._publisher.Close()
         self._observer.close()

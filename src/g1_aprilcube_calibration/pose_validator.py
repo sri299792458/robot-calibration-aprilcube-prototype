@@ -19,7 +19,7 @@ from g1_aprilcube_calibration.joint_map import (
     opposite_arm,
     validate_full_joint_vector,
 )
-from g1_aprilcube_calibration.pose_schema import PoseSet
+from g1_aprilcube_calibration.pose_schema import HANDOFF_POSE_ID, PoseSet
 from g1_aprilcube_calibration.urdf_model import URDFModel
 
 VALIDATION_SCHEMA_VERSION = 1
@@ -277,13 +277,22 @@ class PosePathValidator:
         reference = validate_full_joint_vector(
             reference_full_q, name="reference_full_q"
         )
-        pose_by_id = {pose.id: pose for pose in pose_set.poses}
+        calibration_q_by_id = {
+            HANDOFF_POSE_ID: np.asarray(pose_set.handoff_q),
+            **{
+                pose.id: np.asarray(pose.measured_calibration_q)
+                for pose in pose_set.poses
+            },
+        }
         edge_keys = tuple(directed_edges)
         if len(edge_keys) != len(set(edge_keys)):
             raise ValueError("directed transition list contains duplicates")
         results: list[DirectedEdgeResult] = []
         for source_id, target_id in edge_keys:
-            if source_id not in pose_by_id or target_id not in pose_by_id:
+            if (
+                source_id not in calibration_q_by_id
+                or target_id not in calibration_q_by_id
+            ):
                 raise ValueError(
                     f"transition references an unknown pose: {source_id}->{target_id}"
                 )
@@ -291,8 +300,8 @@ class PosePathValidator:
                 self._validate_edge(
                     source_id,
                     target_id,
-                    np.asarray(pose_by_id[source_id].measured_calibration_q),
-                    np.asarray(pose_by_id[target_id].measured_calibration_q),
+                    calibration_q_by_id[source_id],
+                    calibration_q_by_id[target_id],
                     np.asarray(pose_set.hold_q),
                     pose_set.calibration_arm,
                     reference,

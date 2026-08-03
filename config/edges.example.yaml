@@ -1,9 +1,8 @@
 schema_version: 1
 
-# Explicit directed execution route. Reverse edges are separate approvals; add
-# every edge that the commissioning or collection plan will actually use.
+# Explicit directed taught-pose route. Reverse edges are separate approvals.
+# Per-run __handoff__ entry/return edges are derived from the live stationary
+# Ready state and collision-validated before a command publisher is created.
 edges:
-  - [home, pose_001]
-  - [pose_001, home]
   - [pose_001, pose_002]
-  - [pose_002, home]
+  - [pose_002, pose_001]

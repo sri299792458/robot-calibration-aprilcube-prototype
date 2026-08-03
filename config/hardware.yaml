@@ -33,26 +33,49 @@ control:
   # Initial commissioning values only; hardware tests must tune/approve them.
   max_joint_velocity_rad_s: 0.2
   coarse_arrival_tolerance_rad: 0.05
-  position_tolerance_rad: 0.02
-  velocity_tolerance_rad_s: 0.03
-  settle_dwell_s: 0.75
+  # Unitree's G1 arm controller uses 0.05 rad for its own home-arrival check.
+  # Keep acquisition and the independently held arm on tighter safety limits.
+  target_position_tolerance_rad: 0.05
+  activation_position_tolerance_rad: 0.02
+  held_arm_position_tolerance_rad: 0.02
+  # Stationarity uses encoder-position evidence because raw rt/lowstate dq has
+  # false spikes even when a 500+ sample q window is effectively motionless.
+  settled_position_spread_rad: 0.01
+  settle_dwell_s: 0.5
   lowstate_timeout_s: 0.1
   maximum_control_tick_gap_s: 0.05
   acquisition_weight_ramp_s: 1.0
   release_weight_ramp_s: 1.0
   motion_timeout_s: 30.0
-  clean_release_policy: move_to_approved_home_then_ramp_weight_to_zero
-  emergency_release_policy: ramp_weight_to_zero_without_home_move
+  clean_release_policy: return_to_per_run_activation_then_ramp_weight_to_zero
+  emergency_release_policy: pc2_g1_loco_damp
+
+safety:
+  # Whole-body damping is safe for this workflow only while the G1 is secured
+  # by the rated, load-bearing overhead harness and its arm/table sweep is clear.
+  physical_support: load_bearing_harness
+  emergency_policy: pc2_g1_loco_damp
+  heartbeat_interval_s: 0.1
+  heartbeat_timeout_s: 0.5
+  connect_timeout_s: 5.0
+  loco_client_timeout_s: 3.0
+  pc2_ros_setup: /opt/ros/foxy/setup.bash
+  # This older PC2 CycloneDDS workspace is the installed one configured for
+  # eth0. The newer unitree_ros2/setup.sh incorrectly names enp3s0 on this G1.
+  pc2_cyclonedds_setup: /home/unitree/cyclonedds_ws/install/setup.bash
+  pc2_unitree_ros2_setup: /home/unitree/unitree_ros2/install/setup.bash
+  pc2_cyclonedds_uri: /home/unitree/cyclonedds_ws/cyclonedds.xml
+  pc2_g1_loco_client: /home/unitree/unitree_ros2/install/unitree_ros2_example/bin/g1_loco_client_example
 
 pose_recording:
   # Separate from the replay executor's target-error dwell gate. Manual teaching
-  # has no commanded target, so recording uses measured velocity and spread.
+  # has no commanded target, so recording uses measured position spread.
   stationary_duration_s: 0.5
   minimum_state_samples: 5
   maximum_state_gap_s: 0.1
-  maximum_calibration_velocity_rad_s: 0.03
+  # Raw dq is retained as diagnostic evidence but is not a hard gate; observed
+  # false spikes exceeded 0.10 rad/s while q spread stayed below 0.0001 rad.
   maximum_calibration_position_spread_rad: 0.01
-  maximum_hold_velocity_rad_s: 0.03
   maximum_hold_position_spread_rad: 0.01
   maximum_image_state_delta_s: 0.05
   maximum_image_state_bracket_s: 0.1

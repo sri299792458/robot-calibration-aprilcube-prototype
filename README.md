@@ -136,10 +136,22 @@ The hardware wrapper also applies `--network-interface` to the laptop's ROS 2
 CycloneDDS camera transport and keeps its ROS domain aligned with
 `--domain-id`. This prevents Wi-Fi from being selected on a multi-homed laptop.
 
-## Read-only pose teaching
+To restart the tracked raw camera process and open its live color image on the
+laptop with the same wired DDS settings, run:
 
-First inspect one complete mode-5 state without creating a publisher, then
-initialize the content-hashed pose set:
+```bash
+./tools/g1_camera_view.sh
+```
+
+Closing the viewer leaves the raw stream running for calibration. Pass
+`--no-restart` when a known-healthy tracked camera process must be preserved.
+
+## Manual capture and calibration
+
+Inspect one stationary mode-5 state without creating a publisher. Initializing
+the content-hashed pose set records the robot/URDF identity and schema-compatible
+handoff seeds. Start each manual calibration session with a fresh, empty pose
+set and a new session directory:
 
 ```bash
 ./tools/g1_calib_hardware.sh inspect-hardware \
@@ -147,41 +159,82 @@ initialize the content-hashed pose set:
 
 .venv/bin/g1-calib init-pose-set \
   --state-json work/initial_state.json \
-  --output work/poses.yaml \
+  --output work/manual_run_001_poses.yaml \
   --calibration-arm left
 ```
 
-After physically checking the fixed head-pitch witness mark, run the live
-teacher against the RealSense topics:
+Run the live teacher against the RealSense topics. This is the normal data
+collection path; it observes `rt/lowstate` but creates no arm command publisher:
 
 ```bash
 ./tools/g1_calib_hardware.sh teach-poses \
   --network-interface enp134s0 \
-  --pose-set work/poses.yaml \
+  --pose-set work/manual_run_001_poses.yaml \
+  --session-directory sessions/manual_run_001 \
+  --session-id manual_run_001 \
   --image-topic /camera/color/image_raw \
   --camera-info-topic /camera/color/camera_info \
   --camera-name g1_head_color \
-  --camera-serial 348522074178 \
-  --head-witness-ack
+  --camera-serial 348522074178
 ```
 
-Keys are `S` to save, `A` to mark the next pose as an anchor, `U` to undo, and
-`Q`/Escape to quit. Yellow needs a supplied `--yellow-override-reason` and a
-second `S`; red can never be saved. Saving waits for state samples after the
-chosen image and rechecks image/state bracketing, mode 5, both-arm stationarity,
-the frozen right-arm hold, and the witness acknowledgement. It records measured
-left joints 15–21, never commanded values. This command constructs no DDS
-publisher.
+Keys are `S` to save, `A` to label the next pose as a possible replay anchor,
+`U` to undo, `P`/Escape to pause, and `Q` to finalize. Rerun the exact same
+command after a pause to resume. Yellow needs a supplied
+`--yellow-override-reason`; red can never be saved.
 
-## Validate and commission motion
+One `S` now records the pose and its calibration measurement together. It waits
+for the configured seven-frame stationary burst and stores every rectified
+frame losslessly as PNG, the complete 29-joint LowState window around every
+image, local and camera timestamps, the exact `CameraInfo`, reproducible
+image/state pairing, AprilCube correspondences, visual-quality evidence, and a
+selected medoid frame. The pose YAML stores the median measured joint position
+and spread; commanded positions are never used. `U` removes the active pose but
+keeps its raw capture marked rejected for auditability.
 
-Review the padded `left_rubber_hand` AprilCube envelope in
-`config/collision_pairs.yaml`, then list the exact directed routes in an edges
-file based on `config/edges.example.yaml`:
+`Q` verifies the one-to-one pose/capture binding, freezes the session read-only,
+and automatically writes `sessions/manual_run_001/dataset.json`. The camera
+mount and head pitch must remain fixed for that session. The joint poses remain
+useful if optional replay is desired for a later camera configuration, but the
+images themselves belong only to the camera configuration under which they
+were captured.
+
+Solve directly from that dataset:
+
+```bash
+.venv/bin/g1-calib solve \
+  --dataset sessions/manual_run_001/dataset.json \
+  --output-directory runs/manual_run_001
+```
+
+The dataset can also be rebuilt deterministically from the finalized raw
+session to verify every image hash, state hash, pairing, camera profile, and
+live/offline correspondence hash:
+
+```bash
+.venv/bin/g1-calib build-dataset \
+  --session sessions/manual_run_001 \
+  --output sessions/manual_run_001/dataset_rebuilt.json
+```
+
+Do not accept the calibration from RMS alone. Inspect `report.md`, held-out and
+per-capture residuals, tag grouping, and calibration-joint correlations.
+
+## Optional replay and repeated-anchor qualification
+
+Replay is no longer required to collect a calibration dataset. Keep it for
+commissioning the arm-control path, reproducing old joint configurations after
+a camera change, or collecting exact repeated-anchor measurements. It is the
+only part of this workflow that creates an `rt/arm_sdk` publisher.
+
+To use replay, review the padded `left_rubber_hand` AprilCube envelope in
+`config/collision_pairs.yaml`, then list the directed taught-pose routes in an
+edges file based on `config/edges.example.yaml`. Do not add handoff edges: they
+depend on the live Ready state and are validated again during every run.
 
 ```bash
 .venv/bin/g1-calib validate-poses \
-  --pose-set work/poses.yaml \
+  --pose-set work/manual_run_001_poses.yaml \
   --reference-state-json work/initial_state.json \
   --edges-yaml work/edges.yaml \
   --output work/validation_report.json
@@ -192,35 +245,39 @@ phrase required by each command; it must be passed verbatim. Do not skip a
 stage, and use only the actual robot network interface:
 
 ```bash
-./tools/g1_calib_hardware.sh commission-weight-zero --network-interface enp3s0 \
+./tools/g1_calib_hardware.sh commission-weight-zero --network-interface enp134s0 \
   --confirm 'I UNDERSTAND THIS WRITES RT/ARM_SDK'
 
-./tools/g1_calib_hardware.sh commission-hold --network-interface enp3s0 \
-  --pose-set work/poses.yaml \
-  --confirm 'I CONFIRM THE G1 WORKSPACE IS CLEAR'
+./tools/g1_calib_hardware.sh commission-hold --network-interface enp134s0 \
+  --pose-set work/manual_run_001_poses.yaml \
+  --confirm 'I CONFIRM THE G1 IS SECURED BY THE LOAD-BEARING HARNESS AND THE WORKSPACE IS CLEAR'
 
-./tools/g1_calib_hardware.sh commission-pose --network-interface enp3s0 \
-  --pose-set work/poses.yaml \
+./tools/g1_calib_hardware.sh commission-pose --network-interface enp134s0 \
+  --pose-set work/manual_run_001_poses.yaml \
   --validation-report work/validation_report.json \
-  --home-pose home --target-pose pose_001 \
-  --confirm 'I CONFIRM THE G1 WORKSPACE IS CLEAR'
+  --target-pose pose_001 \
+  --confirm 'I CONFIRM THE G1 IS SECURED BY THE LOAD-BEARING HARNESS AND THE WORKSPACE IS CLEAR'
 ```
 
-Every stage has exclusive local command ownership, measured-state seeding,
-mode/freshness checks, fixed gains matching the official G1 arm example,
-velocity limiting, continuous measured settling, CRC, and a terminal blend
-weight of zero. Only arm slots 15–28 and blend slot 29 are written; no IK is
-used. A fault or operator interruption takes the emergency zero-weight path.
+Before creating a command publisher, each powered stage collects a stationary
+0.5-second state window and collision-validates the exact current handoff and
+return route. It then attaches the publisher to that same observer, seeds the
+measured state, and ramps ownership without a position jump. Every stage also
+has exclusive local command ownership, mode/freshness checks, fixed gains
+matching the official G1 arm example, velocity limiting, continuous measured
+settling, CRC, and terminal blend weight zero. Only arm slots 15–28 and blend
+slot 29 are written; no IK is used. A fault, link loss, or interruption requests
+verified whole-body Damp through the PC2 watchdog.
 
-## Collect, solve, and qualify the mount
-
-Copy `config/session_plan.example.yaml`, replace it with the validated pose
-order, and revisit `home` at least three times across the run:
+Copy `config/session_plan.example.yaml`, replace it with the validated camera
+pose order, and revisit a camera-visible anchor such as `pose_001` at least
+three times across the run. Do not add `__handoff__`; collection inserts it
+automatically before the first capture and after the last:
 
 ```bash
 ./tools/g1_calib_hardware.sh collect-session \
   --network-interface enp134s0 \
-  --pose-set work/poses.yaml \
+  --pose-set work/manual_run_001_poses.yaml \
   --validation-report work/validation_report.json \
   --plan-yaml work/session_plan.yaml \
   --session-directory sessions/run_001 --session-id run_001 \
@@ -228,7 +285,8 @@ order, and revisit `home` at least three times across the run:
   --camera-info-topic /camera/color/camera_info \
   --camera-name g1_head_color \
   --camera-serial 348522074178 \
-  --confirm 'I CONFIRM THE G1 WORKSPACE IS CLEAR'
+  --head-witness-ack \
+  --confirm 'I CONFIRM THE G1 IS SECURED BY THE LOAD-BEARING HARNESS AND THE WORKSPACE IS CLEAR'
 
 .venv/bin/g1-calib build-dataset \
   --session sessions/run_001 --output sessions/run_001/dataset.json
@@ -240,19 +298,19 @@ order, and revisit `home` at least three times across the run:
 .venv/bin/g1-calib anchor-stability \
   --dataset sessions/run_001/dataset.json \
   --result-json runs/run_001/result.json \
-  --pose-id home --output runs/run_001/anchor_stability.json
+  --pose-id pose_001 --output runs/run_001/anchor_stability.json
 ```
 
-Collection requires a passed report bound to the exact pose-set, URDF, and
-collision-config hashes. It freezes all three plus the camera/target inputs into
-the immutable session. Each move is confirmed interactively unless
+Replay collection requires a passed policy report bound to the source pose-set,
+URDF, and collision-config hashes. Before publisher creation it derives the live
+handoff, revalidates the complete run route, and freezes that dynamic pose set,
+runtime report, activation state, camera, and target inputs into the immutable
+session. Each move is confirmed interactively unless
 `--auto-confirm-transitions` is explicitly supplied. The 250 Hz command tick
 runs on a dedicated synchronized thread, so detection and lossless disk writes
-cannot starve arm holding. A run returns to the measured home pose, publishes
-terminal weight zero, then makes the raw session read-only.
+cannot starve arm holding. A run returns to its per-run measured handoff,
+publishes terminal weight zero, then makes the raw session read-only.
 
-Do not accept the calibration from RMS alone. Inspect `report.md`, held-out and
-per-capture residuals, tag grouping, calibration-joint correlations, and the
-repeated anchor report. A failed anchor report means the taped cube/camera mount or data
-must be investigated and the run repeated; it is not a reason to add joint
-offset parameters.
+A failed repeated-anchor report means the taped cube/camera mount or data must
+be investigated and the run repeated; it is not a reason to add joint-offset
+parameters.

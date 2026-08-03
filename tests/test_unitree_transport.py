@@ -204,6 +204,35 @@ def test_transport_maps_only_arms_and_weight_and_requires_zero_close(sdk):
     assert Subscriber.instances[0].closed
 
 
+def test_transport_attaches_publisher_to_existing_read_only_observer(sdk):
+    bindings, initialized = sdk
+    observer = UnitreeLowStateObserver(config(), bindings=bindings)
+
+    assert len(Subscriber.instances) == 1
+    assert Publisher.instances == []
+    transport = UnitreeArmSDKTransport(config(), observer=observer)
+
+    assert initialized == [(4, "enp3s0")]
+    assert len(Subscriber.instances) == 1
+    assert len(Publisher.instances) == 1
+    Subscriber.instances[0].emit(state())
+    assert transport.observe().source_sequence == 17
+    transport.close()
+    assert Subscriber.instances[0].closed
+
+
+def test_transport_rejects_mismatched_existing_observer(sdk):
+    bindings, _ = sdk
+    observer = UnitreeLowStateObserver(config(), bindings=bindings)
+    mismatched = UnitreeTransportConfig(network_interface="other")
+
+    with pytest.raises(ValueError, match="configuration does not match"):
+        UnitreeArmSDKTransport(mismatched, observer=observer)
+
+    assert Publisher.instances == []
+    observer.close()
+
+
 def test_transport_refuses_wrong_mode_before_publish(sdk):
     bindings, _ = sdk
     transport = UnitreeArmSDKTransport(config(), bindings=bindings)
@@ -214,3 +243,15 @@ def test_transport_refuses_wrong_mode_before_publish(sdk):
         )
     assert Publisher.instances[0].messages == []
     transport.close()
+
+
+def test_transport_can_close_nonzero_only_after_external_damping(sdk):
+    bindings, _ = sdk
+    transport = UnitreeArmSDKTransport(config(), bindings=bindings)
+    Subscriber.instances[0].emit(state())
+    transport.send_command(
+        ArmCommand.create(np.zeros(14), weight=1.0, issued_monotonic_s=0)
+    )
+    transport.close_after_external_damping()
+    assert Publisher.instances[0].closed
+    assert Subscriber.instances[0].closed

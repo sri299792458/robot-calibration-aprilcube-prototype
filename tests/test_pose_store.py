@@ -25,7 +25,6 @@ def make_pose(pose_id: str = "pose_001") -> PoseRecord:
         calibration_q_spread=(0.001,) * 7,
         recorded_at_utc=UTC,
         recorded_monotonic_s=10.0,
-        head_witness_ack=True,
         preview_path="previews/pose_001.png",
         visual_quality={"grade": "green", "visible_ids": [0, 5]},
     )
@@ -37,8 +36,13 @@ def empty_pose_set() -> PoseSet:
         mode_machine=5,
         urdf_sha256="a" * 64,
         calibration_arm="left",
+        handoff_q=(0.0,) * 7,
         hold_q=(0.0,) * 7,
     )
+
+
+def test_pose_record_excludes_camera_witness_state() -> None:
+    assert "head_witness_ack" not in make_pose().to_dict()
 
 
 def test_pose_set_requires_calibration_arm_to_match_full_state() -> None:
@@ -107,7 +111,7 @@ def test_schema_and_audit_sequence_are_validated() -> None:
     data = pose_set.to_dict()
 
     wrong_version = deepcopy(data)
-    wrong_version["schema_version"] = 2
+    wrong_version["schema_version"] = 1
     with pytest.raises(ValidationError):
         PoseSet.from_dict(wrong_version)
 
@@ -117,6 +121,7 @@ def test_schema_and_audit_sequence_are_validated() -> None:
             mode_machine=5,
             urdf_sha256=pose_set.urdf_sha256,
             calibration_arm=pose_set.calibration_arm,
+            handoff_q=pose_set.handoff_q,
             hold_q=pose_set.hold_q,
             poses=(pose,),
             audit_log=(),

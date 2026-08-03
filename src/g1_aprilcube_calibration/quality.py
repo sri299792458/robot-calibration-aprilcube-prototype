@@ -66,6 +66,17 @@ class ViewSignature:
     rvec: tuple[float, float, float] | None
     tvec_m: tuple[float, float, float] | None
 
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> ViewSignature:
+        return cls(
+            image_cell=tuple(data["image_cell"]),
+            normalized_centroid=tuple(data["normalized_centroid"]),
+            tag_ids=tuple(data["tag_ids"]),
+            visible_faces=tuple(data["visible_faces"]),
+            rvec=None if data["rvec"] is None else tuple(data["rvec"]),
+            tvec_m=None if data["tvec_m"] is None else tuple(data["tvec_m"]),
+        )
+
 
 @dataclass(frozen=True, slots=True)
 class QualityReport:

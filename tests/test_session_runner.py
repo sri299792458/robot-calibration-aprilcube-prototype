@@ -7,7 +7,12 @@ import pytest
 
 from g1_aprilcube_calibration.clock import ManualClock
 from g1_aprilcube_calibration.executor_state_machine import ExecutorConfig, PoseExecutor
-from g1_aprilcube_calibration.pose_schema import PoseAuditEvent, PoseRecord, PoseSet
+from g1_aprilcube_calibration.pose_schema import (
+    HANDOFF_POSE_ID,
+    PoseAuditEvent,
+    PoseRecord,
+    PoseSet,
+)
 from g1_aprilcube_calibration.pose_validator import (
     DirectedEdgeResult,
     ValidationReport,
@@ -34,13 +39,19 @@ def make_pose(pose_id: str, value: float) -> PoseRecord:
         calibration_q_spread=(0.0,) * 7,
         recorded_at_utc=UTC,
         recorded_monotonic_s=1.0,
-        head_witness_ack=True,
     )
 
 
 def make_pose_set() -> PoseSet:
-    result = PoseSet("g1_29dof_rev_1_0", 5, "a" * 64, "left", (0.0,) * 7)
-    for pose in (make_pose("home", 0), make_pose("near", 0.04), make_pose("far", 0.08)):
+    result = PoseSet(
+        "g1_29dof_rev_1_0",
+        5,
+        "a" * 64,
+        "left",
+        (0.0,) * 7,
+        (0.0,) * 7,
+    )
+    for pose in (make_pose("near", 0.04), make_pose("far", 0.08)):
         result = result.with_pose(pose, PoseAuditEvent("add", pose.id, UTC))
     return result
 
@@ -66,7 +77,11 @@ def report(pose_set: PoseSet) -> ValidationReport:
         collision_config_sha256="b" * 64,
         reference_full_q_sha256="c" * 64,
         config={},
-        edges=(edge("home", "near"), edge("near", "far"), edge("far", "home")),
+        edges=(
+            edge(HANDOFF_POSE_ID, "near"),
+            edge("near", "far"),
+            edge("far", HANDOFF_POSE_ID),
+        ),
     )
 
 
@@ -110,8 +125,10 @@ def make_subject(*, initial_left=0.0):
         config=ExecutorConfig(
             maximum_joint_velocity_rad_s=0.2,
             coarse_arrival_tolerance_rad=0.02,
-            settled_position_tolerance_rad=0.005,
-            settled_velocity_tolerance_rad_s=0.03,
+            target_position_tolerance_rad=0.005,
+            activation_position_tolerance_rad=0.005,
+            held_arm_position_tolerance_rad=0.005,
+            settled_position_spread_rad=0.002,
             settle_dwell_s=0.04,
             state_freshness_timeout_s=0.1,
             maximum_tick_gap_s=0.05,
@@ -122,7 +139,7 @@ def make_subject(*, initial_left=0.0):
     )
     store = Store()
     runner = CaptureSessionRunner(executor=executor, store=store)
-    source = ScheduledFrameSource({"home": ("h",), "near": ("n",), "far": ("f",)})
+    source = ScheduledFrameSource({"near": ("n",), "far": ("f",)})
 
     def step():
         transport.step(0.02)
@@ -135,25 +152,25 @@ def make_subject(*, initial_left=0.0):
         frame_source=source,
         control_step=step,
         confirm_move=lambda _source, _target: True,
-        plan=SessionExecutionPlan("home", ("home", "near", "far")),
+        plan=SessionExecutionPlan(("near", "far")),
     )
     return transport, executor, store, orchestrator
 
 
-def test_fake_end_to_end_plan_captures_returns_home_and_releases():
+def test_fake_end_to_end_plan_captures_returns_handoff_and_releases():
     transport, executor, store, orchestrator = make_subject()
     orchestrator.run(confirm_acquisition=True, confirm_release=True)
-    assert [capture.pose_id for capture in store.captures] == ["home", "near", "far"]
-    assert [capture.frames for capture in store.captures] == [("h",), ("n",), ("f",)]
+    assert [capture.pose_id for capture in store.captures] == ["near", "far"]
+    assert [capture.frames for capture in store.captures] == [("n",), ("f",)]
     assert store.finalized
     assert transport.closed
     assert transport.commands[-1].weight == 0
-    assert executor.current_pose_id == "home"
+    assert executor.current_pose_id == HANDOFF_POSE_ID
 
 
-def test_known_home_acquisition_rejects_measured_mismatch_before_publish():
+def test_handoff_acquisition_rejects_measured_mismatch_before_publish():
     transport, _, store, orchestrator = make_subject(initial_left=0.02)
-    with pytest.raises(ValueError, match="differs from initial pose"):
+    with pytest.raises(ValueError, match="differs from handoff pose"):
         orchestrator.run(confirm_acquisition=True, confirm_release=True)
     assert transport.commands == []
     assert transport.closed
@@ -172,5 +189,5 @@ def test_move_confirmation_refusal_emergency_releases():
 
 
 def test_plan_allows_revisiting_an_anchor_pose():
-    plan = SessionExecutionPlan("home", ("home", "near", "home"))
-    assert plan.capture_pose_ids.count("home") == 2
+    plan = SessionExecutionPlan(("near", "far", "near"))
+    assert plan.capture_pose_ids.count("near") == 2
