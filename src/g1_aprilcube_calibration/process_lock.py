@@ -6,7 +6,8 @@ import fcntl
 import os
 from pathlib import Path
 from types import TracebackType
-from typing import Self
+
+from typing_extensions import Self
 
 
 class CommandOwnerLock:

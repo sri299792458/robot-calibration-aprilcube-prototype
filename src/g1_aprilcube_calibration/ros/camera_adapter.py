@@ -130,24 +130,50 @@ class ROSCameraSubscriber:
         camera_info_topic: str,
         camera_name: str,
         serial_number: str,
+        reliability: str = "reliable",
+        qos_depth: int = 2,
         clock: MonotonicClock | None = None,
         utc_now: Callable[[], str] = utc_now_iso,
         maximum_frames: int = 30,
     ) -> None:
         if not image_topic or not camera_info_topic:
             raise ValueError("ROS camera topics must be non-empty")
+        if reliability not in {"reliable", "best-effort"}:
+            raise ValueError(
+                "ROS camera reliability must be 'reliable' or 'best-effort'"
+            )
+        if qos_depth <= 0:
+            raise ValueError("ROS camera QoS depth must be positive")
         try:
-            from rclpy.qos import qos_profile_sensor_data
+            from rclpy.qos import (
+                DurabilityPolicy,
+                HistoryPolicy,
+                QoSProfile,
+                ReliabilityPolicy,
+            )
             from sensor_msgs.msg import CameraInfo, Image
         except ImportError as error:
             raise RuntimeError(
-                "ROS 2 Python camera messages unavailable; source the ROS Jazzy "
+                "ROS 2 Python camera messages unavailable; source the ROS "
                 "environment before creating ROSCameraSubscriber"
             ) from error
+        reliability_policy = (
+            ReliabilityPolicy.RELIABLE
+            if reliability == "reliable"
+            else ReliabilityPolicy.BEST_EFFORT
+        )
+        subscription_qos = QoSProfile(
+            history=HistoryPolicy.KEEP_LAST,
+            depth=qos_depth,
+            reliability=reliability_policy,
+            durability=DurabilityPolicy.VOLATILE,
+        )
         self.clock = clock or SystemClock()
         self._utc_now = utc_now
         self.camera_name = camera_name
         self.serial_number = serial_number
+        self.reliability = reliability
+        self.qos_depth = qos_depth
         self.frames = ROSFrameBuffer(maximum_frames=maximum_frames)
         self.last_error: str | None = None
         self._camera_info: RectifiedCameraInfo | None = None
@@ -156,10 +182,10 @@ class ROSCameraSubscriber:
             CameraInfo,
             camera_info_topic,
             self._on_camera_info,
-            qos_profile_sensor_data,
+            subscription_qos,
         )
         self._image_subscription = node.create_subscription(
-            Image, image_topic, self._on_image, qos_profile_sensor_data
+            Image, image_topic, self._on_image, subscription_qos
         )
 
     def _on_camera_info(self, message: Any) -> None:

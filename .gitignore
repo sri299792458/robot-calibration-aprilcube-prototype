@@ -13,6 +13,9 @@
 /build/
 /install/
 /log/
+/work/
+/sessions/
+/runs/
 __pycache__/
 *.pyc
 /.venv/

@@ -23,17 +23,18 @@ overlay. It is not a calibration measurement.
 The checked-out `aprilcube/` repository is an editable local dependency:
 
 ```bash
-uv sync --python /usr/bin/python3.12 --group dev
+uv sync --python /usr/bin/python3 --group dev
 ```
 
-Use system Python 3.12 for this project. ROS Jazzy's `rclpy` and `cv_bridge` on
-the laptop are built for Python 3.12 and NumPy 1.x; a Conda Python 3.13 or NumPy
-2.x environment is not ABI-compatible with those installed ROS extensions.
+Use the system Python matching the installed ROS distribution: Python 3.12 for
+ROS Jazzy on Ubuntu 24.04, or Python 3.10 for ROS Humble on Ubuntu 22.04. Keep
+NumPy on the 1.x ABI; a Conda Python or NumPy 2.x environment is not compatible
+with the installed ROS extensions used by the hardware commands.
 
 ## Preview a saved image
 
 ```bash
-uv run g1-calib preview \
+.venv/bin/g1-calib preview \
   --image /path/to/image.png \
   --fx 900 --fy 900 \
   --output renders/quality_preview.png \
@@ -48,7 +49,7 @@ acceptable for calibration data.
 ## Preview a local camera
 
 ```bash
-uv run g1-calib preview --camera 0 --fx 900 --fy 900
+.venv/bin/g1-calib preview --camera 0 --fx 900 --fy 900
 ```
 
 Keys in the live window:
@@ -59,16 +60,16 @@ Keys in the live window:
 
 The standalone OpenCV preview deliberately says **VISUAL QUALITY ONLY** because
 it has no robot-state input. Use `teach-poses` for real pose recording; that
-command is also read-only, but combines the rectified ROS stream with complete
+command is also read-only, but combines a calibrated camera source with complete
 receipt-stamped `rt/lowstate` samples.
 
 ## Pre-hardware verification
 
 ```bash
-uv run pytest -q
-uv run ruff check src tests
-uv run g1-calib inspect-artifacts
-uv run g1-calib synthetic-check \
+.venv/bin/pytest -q
+.venv/bin/ruff check src tests
+.venv/bin/g1-calib inspect-artifacts
+.venv/bin/g1-calib synthetic-check \
   --output-directory runs/synthetic_001 \
   --pose-count 40 --pixel-noise 0.3
 ```
@@ -81,8 +82,8 @@ supplied installation photo. Motion reports are content-bound to this config.
 
 ## Optional ROS and Unitree runtime
 
-Hardware imports are lazy; the offline environment never opens DDS. In the ROS
-Jazzy terminal used with the robot:
+Hardware imports are lazy; the offline environment never opens DDS. In a sourced
+ROS Jazzy or ROS Humble terminal used with the robot:
 
 ```bash
 ./tools/install_hardware_dependencies.sh
@@ -90,15 +91,46 @@ Jazzy terminal used with the robot:
 
 The bootstrap verifies exact commits from `config/upstream_pins.yaml`. The
 installer builds Unitree's pinned Python CycloneDDS binding against the
-CycloneDDS headers and libraries already provided by ROS Jazzy, then verifies a
+CycloneDDS headers and libraries already provided by ROS, then verifies a
 35-slot HG message and the real CRC implementation. Run all hardware commands
 through `tools/g1_calib_hardware.sh`; it supplies the required ROS and dynamic-
-library environment without changing the offline workflow. The
-camera input must be a rectified color `sensor_msgs/Image` paired with its
-matching `CameraInfo`. The adapter rejects non-zero distortion coefficients,
-frame-ID mismatches, changed resolution/intrinsics, and raw topics. RealSense
-intrinsics are used directly from that matching `CameraInfo`; they are not
-estimated by this calibration.
+library environment without resynchronizing or removing the hardware-only
+packages in `.venv`.
+
+The D435i is connected to PC2 and is published by the official RealSense ROS
+driver as raw RGB8 at 1280x720 and 15 Hz. The laptop consumes
+`/camera/color/image_raw` with its matching `/camera/color/camera_info` over
+wired CycloneDDS. The adapter rejects non-zero distortion, frame-ID mismatches,
+and changed resolution/intrinsics. Intrinsics come directly from CameraInfo and
+are never estimated by this calibration. Ensure no other PC2 process owns the
+camera device while the RealSense node is running.
+
+The calibration subscriber requests reliable, volatile, bounded ROS QoS for
+both Image and CameraInfo. Use `--ros-camera-reliability best-effort` only when
+the publisher cannot offer reliable delivery or minimum latency matters more
+than complete frames.
+
+Camera ownership on PC2 is intentionally operator-scoped; this repository does
+not install or enable a boot service. After PC2 boots, switch from its factory
+front-camera owner to the temporary RealSense ROS node from the laptop:
+
+```bash
+./tools/g1_realsense_pc2.sh start
+./tools/g1_realsense_pc2.sh status
+```
+
+`start` pins D435i serial `348522074178`, verifies USB 3.2 and the exact RGB8
+profile, and restores the factory owner automatically if ROS startup fails. It
+does not touch the independent chest camera. When calibration work is finished,
+stop only the tracked ROS process and restore the factory owner:
+
+```bash
+./tools/g1_realsense_pc2.sh stop
+```
+
+The SSH destination defaults to `unitree@192.168.123.164` with identity
+`~/.ssh/g1_pc2_ed25519`; override them with `G1_PC2_HOST` and
+`G1_PC2_SSH_IDENTITY` when needed.
 
 ## Read-only pose teaching
 
@@ -107,24 +139,25 @@ initialize the content-hashed pose set:
 
 ```bash
 ./tools/g1_calib_hardware.sh inspect-hardware \
-  --network-interface enp3s0 --state-json work/initial_state.json
+  --network-interface enp134s0 --state-json work/initial_state.json
 
-uv run g1-calib init-pose-set \
+.venv/bin/g1-calib init-pose-set \
   --state-json work/initial_state.json \
   --output work/poses.yaml \
   --calibration-arm left
 ```
 
 After physically checking the fixed head-pitch witness mark, run the live
-teacher (replace the topic names and serial with observed values):
+teacher against the RealSense topics:
 
 ```bash
 ./tools/g1_calib_hardware.sh teach-poses \
-  --network-interface enp3s0 \
+  --network-interface enp134s0 \
   --pose-set work/poses.yaml \
-  --image-topic /camera/color/image_rect \
+  --image-topic /camera/color/image_raw \
   --camera-info-topic /camera/color/camera_info \
-  --camera-name g1_head_color --camera-serial REPLACE_ME \
+  --camera-name g1_head_color \
+  --camera-serial 348522074178 \
   --head-witness-ack
 ```
 
@@ -143,7 +176,7 @@ Review the padded `left_rubber_hand` AprilCube envelope in
 file based on `config/edges.example.yaml`:
 
 ```bash
-uv run g1-calib validate-poses \
+.venv/bin/g1-calib validate-poses \
   --pose-set work/poses.yaml \
   --reference-state-json work/initial_state.json \
   --edges-yaml work/edges.yaml \
@@ -182,24 +215,25 @@ order, and revisit `home` at least three times across the run:
 
 ```bash
 ./tools/g1_calib_hardware.sh collect-session \
-  --network-interface enp3s0 \
+  --network-interface enp134s0 \
   --pose-set work/poses.yaml \
   --validation-report work/validation_report.json \
   --plan-yaml work/session_plan.yaml \
   --session-directory sessions/run_001 --session-id run_001 \
-  --image-topic /camera/color/image_rect \
+  --image-topic /camera/color/image_raw \
   --camera-info-topic /camera/color/camera_info \
-  --camera-name g1_head_color --camera-serial REPLACE_ME \
+  --camera-name g1_head_color \
+  --camera-serial 348522074178 \
   --confirm 'I CONFIRM THE G1 WORKSPACE IS CLEAR'
 
-uv run g1-calib build-dataset \
+.venv/bin/g1-calib build-dataset \
   --session sessions/run_001 --output sessions/run_001/dataset.json
 
-uv run g1-calib solve \
+.venv/bin/g1-calib solve \
   --dataset sessions/run_001/dataset.json \
   --output-directory runs/run_001
 
-uv run g1-calib anchor-stability \
+.venv/bin/g1-calib anchor-stability \
   --dataset sessions/run_001/dataset.json \
   --result-json runs/run_001/result.json \
   --pose-id home --output runs/run_001/anchor_stability.json

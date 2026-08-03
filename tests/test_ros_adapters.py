@@ -1,13 +1,15 @@
 from __future__ import annotations
 
+import sys
 from dataclasses import dataclass, field
-from types import SimpleNamespace
+from types import ModuleType, SimpleNamespace
 
 import numpy as np
 import pytest
 
 from g1_aprilcube_calibration.joint_map import G1_29_JOINT_NAMES
 from g1_aprilcube_calibration.ros.camera_adapter import (
+    ROSCameraSubscriber,
     ROSFrameBuffer,
     ROSImageFrame,
     camera_info_from_ros,
@@ -126,6 +128,89 @@ def test_frame_buffer_is_bounded_monotonic_and_immutable():
     assert int(buffer.latest.image_bgr.max()) == 0
     with pytest.raises(ValueError, match="strictly increasing"):
         buffer.add(buffer.latest)
+
+
+class FakeNode:
+    def __init__(self):
+        self.subscriptions = []
+        self.destroyed = []
+
+    def create_subscription(self, message_type, topic, callback, qos):
+        subscription = SimpleNamespace(
+            message_type=message_type,
+            topic=topic,
+            callback=callback,
+            qos=qos,
+        )
+        self.subscriptions.append(subscription)
+        return subscription
+
+    def destroy_subscription(self, subscription):
+        self.destroyed.append(subscription)
+
+
+def _install_fake_ros_messages(monkeypatch):
+    rclpy = ModuleType("rclpy")
+    qos = ModuleType("rclpy.qos")
+    sensor_msgs = ModuleType("sensor_msgs")
+    sensor_msgs_msg = ModuleType("sensor_msgs.msg")
+
+    class QoSProfile:
+        def __init__(self, **values):
+            self.__dict__.update(values)
+
+    qos.QoSProfile = QoSProfile
+    qos.ReliabilityPolicy = SimpleNamespace(
+        RELIABLE="reliable", BEST_EFFORT="best-effort"
+    )
+    qos.HistoryPolicy = SimpleNamespace(KEEP_LAST="keep-last")
+    qos.DurabilityPolicy = SimpleNamespace(VOLATILE="volatile")
+    sensor_msgs_msg.CameraInfo = type("CameraInfo", (), {})
+    sensor_msgs_msg.Image = type("Image", (), {})
+    rclpy.qos = qos
+    sensor_msgs.msg = sensor_msgs_msg
+    monkeypatch.setitem(sys.modules, "rclpy", rclpy)
+    monkeypatch.setitem(sys.modules, "rclpy.qos", qos)
+    monkeypatch.setitem(sys.modules, "sensor_msgs", sensor_msgs)
+    monkeypatch.setitem(sys.modules, "sensor_msgs.msg", sensor_msgs_msg)
+
+
+@pytest.mark.parametrize("reliability", ["reliable", "best-effort"])
+def test_camera_subscriber_uses_bounded_requested_qos(monkeypatch, reliability):
+    _install_fake_ros_messages(monkeypatch)
+    node = FakeNode()
+
+    camera = ROSCameraSubscriber(
+        node,
+        image_topic="/camera/color/image_raw",
+        camera_info_topic="/camera/color/camera_info",
+        camera_name="head_color",
+        serial_number="D435-TEST",
+        reliability=reliability,
+    )
+
+    assert camera.reliability == reliability
+    assert camera.qos_depth == 2
+    assert len(node.subscriptions) == 2
+    for subscription in node.subscriptions:
+        assert subscription.qos.reliability == reliability
+        assert subscription.qos.history == "keep-last"
+        assert subscription.qos.depth == 2
+        assert subscription.qos.durability == "volatile"
+    camera.close()
+    assert node.destroyed == list(reversed(node.subscriptions))
+
+
+def test_camera_subscriber_rejects_invalid_qos_before_ros_import():
+    with pytest.raises(ValueError, match="reliability"):
+        ROSCameraSubscriber(
+            SimpleNamespace(),
+            image_topic="image",
+            camera_info_topic="info",
+            camera_name="head_color",
+            serial_number="D435-TEST",
+            reliability="sometimes",
+        )
 
 
 def test_named_joint_state_requires_complete_measured_velocity():

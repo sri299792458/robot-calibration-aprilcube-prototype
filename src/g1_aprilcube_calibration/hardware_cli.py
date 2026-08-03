@@ -86,10 +86,7 @@ def add_hardware_subparsers(
     )
     _add_network_arguments(teach)
     teach.add_argument("--pose-set", type=Path, required=True)
-    teach.add_argument("--image-topic", required=True)
-    teach.add_argument("--camera-info-topic", required=True)
-    teach.add_argument("--camera-name", required=True)
-    teach.add_argument("--camera-serial", required=True)
+    _add_camera_arguments(teach)
     teach.add_argument("--hardware-config", type=Path, default=default_hardware)
     teach.add_argument("--target-config", type=Path, default=default_target)
     teach.add_argument("--quality-config", type=Path, default=default_quality)
@@ -138,10 +135,7 @@ def add_hardware_subparsers(
     collect.add_argument("--plan-yaml", type=Path, required=True)
     collect.add_argument("--session-directory", type=Path, required=True)
     collect.add_argument("--session-id", required=True)
-    collect.add_argument("--image-topic", required=True)
-    collect.add_argument("--camera-info-topic", required=True)
-    collect.add_argument("--camera-name", required=True)
-    collect.add_argument("--camera-serial", required=True)
+    _add_camera_arguments(collect)
     collect.add_argument("--hardware-config", type=Path, default=default_hardware)
     collect.add_argument("--collision-config", type=Path, default=default_collision)
     collect.add_argument("--target-config", type=Path, default=default_target)
@@ -159,6 +153,22 @@ def add_hardware_subparsers(
 def _add_network_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--network-interface", required=True)
     parser.add_argument("--domain-id", type=int, default=0)
+
+
+def _add_camera_arguments(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--image-topic", required=True)
+    parser.add_argument("--camera-info-topic", required=True)
+    parser.add_argument("--camera-name", required=True)
+    parser.add_argument("--camera-serial", required=True)
+    parser.add_argument(
+        "--ros-camera-reliability",
+        choices=("reliable", "best-effort"),
+        default="reliable",
+        help=(
+            "ROS Image/CameraInfo subscription reliability; calibration defaults "
+            "to reliable"
+        ),
+    )
 
 
 def run_commission_weight_zero(args: argparse.Namespace) -> int:
@@ -209,6 +219,7 @@ def run_teach_poses(args: argparse.Namespace) -> int:
             camera_info_topic=args.camera_info_topic,
             camera_name=args.camera_name,
             serial_number=args.camera_serial,
+            reliability=args.ros_camera_reliability,
         )
         observer = UnitreeLowStateObserver(
             _transport_config(args), on_sample=states.add
@@ -485,6 +496,7 @@ def run_collect_session(args: argparse.Namespace) -> int:
             camera_info_topic=args.camera_info_topic,
             camera_name=args.camera_name,
             serial_number=args.camera_serial,
+            reliability=args.ros_camera_reliability,
         )
         _wait_for_camera(rclpy, node, camera, args.camera_timeout_s)
         camera_info = camera.frames.latest.camera_info
@@ -518,6 +530,7 @@ def run_collect_session(args: argparse.Namespace) -> int:
                     "yellow_override_reason": args.yellow_override_reason,
                     "camera_image_topic": args.image_topic,
                     "camera_info_topic": args.camera_info_topic,
+                    "ros_camera_reliability": args.ros_camera_reliability,
                     "network_interface": args.network_interface,
                 },
             )

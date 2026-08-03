@@ -59,9 +59,22 @@ pose_recording:
 
 camera:
   manufacturer: intel_realsense
-  model: null  # Confirm D435/D435i/D455 and serial number.
-  serial_number: null
-  calibration_frame: null  # Exact color optical frame_id from CameraInfo.
+  model: D435i
+  name: g1_head_color
+  serial_number: "348522074178"
+  calibration_frame: camera_color_optical_frame
+  # Published by the RealSense ROS driver on PC2 and verified end to end on the
+  # laptop over wired CycloneDDS.
+  color_profile:
+    width: 1280
+    height: 720
+    frames_per_second: 15
+    encoding: rgb8
+    distortion_model: plumb_bob
+    d: [0.0, 0.0, 0.0, 0.0, 0.0]
+    k: [905.4686279296875, 0.0, 652.4732055664062, 0.0, 905.5797729492188, 368.78778076171875, 0.0, 0.0, 1.0]
+    r: [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
+    p: [905.4686279296875, 0.0, 652.4732055664062, 0.0, 0.0, 905.5797729492188, 368.78778076171875, 0.0, 0.0, 0.0, 1.0, 0.0]
   mount:
     pitch_adjustment: manual
     pitch_measured: false
@@ -71,6 +84,8 @@ camera:
     # A shifted witness mark or loosened mount invalidates the extrinsic.
 
 ros:
-  image_topic: null
-  camera_info_topic: null
+  image_topic: /camera/color/image_raw
+  camera_info_topic: /camera/color/camera_info
+  camera_reliability: reliable
+  camera_qos_depth: 2
   joint_states_topic: null

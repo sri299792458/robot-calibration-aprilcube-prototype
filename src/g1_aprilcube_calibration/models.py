@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import numpy as np
 
@@ -17,13 +17,17 @@ from g1_aprilcube_calibration.joint_map import (
 
 
 def utc_now_iso() -> str:
-    return datetime.now(UTC).isoformat().replace("+00:00", "Z")
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
 def validate_utc_iso(value: str) -> str:
     if not isinstance(value, str) or not value:
         raise ValueError("UTC timestamp must be a non-empty string")
-    parsed = datetime.fromisoformat(value)
+    # Python 3.10 does not accept the ISO 8601 ``Z`` UTC designator here;
+    # normalize it to the equivalent explicit offset before parsing.
+    parsed = datetime.fromisoformat(
+        f"{value[:-1]}+00:00" if value.endswith("Z") else value
+    )
     if parsed.tzinfo is None or parsed.utcoffset() is None:
         raise ValueError("UTC timestamp must include a timezone")
     if parsed.utcoffset() != timedelta(0):
