@@ -132,6 +132,10 @@ The SSH destination defaults to `unitree@192.168.123.164` with identity
 `~/.ssh/g1_pc2_ed25519`; override them with `G1_PC2_HOST` and
 `G1_PC2_SSH_IDENTITY` when needed.
 
+The hardware wrapper also applies `--network-interface` to the laptop's ROS 2
+CycloneDDS camera transport and keeps its ROS domain aligned with
+`--domain-id`. This prevents Wi-Fi from being selected on a multi-homed laptop.
+
 ## Read-only pose teaching
 
 First inspect one complete mode-5 state without creating a publisher, then
