@@ -1,0 +1,129 @@
+robot:
+  manufacturer: unitree
+  model: g1
+  mode_machine: 5
+  dof: 29
+  urdf: unitree_ros/robots/g1_description/g1_29dof_rev_1_0.urdf
+  calibration_reference_frame: torso_link
+  available_hands:
+    - dex3
+    - rubber_hand
+  calibration_hand: rubber_hand
+  calibration_arm: left
+  dummy_hand_rigid: true
+  calibration_target_mount: ordered_scotch_foam_mounting_tape_on_rigid_dummy_palm
+  calibration_target_tape_candidate: already_purchased_exact_sku_to_record
+  calibration_target_mount_policy: qualify_by_repeated_anchor_measurement
+  calibration_target_modeled_pose_on_hand_m: [0.040, -0.033, 0.000]
+  calibration_target_modeled_rpy_rad: [-1.57079632679, 0.0, 0.0]
+  calibration_target_collision_envelope_m: [0.060, 0.058, 0.060]
+  calibration_wrist_policy: record_and_replay_all_three_measured_wrist_joints
+
+control:
+  implementation: separate_continuous_teaching_and_replay_controllers
+  upstream_reference: unitreerobotics/xr_teleoperate_G1_29_ArmController
+  command_topic: rt/arm_sdk
+  state_topic: rt/lowstate
+  required_mode_machine: 5
+  right_arm_motor_indices: [22, 23, 24, 25, 26, 27, 28]
+  left_arm_motor_indices: [15, 16, 17, 18, 19, 20, 21]
+  calibration_arm: left
+  opposite_arm_policy: hold_measured_activation_pose
+  command_rate_hz: 250
+  # HOLD uses Unitree's pinned G1_29 tracking gains. GUIDE scales only the
+  # calibration arm. Kp remains at the commissioned 0.5 scale; Kd is reduced to
+  # 0.25 after the first collection still felt overly damped. These remain local
+  # commissioning values, not an upstream Unitree freedrive recommendation.
+  hold_shoulder_elbow_kp: 80.0
+  hold_shoulder_elbow_kd: 3.0
+  hold_wrist_kp: 40.0
+  hold_wrist_kd: 1.5
+  guide_kp_scale: 0.5
+  guide_kd_scale: 0.25
+  gain_transition_ramp_s: 1.0
+  # G1 Regular/Ready locomotion mode observed through the official LocoClient.
+  # mode_machine=5 identifies the 29-DoF layout and is not an FSM-mode check.
+  required_regular_fsm_id: 4
+  guide_joint_limit_margin_rad: 0.03
+  # Initial commissioning values only; hardware tests must tune/approve them.
+  max_joint_velocity_rad_s: 0.2
+  coarse_arrival_tolerance_rad: 0.05
+  # Unitree's G1 arm controller uses 0.05 rad for its own home-arrival check.
+  # Keep acquisition and the independently held arm on tighter safety limits.
+  target_position_tolerance_rad: 0.05
+  activation_position_tolerance_rad: 0.02
+  held_arm_position_tolerance_rad: 0.02
+  # Stationarity uses encoder-position evidence because raw rt/lowstate dq has
+  # false spikes even when a 500+ sample q window is effectively motionless.
+  settled_position_spread_rad: 0.01
+  settle_dwell_s: 0.5
+  lowstate_timeout_s: 0.1
+  maximum_control_tick_gap_s: 0.05
+  acquisition_weight_ramp_s: 1.0
+  release_weight_ramp_s: 1.0
+  motion_timeout_s: 30.0
+  clean_release_policy: return_to_per_run_activation_then_ramp_weight_to_zero
+  emergency_release_policy: pc2_g1_loco_damp
+
+safety:
+  # Whole-body damping is safe for this workflow only while the G1 is secured
+  # by the rated, load-bearing overhead harness and its arm/table sweep is clear.
+  physical_support: load_bearing_harness
+  emergency_policy: pc2_g1_loco_damp
+  heartbeat_interval_s: 0.1
+  heartbeat_timeout_s: 0.5
+  connect_timeout_s: 5.0
+  loco_client_timeout_s: 3.0
+  pc2_ros_setup: /opt/ros/foxy/setup.bash
+  # This older PC2 CycloneDDS workspace is the installed one configured for
+  # eth0. The newer unitree_ros2/setup.sh incorrectly names enp3s0 on this G1.
+  pc2_cyclonedds_setup: /home/unitree/cyclonedds_ws/install/setup.bash
+  pc2_unitree_ros2_setup: /home/unitree/unitree_ros2/install/setup.bash
+  pc2_cyclonedds_uri: /home/unitree/cyclonedds_ws/cyclonedds.xml
+  pc2_g1_loco_client: /home/unitree/unitree_ros2/install/unitree_ros2_example/bin/g1_loco_client_example
+
+pose_recording:
+  # Separate from the replay executor's target-error dwell gate. Manual teaching
+  # has no commanded target, so recording uses measured position spread.
+  stationary_duration_s: 0.5
+  minimum_state_samples: 5
+  maximum_state_gap_s: 0.1
+  # Raw dq is retained as diagnostic evidence but is not a hard gate; observed
+  # false spikes exceeded 0.10 rad/s while q spread stayed below 0.0001 rad.
+  maximum_calibration_position_spread_rad: 0.01
+  maximum_hold_position_spread_rad: 0.01
+  maximum_image_state_delta_s: 0.05
+  maximum_image_state_bracket_s: 0.1
+
+camera:
+  manufacturer: intel_realsense
+  model: D435i
+  name: g1_head_color
+  serial_number: "348522074178"
+  calibration_frame: camera_color_optical_frame
+  # Published by the RealSense ROS driver on PC2 and verified end to end on the
+  # laptop over wired CycloneDDS.
+  color_profile:
+    width: 1280
+    height: 720
+    frames_per_second: 15
+    encoding: rgb8
+    distortion_model: plumb_bob
+    d: [0.0, 0.0, 0.0, 0.0, 0.0]
+    k: [905.4686279296875, 0.0, 652.4732055664062, 0.0, 905.5797729492188, 368.78778076171875, 0.0, 0.0, 1.0]
+    r: [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
+    p: [905.4686279296875, 0.0, 652.4732055664062, 0.0, 0.0, 905.5797729492188, 368.78778076171875, 0.0, 0.0, 0.0, 1.0, 0.0]
+  mount:
+    pitch_adjustment: manual
+    pitch_measured: false
+    mechanically_fixed: true
+    witness_marked: true
+    calibration_policy: lock_before_calibration
+    # A shifted witness mark or loosened mount invalidates the extrinsic.
+
+ros:
+  image_topic: /camera/color/image_raw
+  camera_info_topic: /camera/color/camera_info
+  camera_reliability: reliable
+  camera_qos_depth: 2
+  joint_states_topic: null
