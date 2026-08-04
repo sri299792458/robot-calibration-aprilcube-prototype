@@ -273,14 +273,21 @@ many nearly identical front-facing poses does not add the missing information.
 
 ```mermaid
 flowchart TB
-    TEACH["Verified manual-teaching mode"] --> CAPTURE["Read-only teach + capture\nno command publisher"]
+    TEACH["Regular-FSM verified\none-session arm_sdk acquisition"] --> GUIDE["GUIDE\nq follows measured q\nKp 50%, Kd 25%"]
+    GUIDE --> TOHOLD["ENTERING_HOLD\nfreeze measured q\nramp gains up"]
+    TOHOLD --> HOLD["HOLD\nfrozen q\nfull gains"]
+    HOLD --> TOGUIDE["ENTERING_GUIDE\noperator supports\nramp gains down"]
+    TOGUIDE --> GUIDE
+    HOLD --> CAPTURE["Equal supported/held\nstationary bursts"]
     RS["RealSense ROS 2\nrectified color + CameraInfo"] --> CAPTURE
-    LOW["rt/lowstate receipt-stamped adapter"] --> CAPTURE
+    LOW["rt/lowstate receipt-stamped adapter"] --> GUIDE
+    LOW --> HOLD
+    LOW --> CAPTURE
     APRIL["Stateless AprilCube correspondences"] --> CAPTURE
     CAPTURE --> POSES["Versioned measured pose set"]
     CAPTURE --> RAW["Lossless raw session + manifest"]
 
-    subgraph OPTIONAL["Optional replay path: one rt/arm_sdk owner"]
+    subgraph OPTIONAL["Optional replay path: same exclusive rt/arm_sdk ownership"]
       POSES --> VALIDATE["Offline joint-limit and\nself-collision path validator"]
       TRANSPORT["Safe Unitree arm transport"] --> EXEC["Move / settle state machine"]
       VALIDATE --> EXEC
@@ -292,9 +299,9 @@ flowchart TB
       REPLAY --> RAW2["Separate replay raw session"]
     end
 
-    RAW --> DERIVE["Deterministic dataset builder"]
+    RAW --> DERIVE["Deterministic paired dataset builder"]
     RAW2 --> DERIVE
-    DERIVE --> DATA["CalibrationData + train/holdout split"]
+    DERIVE --> DATA["Held production data +\nsupported diagnostic data"]
     URDF["Mode-5 URDF + optical-frame overlay"] --> SOLVE["robot_calibration / Ceres"]
     DATA --> SOLVE
     SOLVE --> REPORT["Residual, bootstrap, and observability report"]
@@ -317,6 +324,8 @@ g1_aprilcube_calibration/
     pose_store.py
     motion_profile.py
     safety.py
+    teaching_controller.py
+    teaching_driver.py
     executor_state_machine.py
     timestamp_pairing.py
     operator_preview.py
@@ -369,7 +378,7 @@ The first command-line surface is deliberately small:
 
 ```text
 g1-calib inspect-hardware       # read only; topics, mode, motor mapping
-g1-calib teach-poses           # manual pose, measured arm_sdk hold, synchronized data
+g1-calib teach-poses           # continuous GUIDE/HOLD, paired synchronized data
 g1-calib validate-poses        # offline joint/path/collision report
 g1-calib collect-session       # optional rt/arm_sdk replay + capture
 g1-calib build-dataset         # raw session -> CalibrationData
@@ -378,11 +387,12 @@ g1-calib report                # regenerate diagnostics without re-solving
 ```
 
 Avoid custom ROS actions/services in the MVP. `teach-poses` owns the camera,
-state, measured-pose hold, and capture lifecycle in one process. It reuses the
-commissioned control state machine and never sends a pose different from the
-stationary measured handoff. The optional `collect-session` command uses the
-same transport for validated replay. A standard trajectory-action adapter can
-replace only `transports/unitree_arm_sdk.py` later.
+state, GUIDE/HOLD teaching controller, and capture lifecycle in one process. It
+acquires once from the stationary Regular-mode arms-down state and has no
+pose-target or autonomous-motion API. The optional `collect-session` command
+uses a separate replay executor over the same exclusive transport boundary. A
+standard trajectory-action adapter can replace only
+`transports/unitree_arm_sdk.py` later.
 
 ### 4.1 Unitree transport boundary
 
@@ -390,11 +400,10 @@ replace only `transports/unitree_arm_sdk.py` later.
 
 ```python
 class ArmTransport(Protocol):
-    def observe(self) -> ArmState: ...
-    def acquire(self) -> None: ...
-    def set_dual_arm_target(self, q14: ArrayLike) -> None: ...
-    def release(self, emergency: bool = False) -> None: ...
+    def observe(self) -> RobotStateSample: ...
+    def send_command(self, command: ArmCommand) -> None: ...
     def close(self) -> None: ...
+    def close_after_external_damping(self) -> None: ...
 ```
 
 The hardware implementation is a minimal G1-only derivative of Unitree's
@@ -403,50 +412,60 @@ initialization and lifecycle as described above. It must be dependency-injected
 with publisher/subscriber and clock interfaces so nearly all behavior is tested
 without DDS.
 
-Only the transport thread publishes `rt/arm_sdk`. The session runner and
-capture code communicate with it through thread-safe targets/state snapshots.
-A project-local process lock prevents two copies of this executor. Since that
-cannot detect unrelated Unitree/G1Pilot programs, startup also presents an
-operator checklist and refuses unattended acquisition.
+Only the fixed-rate controller thread repeatedly publishes `rt/arm_sdk` during
+GUIDE/HOLD. Operator state transitions are serialized with that thread and may
+publish their immediate zero-displacement boundary command while holding the
+same lock. Camera and disk work never publish. A project-local process lock
+prevents two copies of either controller. Since that cannot detect unrelated
+Unitree/G1Pilot programs, startup also presents an operator checklist and
+refuses unattended acquisition.
 
-### 4.2 Motion/executor state machine
+### 4.2 Teaching and replay state machines
 
 ```mermaid
 stateDiagram-v2
     [*] --> Observing
-    Observing --> Acquiring: operator acquire
-    Acquiring --> Ready: weight=1 at per-run measured handoff
-    Holding --> Moving: confirmed validated pose
-    Ready --> Moving: confirmed validated pose
-    Moving --> Settling: target reached coarsely
-    Settling --> Ready: q error/spread within limits for dwell
-    Ready --> Capturing: automatic stationary burst
-    Capturing --> Holding: accepted or retry recorded
-    Ready --> Releasing: per-run handoff then weight ramp
-    Releasing --> Stopped: weight=0
-    Observing --> Stopped: exit without acquisition
+    Observing --> Acquiring: stationary Regular-mode acquisition
+    Acquiring --> Guide: weight=1, q target equals measured q
+    Guide --> Holding: SPACE, supported burst, gain ramp
+    Holding --> Capturing: green REMOVE HAND banner, SPACE
+    Capturing --> Holding: held burst accepted or retry
+    Holding --> Guide: POSE SAVED, operator supports, SPACE
+    Guide --> Holding: camera stale or joint soft margin
+    Guide --> Stopped: operator supports, Q, verified PC2 Damp
+    Holding --> Stopped: operator supports, Q, verified PC2 Damp
     Acquiring --> Fault
+    Guide --> Fault
     Holding --> Fault
-    Moving --> Fault
-    Settling --> Fault
-    Ready --> Fault
     Capturing --> Fault
-    Fault --> Stopped: emergency weight ramp to 0
+    Fault --> Stopped: PC2 confirms whole-body Damp
 ```
 
-Transitions are explicit and logged. Capture is impossible in `Moving`; motion
-is impossible while `Capturing`. Before publisher creation, a subscriber-only
-preflight selects a stationary measured handoff and validates the exact entry
-and return routes. Clean release returns to that run's handoff and then ramps
-the blend weight to zero.
-Emergency release skips the handoff motion and ramps weight out immediately; the onboard controller may
-then move the arms toward its own command, so the operator must keep the area
-clear.
+The teaching controller is intentionally incapable of replay. In `Guide`, the
+calibration-arm target is replaced by the newest measured position every 250 Hz
+while the opposite arm stays fixed and blend weight remains one. This supplies
+damped hand-guiding but no validated gravity compensation, so the operator must
+support the arm continuously. `Holding` freezes the current measured target
+without a target step. Returning to `Guide` reseeds from the current measured
+position without lowering blend weight. The operator sees only the current
+physical instruction for `SPACE`; internal state names are not UI controls.
+`Q`, after physical support, terminates through verified PC2 whole-body Damp and
+leaves the session resumable.
+
+The existing `PoseExecutor` remains only for optional validated replay. It owns
+the `Moving` and `Settling` states and cannot be reached from `teach-poses`.
+Both controllers retain the exclusive process lock, Unitree transport, fixed-
+rate thread, and PC2 damping-watchdog boundary.
 
 Initial hardware-commissioning values are conservative and configurable:
 
 - command rate: 250 Hz;
-- maximum joint speed: 0.2 rad/s;
+- HOLD shoulder/elbow gains: Kp 80, Kd 3; HOLD wrist gains: Kp 40, Kd 1.5;
+- GUIDE calibration-arm Kp scale: 0.5 and Kd scale: 0.25, explicit local
+  commissioning values;
+- GUIDE/HOLD gain-transition ramp: 1.0 s, with the opposite arm remaining at
+  full HOLD gains;
+- replay maximum joint speed: 0.2 rad/s;
 - coarse position arrival: 0.05 rad;
 - target position error: 0.05 rad, matching Unitree's G1 home-arrival check;
 - activation and held-arm position error: 0.02 rad;
@@ -454,9 +473,11 @@ Initial hardware-commissioning values are conservative and configurable:
 - continuous dwell: 0.5 s, matching the pose-recording stationarity window; and
 - `LowState` freshness timeout: 0.1 s.
 
-These are starting values, not claimed G1 performance. Hardware commissioning
-must measure tracking and set final thresholds without silently relaxing them
-during a collection run.
+The teaching controller displays a warning within 0.03 rad of a URDF joint
+limit but does not seize HOLD there. It enforces actual URDF limits, a 0.05 rad
+frozen-arm drift limit, and exact startup locomotion FSM ID 4. These are starting
+values, not claimed G1 performance.
+Hardware commissioning must measure guiding resistance and hold behavior.
 
 ### 4.3 Safety invariants
 
@@ -464,17 +485,21 @@ The executor rejects or faults unless all relevant invariants hold:
 
 | Invariant | Enforcement |
 |---|---|
-| Robot is the mode-5 29-DoF G1 | check every `LowState.mode_machine`, motor count, and mapping |
+| Robot is the mode-5 29-DoF G1 in Regular mode | check every `LowState.mode_machine`, motor count, mapping, and initial LocoClient FSM ID 4 |
 | No command before fresh state | transport starts read-only and seeds targets from measured q |
 | One intended command owner | process lock, operator checklist, never launch G1Pilot/XR teleop concurrently |
-| Targets are valid | exact 7/14 length, finite values, URDF soft limits with margin |
-| Transition is prevalidated | pose-set manifest contains validator version/hash and path result |
-| Per-cycle command is bounded | velocity clamp independent of target or UI behavior |
-| State remains fresh | stale state triggers fault and emergency blend ramp |
-| Left arm is deterministic | capture its measured safe pose at acquisition and hold it for the session |
-| Operator controls each move | one confirmation per pose; no autonomous multi-pose run on first hardware version |
+| Targets are valid | exact 7/14 length, finite values, actual URDF limits |
+| Teaching cannot replay | dedicated teaching controller exposes no target-pose or move method |
+| GUIDE is operator-supported | persistent on-screen GUIDE warning; HOLD required before hands off |
+| Guide limit proximity | configured margin is display-only; an actual URDF violation faults and invokes the damping watchdog |
+| Replay transition is prevalidated | pose-set manifest contains validator version/hash and path result |
+| Replay command is bounded | velocity clamp independent of target or UI behavior |
+| State remains fresh | stale state faults the controller, stops heartbeat, and triggers PC2 Damp |
+| Opposite arm is deterministic | activation position remains fixed and is checked every control tick |
+| Operator controls teaching motion | GUIDE follows measured q; only the operator physically changes pose |
 | Capture is stationary | measured q-spread dwell gate, not a fixed sleep; raw `dq` is diagnostic only |
-| Shutdown is explicit | signal handlers, joined threads, terminal weight-zero publish, outcome logged |
+| Clean shutdown is explicit | operator support, verified PC2 Damp, closed transport, joined thread, resumable session |
+| Control failure is fail-closed | laptop heartbeat stops and PC2 verifies locomotion FSM 1 after `Damp()` |
 
 ### 4.4 Laptop preview and pose-quality guidance
 
@@ -506,16 +531,28 @@ show these as separate statuses rather than implying that detector success
 authorizes replay.
 
 `teach-poses` uses the preview while the operator manually teaches the arm.
-The first `S` seeds a zero-displacement `arm_sdk` handoff from the stationary
-measured state and ramps ownership; the second `S` records a seven-frame
-stationary lossless burst. `R` returns weight to zero before the next manual
-pose. Every image retains its centered complete 29-joint `q`, `dq`, and
-`tau_est` window, exact `CameraInfo`, receipt/header timestamps, pairing,
-detection, quality report, and hashes. The capture also retains the
-operator-supported pre-acquisition state. One medoid frame becomes the derived
-calibration sample. Yellow requires a recorded override reason; red cannot be
-saved. Undo removes the active pose through the pose-store API and marks the
-corresponding raw capture rejected rather than deleting evidence.
+It acquires `arm_sdk` once at the stationary Regular-mode arms-down position.
+The first `SPACE` records a seven-frame supported burst, freezes the newest
+measured target, and starts the one-second ramp from GUIDE Kp 50% / Kd 25% to full
+HOLD gains. The UI continues to say `KEEP SUPPORTING` until at least ten
+full-gain packets have been confirmed; only then does a green `HOLD ACTIVE —
+REMOVE YOUR HAND NOW` banner appear. Hands-off `SPACE` records and saves the
+equal seven-frame held burst. After `POSE SAVED`, supported `SPACE` ramps back to
+GUIDE gains and returns to measured-state following. `Q` requests verified Damp
+and preserves a resumable session; physical collection never finalizes datasets.
+For every unsaved pose in HOLD, the UI offers the operator-controlled choice to
+support the arm and press contextual `R`; this discards the attempt for any
+reason and uses the same gain ramp back to measured-state GUIDE without
+consuming an ID.
+
+Every supported and held image retains its centered complete 29-joint `q`,
+`dq`, and `tau_est` window, exact `CameraInfo`, receipt/header timestamps,
+pairing, detection, quality report, and hashes. Separate medoids record
+common-tag pixel displacement, arm-position change, and torque change. The held
+medoid becomes the production calibration sample; the supported medoid becomes
+the matching diagnostic-dataset sample. Yellow stores a recorded operator warning
+reason; red cannot be saved. Undo removes the active pose through the pose-store
+API and marks both raw bursts rejected rather than deleting evidence.
 
 `collect-session` shows the same preview during optional replay. After a
 validated target is reached and the measured dwell gate passes, it records a
@@ -837,11 +874,11 @@ report, and deliberately colliding synthetic poses are rejected in tests.
 
 ### Phase 2D — Stationary capture and immutable session recording
 
-Both the measured-pose-hold teacher and optional replay runner maintain bounded
+Both the GUIDE/HOLD teacher and optional replay runner maintain bounded
 ring buffers for rectified images, `CameraInfo`, measured joint states, and both
-header/receipt timestamps. The teacher captures on the second `S`, after
-ownership reaches weight one; the replay runner captures after the executor
-reaches `Ready`. Each burst:
+header/receipt timestamps. The teacher captures an equal supported burst before
+freezing and a held burst after hands-off settling; the replay runner captures
+after the executor reaches `Ready`. Each burst:
 
 1. requires fresh joint samples bracketing every candidate image;
 2. verifies measured q spread remains within the configured window for the

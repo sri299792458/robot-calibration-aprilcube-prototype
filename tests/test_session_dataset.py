@@ -10,6 +10,7 @@ from aprilcube.generate import DICT_MAP
 
 from aprilcube import CorrespondenceDetector
 from g1_aprilcube_calibration.camera_models import RectifiedCameraInfo
+from g1_aprilcube_calibration.capture_diagnostics import supported_vs_held_metrics
 from g1_aprilcube_calibration.collision import CollisionConfig
 from g1_aprilcube_calibration.dataset_builder import (
     CalibrationDataset,
@@ -233,7 +234,8 @@ def test_raw_first_manifest_second_and_offline_rebuild(tmp_path) -> None:
     dataset = DatasetBuilder(store.directory).build(output_path=output)
     sample = dataset.samples[0]
     assert dataset.calibration_arm == "left"
-    assert dataset.schema_version == 2
+    assert dataset.schema_version == 3
+    assert dataset.observation_phase == "held"
     assert sample.capture_id == "capture_001"
     assert sample.measured_state["estimated_torque"] == list(
         np.arange(29, dtype=float) / 1000.0
@@ -261,6 +263,7 @@ def test_manual_session_updates_undoes_resumes_and_builds(tmp_path) -> None:
         outcome="accepted",
         reason="manual stationary burst passed",
         frames=(frame("capture_001_000", 1.0),),
+        supported_frames=(frame("capture_001_supported_000", 0.5),),
         recorded_at_utc=UTC,
     )
     store.validate_manual_alignment(with_first)
@@ -273,6 +276,9 @@ def test_manual_session_updates_undoes_resumes_and_builds(tmp_path) -> None:
         updated_pose_set=without_first,
         reason="operator undo",
     )
+    undone = store.load().captures[0]
+    assert undone.selected_frame_id is None
+    assert undone.selected_supported_frame_id is None
     store.validate_manual_alignment(without_first)
 
     replacement_pose = replace(first_pose, recorded_monotonic_s=2.0)
@@ -281,17 +287,19 @@ def test_manual_session_updates_undoes_resumes_and_builds(tmp_path) -> None:
         PoseAuditEvent("add", replacement_pose.id, UTC, {"source": "test"}),
     )
     store.update_manual_pose_set(final_poses)
+    supported = frame("capture_002_supported_000", 1.5)
+    held = frame("capture_002_000", 2.0)
+    comparison = supported_vs_held_metrics(supported, held, calibration_arm="left")
     store.append_capture(
         capture_id="capture_002",
         pose_id=replacement_pose.id,
         outcome="accepted",
         reason="manual stationary burst passed",
-        frames=(frame("capture_002_000", 2.0),),
+        frames=(held,),
+        supported_frames=(supported,),
         metadata={
-            "capture_phase": "arm_sdk_weight_1_hold",
-            "pre_acquisition_supported_state": frame("metadata_only_frame", 2.0)
-            .state_window[-1]
-            .to_dict(),
+            "capture_phase": "continuous_guide_to_weight_1_hold",
+            "supported_vs_held": comparison,
         },
         recorded_at_utc=UTC,
     )
@@ -299,15 +307,31 @@ def test_manual_session_updates_undoes_resumes_and_builds(tmp_path) -> None:
     resumed = SessionStore(store.directory)
     resumed.validate_manual_alignment(final_poses)
     manifest = resumed.finalize()
-    dataset = DatasetBuilder(resumed.directory).build()
+    dataset = DatasetBuilder(resumed.directory).build(observation_phase="held")
+    supported_dataset = DatasetBuilder(resumed.directory).build(
+        observation_phase="supported"
+    )
     assert manifest.provenance["collection_method"] == "manual_teaching"
     assert [capture.outcome for capture in manifest.captures] == [
         "rejected",
         "accepted",
     ]
     assert [sample.capture_id for sample in dataset.samples] == ["capture_002"]
-    assert manifest.schema_version == 2
-    assert manifest.captures[-1].metadata["capture_phase"] == ("arm_sdk_weight_1_hold")
+    assert manifest.schema_version == 3
+    assert manifest.captures[-1].metadata["capture_phase"] == (
+        "continuous_guide_to_weight_1_hold"
+    )
+    assert manifest.captures[-1].supported_frames
+    assert (
+        manifest.captures[-1].supported_frames[0].frame_id
+        == "capture_002_supported_000"
+    )
+    assert dataset.samples[0].frame_id == "capture_002_000"
+    assert supported_dataset.samples[0].frame_id == "capture_002_supported_000"
+    assert supported_dataset.observation_phase == "supported"
+    assert comparison["common_corner_count"] == 4
+    assert comparison["corner_displacement_px"]["maximum"] == pytest.approx(0.0)
+    assert store.find_orphans() == ()
 
 
 def test_finalized_session_rejects_append(tmp_path) -> None:
@@ -319,6 +343,33 @@ def test_finalized_session_rejects_append(tmp_path) -> None:
             pose_id="pose_001",
             outcome="skipped",
             reason="operator skipped",
+        )
+
+
+def test_manual_capture_requires_equal_supported_and_held_bursts(tmp_path) -> None:
+    store, _ = create_manual_store(tmp_path)
+
+    with pytest.raises(ValueError, match="equal supported and held bursts"):
+        store.append_capture(
+            capture_id="capture_001",
+            pose_id="pose_001",
+            outcome="accepted",
+            reason="invalid unequal pair",
+            frames=(frame("capture_001_000", 1.0),),
+        )
+
+
+def test_manual_capture_requires_supported_burst_before_held_burst(tmp_path) -> None:
+    store, _ = create_manual_store(tmp_path)
+
+    with pytest.raises(ValueError, match="supported burst to precede"):
+        store.append_capture(
+            capture_id="capture_001",
+            pose_id="pose_001",
+            outcome="accepted",
+            reason="invalid phase order",
+            frames=(frame("capture_001_000", 1.0),),
+            supported_frames=(frame("capture_001_supported_000", 1.5),),
         )
 
 
@@ -476,7 +527,14 @@ def test_deterministic_holdout_split_preserves_source_order() -> None:
         for index in range(10)
     )
     dataset = CalibrationDataset(
-        "session", "c" * 64, "d" * 64, "e" * 64, "f" * 64, "left", samples
+        "session",
+        "c" * 64,
+        "d" * 64,
+        "e" * 64,
+        "f" * 64,
+        "left",
+        "held",
+        samples,
     )
     training_a, holdout_a = deterministic_holdout_split(dataset)
     training_b, holdout_b = deterministic_holdout_split(dataset)

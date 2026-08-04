@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import textwrap
+from collections.abc import Sequence
 
 import cv2
 import numpy as np
@@ -28,6 +29,7 @@ def render_operator_preview(
     *,
     intrinsics: CameraIntrinsics | None = None,
     saved_view_count: int = 0,
+    footer_lines: Sequence[str] | None = None,
 ) -> np.ndarray:
     """Render detection geometry and a compact quality side panel."""
     frame = np.asarray(image)
@@ -156,28 +158,24 @@ def render_operator_preview(
                 y += 22
             y += 3
 
-    controls_y = max(canvas.shape[0] - 65, y + 12)
-    if controls_y < canvas.shape[0] - 12:
-        cv2.putText(
-            panel,
-            "S save visual view   U undo   Q quit",
-            (18, controls_y),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.43,
-            (155, 155, 155),
-            1,
-            cv2.LINE_AA,
-        )
-        cv2.putText(
-            panel,
-            "Robot readiness/collision status: not connected",
-            (18, controls_y + 25),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.39,
-            (100, 180, 255),
-            1,
-            cv2.LINE_AA,
-        )
+    lines = tuple(footer_lines) if footer_lines is not None else (
+        "S save visual view   U undo   Q quit",
+        "Robot readiness/collision status: not connected",
+    )
+    controls_y = max(canvas.shape[0] - (25 * len(lines) + 15), y + 12)
+    if controls_y + 25 * len(lines) < canvas.shape[0] + 12:
+        for index, line in enumerate(lines):
+            color = (100, 180, 255) if index == len(lines) - 1 else (155, 155, 155)
+            cv2.putText(
+                panel,
+                line,
+                (18, controls_y + index * 25),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.43,
+                color,
+                1,
+                cv2.LINE_AA,
+            )
     return np.hstack((canvas, panel))
 
 

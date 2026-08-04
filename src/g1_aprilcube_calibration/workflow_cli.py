@@ -117,6 +117,11 @@ def add_workflow_subparsers(
     )
     dataset.add_argument("--session", type=Path, required=True)
     dataset.add_argument("--output", type=Path, required=True)
+    dataset.add_argument(
+        "--observation-phase",
+        choices=("held", "supported"),
+        default="held",
+    )
     dataset.add_argument("--allow-unfinalized", action="store_true")
     dataset.set_defaults(handler=run_build_dataset)
 
@@ -323,11 +328,13 @@ def run_build_dataset(args: argparse.Namespace) -> int:
     dataset = DatasetBuilder(args.session).build(
         output_path=args.output,
         require_finalized=not args.allow_unfinalized,
+        observation_phase=args.observation_phase,
     )
     _print_json(
         {
             "session_id": dataset.session_id,
             "sample_count": len(dataset.samples),
+            "observation_phase": dataset.observation_phase,
             "content_sha256": dataset.content_sha256,
             "output": str(args.output.resolve()),
         }

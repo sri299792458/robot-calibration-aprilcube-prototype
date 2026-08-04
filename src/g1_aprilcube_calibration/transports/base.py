@@ -1,4 +1,4 @@
-"""Narrow command boundary owned exclusively by the calibration executor."""
+"""Narrow command boundary owned by one calibration arm controller at a time."""
 
 from __future__ import annotations
 
@@ -18,6 +18,8 @@ class ArmCommand:
     weight: float
     issued_monotonic_s: float
     emergency_release: bool = False
+    kp_scale14: tuple[float, ...] = (1.0,) * DUAL_ARM_DOF
+    kd_scale14: tuple[float, ...] = (1.0,) * DUAL_ARM_DOF
 
     def __post_init__(self) -> None:
         array = np.asarray(self.q14, dtype=np.float64).reshape(-1)
@@ -29,7 +31,28 @@ class ArmCommand:
             raise ValueError("arm command weight must be within [0, 1]")
         if not np.isfinite(self.issued_monotonic_s) or self.issued_monotonic_s < 0:
             raise ValueError("arm command timestamp must be finite and non-negative")
+        gain_scales: dict[str, np.ndarray] = {}
+        for name, label in (
+            ("kp_scale14", "Kp gain scale"),
+            ("kd_scale14", "Kd gain scale"),
+        ):
+            gain_scale = np.asarray(getattr(self, name), dtype=np.float64).reshape(-1)
+            if gain_scale.shape != (DUAL_ARM_DOF,):
+                raise ValueError(
+                    f"arm command {label} must contain {DUAL_ARM_DOF} joints"
+                )
+            if not np.all(np.isfinite(gain_scale)) or np.any(gain_scale < 0):
+                raise ValueError(
+                    f"arm command {label} must be finite and non-negative"
+                )
+            gain_scales[name] = gain_scale
         object.__setattr__(self, "q14", tuple(float(value) for value in array))
+        for name, gain_scale in gain_scales.items():
+            object.__setattr__(
+                self,
+                name,
+                tuple(float(value) for value in gain_scale),
+            )
 
     @classmethod
     def create(
@@ -39,8 +62,19 @@ class ArmCommand:
         weight: float,
         issued_monotonic_s: float,
         emergency_release: bool = False,
+        kp_scale14: Sequence[float] | np.ndarray | None = None,
+        kd_scale14: Sequence[float] | np.ndarray | None = None,
     ) -> ArmCommand:
-        return cls(tuple(q14), weight, issued_monotonic_s, emergency_release)
+        kp_scales = (1.0,) * DUAL_ARM_DOF if kp_scale14 is None else tuple(kp_scale14)
+        kd_scales = (1.0,) * DUAL_ARM_DOF if kd_scale14 is None else tuple(kd_scale14)
+        return cls(
+            tuple(q14),
+            weight,
+            issued_monotonic_s,
+            emergency_release,
+            kp_scales,
+            kd_scales,
+        )
 
 
 class ArmTransport(Protocol):

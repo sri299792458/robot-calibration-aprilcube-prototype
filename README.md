@@ -9,9 +9,10 @@ camera mount, hand-to-AprilCube mount, and explicitly selected G1 kinematic
 parameters from raw image corners and measured joint states. The local SciPy
 twelve-parameter solver remains an offline diagnostic and synthetic-test oracle.
 
-The codebase now covers the full workflow: manual positioning followed by a
-measured-pose `arm_sdk` hold, offline path validation, staged G1 commissioning,
-immutable rectified capture, deterministic dataset rebuilding, a
+The codebase now covers the full workflow: continuously owned, manually guided
+`arm_sdk` teaching with hands-off measured-pose holds, offline path validation,
+staged G1 commissioning, immutable rectified capture, deterministic paired
+dataset rebuilding, a
 twelve-parameter extrinsic solve, held-out residuals, and joint-compensated
 repeated-anchor stability. It uses only tags decoded in the current frame—no
 optical flow, prediction, recovery, or temporal filtering.
@@ -64,8 +65,9 @@ Keys in the live window:
 The standalone OpenCV preview deliberately says **VISUAL QUALITY ONLY** because
 it has no robot-state input. Use `teach-poses` for real pose recording; that
 command combines a calibrated camera source with complete receipt-stamped
-`rt/lowstate` samples and takes `arm_sdk` ownership only after the operator asks
-it to hold the current measured pose.
+`rt/lowstate` samples. It acquires `arm_sdk` once from the stationary
+Regular-mode arms-down position and keeps ownership while the operator switches
+the calibration arm between GUIDE and HOLD.
 
 ## Pre-hardware verification
 
@@ -155,9 +157,11 @@ Closing the viewer leaves the raw stream running for calibration. Pass
 Run the live teacher against the RealSense topics with a new session directory.
 This is the normal data-collection path; it creates a version-3, content-hashed
 pose set inside the session from the configured URDF. The robot must be secured
-by the load-bearing harness. The teacher observes `rt/lowstate` while the arm is
-manually positioned, then reuses the commissioned measured-state handoff to
-hold that exact pose through `rt/arm_sdk`:
+by the load-bearing harness and already in Unitree Regular/Ready mode. Startup
+requires locomotion FSM ID 4 as well as `mode_machine=5`; the latter describes
+the 29-DoF hardware layout and does not identify the locomotion state. The
+teacher acquires `rt/arm_sdk` once at the measured arms-down position and never
+contains a pose-target or autonomous-move transition:
 
 ```bash
 ./tools/g1_calib_hardware.sh teach-poses \
@@ -171,38 +175,84 @@ hold that exact pose through `rt/arm_sdk`:
   --confirm 'I CONFIRM THE G1 IS SECURED BY THE LOAD-BEARING HARNESS AND THE WORKSPACE IS CLEAR'
 ```
 
-At each pose, physically support and position the arm and wait for a good
-preview. The first `S` validates a stationary handoff, creates the command
-publisher, seeds both arm targets from measured `q` at weight zero, and ramps
-only the ownership weight to one. Remove your hand. The second `S` saves the
-controller-held burst. Grip/support the arm again and press `R` to ramp the
-weight to zero and return to manual positioning. `Q`, `P`/Escape, `A`, and `U`
-are blocked while the controller is holding, so a clean release cannot be
-bypassed. Rerun the exact command after a pause to resume. Yellow needs a
-supplied `--yellow-override-reason`; red can never be acquired or saved.
+After the one-second measured-state acquisition, the teacher enters GUIDE. In
+GUIDE it publishes the newest measured calibration-arm position as the next
+target at 250 Hz while keeping the opposite arm fixed and blend weight at one.
+GUIDE scales the calibration arm's Kp to 50% and Kd to 25% of HOLD:
+shoulder/elbow gains are `40/0.75` instead of `80/3`, and wrist gains are
+`20/0.375` instead of `40/1.5`. The opposite arm stays at full HOLD gains. These
+GUIDE scales are local commissioning values, not a Unitree freedrive
+recommendation or validated gravity compensation; continuously support the
+calibration arm and move it slowly.
 
-The save-stage `S` waits for the configured seven-frame stationary burst and
-stores every rectified frame losslessly as PNG, the complete 29-joint `q`, `dq`,
-and `tau_est` window around every image, local and camera timestamps, the exact
-`CameraInfo`, reproducible image/state pairing, AprilCube correspondences,
-visual-quality evidence, and a selected medoid frame. Capture metadata also
-stores the median operator-supported state from immediately before ownership;
-this allows direct held-versus-supported `q` and `tau_est` comparison. The pose
-YAML stores measured joint position and spread; commanded positions are never
-used. `U` removes the active pose but keeps its raw capture marked rejected for
-auditability.
+The operator UI uses `SPACE` for the one normal action shown in the large
+banner, and `Q` stops through verified whole-body Damp. A contextual `R` action
+appears for every unsaved pose in HOLD, allowing the operator to support the
+arm, reject that pose for any reason, and return to guiding without ending the
+session. For each pose:
+
+1. While supporting the arm, move to the pose and press `SPACE`.
+2. Keep supporting until the green banner says exactly `HOLD ACTIVE — REMOVE
+   YOUR HAND NOW`. That banner is impossible before the one-second gain ramp and
+   ten confirmed full-gain HOLD packets complete.
+3. Remove your hand, let the arm settle, and press `SPACE`; this captures the
+   hands-off burst and saves the pose.
+4. When the banner says `POSE SAVED`, support the arm and press `SPACE` to
+   continue to the next pose.
+
+To reject any current unsaved pose in HOLD, support the arm again and press `R`.
+The unsaved supported/held attempt is discarded, no pose or capture number is
+consumed, and GUIDE resumes after the normal one-second gain ramp.
+
+No GUIDE/HOLD state names are exposed as operator controls. Blend weight remains
+one throughout collection, and no transition commands a trajectory. A stale
+camera freezes the arm and changes the only available `SPACE` action to
+supported continuation. Nearness to a URDF joint limit is displayed as a
+warning; an actual limit violation invokes the damping watchdog. Yellow is
+recorded as a warning; red cannot be saved. The operator may use contextual `R`
+regardless of the displayed visual grade.
+
+`Q` always means: support the arm, request and verify PC2 whole-body Damp, close
+`arm_sdk`, and leave the session resumable. There is no manual return-to-start,
+`R`, pause/finalize distinction, or dataset construction inside the physical
+robot session.
+
+Loss of `LowState`, command failure, Ethernet/SSH loss, Ctrl+C, an unexpected
+process exit, or a control-thread stall long enough to miss the independent PC2
+heartbeat stops ownership and requests verified whole-body Damp. A single
+non-real-time laptop scheduling delay does not falsely trip the teaching
+controller. Damp can leave the arm limp;
+the load-bearing body harness does not replace arm support, so keep the complete
+arm/table sweep clear throughout GUIDE and HOLD.
+
+Both bursts store every rectified frame losslessly as PNG, the complete 29-joint
+`q`, `dq`, and `tau_est` window around every image, local and camera timestamps,
+the exact `CameraInfo`, reproducible image/state pairing, AprilCube
+correspondences, visual-quality evidence, and separate supported/held medoids.
+The hash-bound metadata reports common-tag pixel displacement, arm-position
+change, and torque change between those medoids. The pose YAML and datasets use
+measured joint positions; commanded positions are never calibration evidence.
+
+Manual GUIDE performs no per-pose FCL calculation: the operator, not the
+software, creates the motion and the pose is already physically occupied before
+capture. Collision and path validation remain mandatory before any optional
+autonomous replay.
 
 A capture attempt is rejected if consecutive images are more than 0.5 seconds
 apart, the seven images span more than 2 seconds, or their combined state windows
-exceed either arm's stationary-position limit. Nothing is saved; hold the arm
-still and press `S` again while it remains controller-held.
+exceed either arm's stationary-position limit. Nothing is saved; keep the arm
+hands-off and press `SPACE` again.
 
-After the final `R`, `Q` verifies the one-to-one pose/capture binding, freezes the session read-only,
-and automatically writes `sessions/manual_run_002/dataset.json`. The camera
-mount and head pitch must remain fixed for that session. The joint poses remain
-useful if optional replay is desired for a later camera configuration, but the
-images themselves belong only to the camera configuration under which they
-were captured.
+The camera mount and head pitch must remain fixed for the whole session. During
+collection, build analysis datasets explicitly from the resumable session:
+
+```bash
+.venv/bin/g1-calib build-dataset \
+  --session sessions/manual_run_002 \
+  --output sessions/manual_run_002/dataset.json \
+  --observation-phase held \
+  --allow-unfinalized
+```
 
 Solve directly from that dataset:
 
@@ -219,7 +269,13 @@ live/offline correspondence hash:
 ```bash
 .venv/bin/g1-calib build-dataset \
   --session sessions/manual_run_002 \
+  --observation-phase held \
   --output sessions/manual_run_002/dataset_rebuilt.json
+
+.venv/bin/g1-calib build-dataset \
+  --session sessions/manual_run_002 \
+  --observation-phase supported \
+  --output sessions/manual_run_002/dataset_supported_rebuilt.json
 ```
 
 Do not accept the calibration from RMS alone. Inspect `report.md`, held-out and
@@ -284,8 +340,10 @@ The complete finalized `sessions/manual_run_001` capture and corresponding
 
 Replay is no longer required to collect a calibration dataset. Keep it for
 commissioning the arm-control path, reproducing old joint configurations after
-a camera change, or collecting exact repeated-anchor measurements. It is the
-only part of this workflow that creates an `rt/arm_sdk` publisher.
+a camera change, or collecting exact repeated-anchor measurements. Replay uses
+the autonomous `PoseExecutor`; `teach-poses` uses the separate non-moving
+GUIDE/HOLD controller. Both create an `rt/arm_sdk` publisher under the same
+exclusive command-owner lock and damping-watchdog contract.
 
 To use replay, review the padded `left_rubber_hand` AprilCube envelope in
 `config/collision_pairs.yaml`, then list the directed taught-pose routes in an

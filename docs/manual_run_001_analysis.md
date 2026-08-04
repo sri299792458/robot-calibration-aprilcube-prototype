@@ -10,7 +10,8 @@
   the dataset builder
 - The original ignored raw session remains untouched. Its historical version-2
   pose artifact is not a supported input to the cleaned version-3 pose API; the
-  finalized `dataset.json` is schema-independent and remains the solver input.
+  historical dataset is likewise an analysis archive for the commit that
+  produced it, not an input to the current paired schema-version-3 pipeline.
 
 ## Native `mikeferguson/robot_calibration` full-data fits
 

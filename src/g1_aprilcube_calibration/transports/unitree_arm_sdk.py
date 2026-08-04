@@ -269,11 +269,15 @@ class UnitreeArmSDKTransport:
             motor.dq = 0.0
             motor.tau = 0.0
             if motor_index in _WRIST_INDICES:
-                motor.kp = self.config.wrist_kp
-                motor.kd = self.config.wrist_kd
+                motor.kp = self.config.wrist_kp * command.kp_scale14[offset]
+                motor.kd = self.config.wrist_kd * command.kd_scale14[offset]
             else:
-                motor.kp = self.config.shoulder_elbow_kp
-                motor.kd = self.config.shoulder_elbow_kd
+                motor.kp = (
+                    self.config.shoulder_elbow_kp * command.kp_scale14[offset]
+                )
+                motor.kd = (
+                    self.config.shoulder_elbow_kd * command.kd_scale14[offset]
+                )
         self._message.motor_cmd[ARM_WEIGHT_SLOT].q = command.weight
         self._message.crc = self.bindings.calculate_crc(self._message)
         result = self._publisher.Write(self._message)
@@ -287,7 +291,7 @@ class UnitreeArmSDKTransport:
             return
         if self.command_count and self._last_weight != 0.0:
             raise RuntimeError(
-                "refusing to close after a non-zero blend weight; executor must "
+                "refusing to close after a non-zero blend weight; controller must "
                 "publish a terminal weight-zero command"
             )
         self._closed = True

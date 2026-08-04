@@ -150,6 +150,7 @@ def test_holdout_split_keeps_repeated_pose_captures_together() -> None:
         pose_set_sha256=dataset.pose_set_sha256,
         urdf_sha256=dataset.urdf_sha256,
         calibration_arm=dataset.calibration_arm,
+        observation_phase=dataset.observation_phase,
         samples=(*dataset.samples, repeated),
     )
     training, holdout = deterministic_holdout_split(with_repeat)

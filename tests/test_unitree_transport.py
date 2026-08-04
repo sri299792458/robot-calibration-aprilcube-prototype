@@ -194,7 +194,17 @@ def test_transport_maps_only_arms_and_weight_and_requires_zero_close(sdk):
     )
     assert Publisher.instances[0].messages == []
     Subscriber.instances[0].emit(state())
-    command = ArmCommand.create(np.arange(14) / 20, weight=0.6, issued_monotonic_s=5)
+    kp_scale = np.ones(14)
+    kd_scale = np.ones(14)
+    kp_scale[:7] = 0.5
+    kd_scale[:7] = 0.25
+    command = ArmCommand.create(
+        np.arange(14) / 20,
+        weight=0.6,
+        issued_monotonic_s=5,
+        kp_scale14=kp_scale,
+        kd_scale14=kd_scale,
+    )
     transport.send_command(command)
 
     sent = Publisher.instances[0].messages[-1]
@@ -208,7 +218,8 @@ def test_transport_maps_only_arms_and_weight_and_requires_zero_close(sdk):
         assert motor.q == pytest.approx(command.q14[offset])
         assert motor.dq == 0
         assert motor.tau == 0
-        expected = (40.0, 1.5) if index in {19, 20, 21, 26, 27, 28} else (80, 3)
+        base = (40.0, 1.5) if index in {19, 20, 21, 26, 27, 28} else (80, 3)
+        expected = (base[0] * kp_scale[offset], base[1] * kd_scale[offset])
         assert (motor.kp, motor.kd) == expected
     for index in list(range(15)) + list(range(30, 35)):
         assert sent.motor_cmd[index] == Motor()
@@ -262,6 +273,21 @@ def test_transport_refuses_wrong_mode_before_publish(sdk):
         )
     assert Publisher.instances[0].messages == []
     transport.close()
+
+
+@pytest.mark.parametrize("name", ["kp_scale14", "kd_scale14"])
+@pytest.mark.parametrize(
+    "gain_scale",
+    [np.ones(13), np.full(14, -0.1), np.full(14, np.nan)],
+)
+def test_arm_command_rejects_invalid_gain_scales(name, gain_scale):
+    with pytest.raises(ValueError, match="gain scale"):
+        ArmCommand.create(
+            np.zeros(14),
+            weight=0.0,
+            issued_monotonic_s=0.0,
+            **{name: gain_scale},
+        )
 
 
 def test_transport_can_close_nonzero_only_after_external_damping(sdk):

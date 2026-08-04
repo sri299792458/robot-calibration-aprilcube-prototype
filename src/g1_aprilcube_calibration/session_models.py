@@ -13,7 +13,7 @@ from jsonschema import Draft202012Validator
 
 from g1_aprilcube_calibration.models import validate_utc_iso
 
-SESSION_SCHEMA_VERSION = 2
+SESSION_SCHEMA_VERSION = 3
 _ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$")
 _SHA_PATTERN = re.compile(r"^[0-9a-f]{64}$")
 CAPTURE_OUTCOMES = frozenset({"accepted", "rejected", "retry", "skipped", "aborted"})
@@ -85,6 +85,8 @@ class CaptureRecord:
     recorded_at_utc: str
     metadata: dict[str, Any]
     frames: tuple[RawFrameRecord, ...] = ()
+    supported_frames: tuple[RawFrameRecord, ...] = ()
+    selected_supported_frame_id: str | None = None
     selected_frame_id: str | None = None
 
     def __post_init__(self) -> None:
@@ -100,14 +102,35 @@ class CaptureRecord:
         object.__setattr__(
             self, "metadata", _json_mapping(self.metadata, name="capture metadata")
         )
-        frame_ids = [frame.frame_id for frame in self.frames]
+        held_frame_ids = [frame.frame_id for frame in self.frames]
+        supported_frame_ids = [frame.frame_id for frame in self.supported_frames]
+        frame_ids = [*held_frame_ids, *supported_frame_ids]
         if len(frame_ids) != len(set(frame_ids)):
             raise ValueError("capture contains duplicate frame IDs")
         if self.outcome == "accepted":
-            if not self.frames or self.selected_frame_id not in frame_ids:
-                raise ValueError("accepted capture requires a selected raw frame")
-        elif self.selected_frame_id is not None:
-            raise ValueError("non-accepted capture cannot select a solver frame")
+            if not self.frames or self.selected_frame_id not in held_frame_ids:
+                raise ValueError("accepted capture requires a selected held frame")
+            if self.supported_frames and (
+                self.selected_supported_frame_id not in supported_frame_ids
+            ):
+                raise ValueError(
+                    "accepted paired capture requires a selected supported frame"
+                )
+            if not self.supported_frames and self.selected_supported_frame_id is not None:
+                raise ValueError("capture cannot select a missing supported frame")
+        elif (
+            self.selected_frame_id is not None
+            or self.selected_supported_frame_id is not None
+        ):
+            raise ValueError("non-accepted capture cannot select a raw frame")
+        object.__setattr__(self, "frames", tuple(self.frames))
+        object.__setattr__(self, "supported_frames", tuple(self.supported_frames))
+
+    @property
+    def raw_frames(self) -> tuple[RawFrameRecord, ...]:
+        """All persisted held and operator-supported observations."""
+
+        return (*self.frames, *self.supported_frames)
 
     def to_dict(self) -> dict:
         return {
@@ -118,6 +141,10 @@ class CaptureRecord:
             "recorded_at_utc": self.recorded_at_utc,
             "metadata": self.metadata,
             "frames": [frame.to_dict() for frame in self.frames],
+            "supported_frames": [
+                frame.to_dict() for frame in self.supported_frames
+            ],
+            "selected_supported_frame_id": self.selected_supported_frame_id,
             "selected_frame_id": self.selected_frame_id,
         }
 
@@ -131,6 +158,10 @@ class CaptureRecord:
             recorded_at_utc=data["recorded_at_utc"],
             metadata=dict(data["metadata"]),
             frames=tuple(RawFrameRecord.from_dict(item) for item in data["frames"]),
+            supported_frames=tuple(
+                RawFrameRecord.from_dict(item) for item in data["supported_frames"]
+            ),
+            selected_supported_frame_id=data["selected_supported_frame_id"],
             selected_frame_id=data["selected_frame_id"],
         )
 
@@ -167,7 +198,7 @@ class SessionManifest:
             raise ValueError("artifact hashes must be named lowercase SHA-256 values")
         capture_ids = [capture.capture_id for capture in self.captures]
         frame_ids = [
-            frame.frame_id for capture in self.captures for frame in capture.frames
+            frame.frame_id for capture in self.captures for frame in capture.raw_frames
         ]
         if len(capture_ids) != len(set(capture_ids)):
             raise ValueError("session contains duplicate capture IDs")
@@ -241,7 +272,7 @@ class SessionManifest:
             "content_sha256",
         }
         if set(data) != allowed:
-            raise ValueError("session manifest fields do not match schema version 2")
+            raise ValueError("session manifest fields do not match schema version 3")
         if not isinstance(data["finalized"], bool):
             raise TypeError("session finalized field must be boolean")
         result = cls(

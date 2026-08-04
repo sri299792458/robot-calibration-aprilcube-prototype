@@ -161,6 +161,7 @@ def make_synthetic_dataset(
         pose_set_sha256=hashlib.sha256(f"pose-set-{seed}".encode()).hexdigest(),
         urdf_sha256=model.sha256,
         calibration_arm=calibration_arm,
+        observation_phase="held",
         samples=tuple(samples),
     )
     return dataset, truth

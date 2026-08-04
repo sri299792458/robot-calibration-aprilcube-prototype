@@ -26,8 +26,9 @@ from g1_aprilcube_calibration.timestamp_pairing import (
     pair_state_to_image,
 )
 
-DATASET_SCHEMA_VERSION = 2
+DATASET_SCHEMA_VERSION = 3
 _SHA256_LENGTH = 64
+OBSERVATION_PHASES = frozenset({"held", "supported"})
 
 
 @dataclass(frozen=True, slots=True)
@@ -130,6 +131,7 @@ class CalibrationDataset:
     pose_set_sha256: str
     urdf_sha256: str
     calibration_arm: str
+    observation_phase: str
     samples: tuple[CalibrationSample, ...]
     schema_version: int = DATASET_SCHEMA_VERSION
 
@@ -141,6 +143,10 @@ class CalibrationDataset:
         object.__setattr__(
             self, "calibration_arm", validate_arm_side(self.calibration_arm)
         )
+        if self.observation_phase not in OBSERVATION_PHASES:
+            raise ValueError(
+                f"unsupported dataset observation phase: {self.observation_phase}"
+            )
         for value in (
             self.session_manifest_sha256,
             self.target_artifact_sha256,
@@ -179,6 +185,7 @@ class CalibrationDataset:
             "pose_set_sha256": self.pose_set_sha256,
             "urdf_sha256": self.urdf_sha256,
             "calibration_arm": self.calibration_arm,
+            "observation_phase": self.observation_phase,
             "samples": [sample.to_dict() for sample in self.samples],
         }
         if include_hash:
@@ -195,11 +202,12 @@ class CalibrationDataset:
             "pose_set_sha256",
             "urdf_sha256",
             "calibration_arm",
+            "observation_phase",
             "samples",
             "content_sha256",
         }
         if set(data) != expected:
-            raise ValueError("dataset fields do not match schema version 2")
+            raise ValueError("dataset fields do not match schema version 3")
         result = cls(
             schema_version=int(data["schema_version"]),
             session_id=data["session_id"],
@@ -208,6 +216,7 @@ class CalibrationDataset:
             pose_set_sha256=data["pose_set_sha256"],
             urdf_sha256=data["urdf_sha256"],
             calibration_arm=data["calibration_arm"],
+            observation_phase=data["observation_phase"],
             samples=tuple(
                 CalibrationSample.from_dict(item) for item in data["samples"]
             ),
@@ -232,7 +241,12 @@ class DatasetBuilder:
         *,
         output_path: str | Path | None = None,
         require_finalized: bool = True,
+        observation_phase: str = "held",
     ) -> CalibrationDataset:
+        if observation_phase not in OBSERVATION_PHASES:
+            raise ValueError(
+                f"unsupported dataset observation phase: {observation_phase}"
+            )
         manifest = self.store.load()
         if require_finalized and not manifest.finalized:
             raise RuntimeError("session must be finalized before dataset construction")
@@ -258,14 +272,29 @@ class DatasetBuilder:
                     pairing_config=pairing_config,
                     camera_profile_sha256=manifest.camera_profile_sha256,
                 )
-                for frame in capture.frames
+                for frame in capture.raw_frames
             }
             if capture.outcome != "accepted":
                 continue
+            phase_frames = (
+                capture.frames
+                if observation_phase == "held"
+                else capture.supported_frames
+            )
+            selected_frame_id = (
+                capture.selected_frame_id
+                if observation_phase == "held"
+                else capture.selected_supported_frame_id
+            )
+            if not phase_frames or selected_frame_id is None:
+                raise ValueError(
+                    f"accepted capture {capture.capture_id} has no "
+                    f"{observation_phase} observation"
+                )
             selected = next(
                 frame
-                for frame in capture.frames
-                if frame.frame_id == capture.selected_frame_id
+                for frame in phase_frames
+                if frame.frame_id == selected_frame_id
             )
             result, pairing, camera_info = verified[selected.frame_id]
             result_hash = correspondence_sha256(result)
@@ -310,6 +339,7 @@ class DatasetBuilder:
             pose_set_sha256=pose_set.content_sha256,
             urdf_sha256=pose_set.urdf_sha256,
             calibration_arm=pose_set.calibration_arm,
+            observation_phase=observation_phase,
             samples=tuple(samples),
         )
         if output_path is not None:

@@ -20,7 +20,7 @@ robot:
   calibration_wrist_policy: record_and_replay_all_three_measured_wrist_joints
 
 control:
-  implementation: project_local_lightweight_executor
+  implementation: separate_continuous_teaching_and_replay_controllers
   upstream_reference: unitreerobotics/xr_teleoperate_G1_29_ArmController
   command_topic: rt/arm_sdk
   state_topic: rt/lowstate
@@ -30,6 +30,21 @@ control:
   calibration_arm: left
   opposite_arm_policy: hold_measured_activation_pose
   command_rate_hz: 250
+  # HOLD uses Unitree's pinned G1_29 tracking gains. GUIDE scales only the
+  # calibration arm. Kp remains at the commissioned 0.5 scale; Kd is reduced to
+  # 0.25 after the first collection still felt overly damped. These remain local
+  # commissioning values, not an upstream Unitree freedrive recommendation.
+  hold_shoulder_elbow_kp: 80.0
+  hold_shoulder_elbow_kd: 3.0
+  hold_wrist_kp: 40.0
+  hold_wrist_kd: 1.5
+  guide_kp_scale: 0.5
+  guide_kd_scale: 0.25
+  gain_transition_ramp_s: 1.0
+  # G1 Regular/Ready locomotion mode observed through the official LocoClient.
+  # mode_machine=5 identifies the 29-DoF layout and is not an FSM-mode check.
+  required_regular_fsm_id: 4
+  guide_joint_limit_margin_rad: 0.03
   # Initial commissioning values only; hardware tests must tune/approve them.
   max_joint_velocity_rad_s: 0.2
   coarse_arrival_tolerance_rad: 0.05

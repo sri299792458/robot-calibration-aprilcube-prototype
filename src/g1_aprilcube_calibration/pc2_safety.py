@@ -24,6 +24,7 @@ class PC2SafetyConfig:
     heartbeat_timeout_s: float = 0.5
     connect_timeout_s: float = 5.0
     client_timeout_s: float = 3.0
+    required_initial_fsm_id: int | None = None
     remote_ros_setup: Path = Path("/opt/ros/foxy/setup.bash")
     remote_cyclonedds_setup: Path = Path(
         "/home/unitree/cyclonedds_ws/install/setup.bash"
@@ -52,6 +53,8 @@ class PC2SafetyConfig:
             raise ValueError("heartbeat timeout must be within [0.2, 10.0] seconds")
         if self.connect_timeout_s <= 0 or self.client_timeout_s <= 0:
             raise ValueError("PC2 connection/client timeouts must be positive")
+        if self.required_initial_fsm_id is not None and self.required_initial_fsm_id < 0:
+            raise ValueError("required initial FSM ID must be non-negative")
         for path in (
             self.remote_ros_setup,
             self.remote_cyclonedds_setup,
@@ -89,6 +92,7 @@ class PC2DampingWatchdog:
         self._lock = threading.RLock()
         self._armed = False
         self._terminal_action: str | None = None
+        self._initial_fsm_id: int | None = None
 
     @property
     def armed(self) -> bool:
@@ -99,6 +103,11 @@ class PC2DampingWatchdog:
     def terminal_action(self) -> str | None:
         with self._lock:
             return self._terminal_action
+
+    @property
+    def initial_fsm_id(self) -> int | None:
+        with self._lock:
+            return self._initial_fsm_id
 
     def start(self) -> None:
         with self._lock:
@@ -131,12 +140,28 @@ class PC2DampingWatchdog:
                 bufsize=0,
             )
             try:
-                self._wait_for_marker(
+                ready = self._wait_for_marker(
                     pc2_watchdog_agent.READY_MARKER,
                     timeout_s=self.config.connect_timeout_s
                     + self.config.client_timeout_s
                     + 2.0,
                 )
+                self._initial_fsm_id = self._parse_fsm_id(ready)
+                required = self.config.required_initial_fsm_id
+                if required is not None and self._initial_fsm_id != required:
+                    self._send("DISARM")
+                    self._wait_for_marker(
+                        pc2_watchdog_agent.DISARMED_MARKER,
+                        timeout_s=self.config.heartbeat_timeout_s
+                        + self.config.connect_timeout_s,
+                    )
+                    self._terminal_action = "disarmed"
+                    self._finish_local_process()
+                    raise RuntimeError(
+                        "refusing arm ownership from locomotion "
+                        f"fsm_id={self._initial_fsm_id}; required Regular-mode "
+                        f"fsm_id={required}"
+                    )
                 self._armed = True
                 self._send("PING")
                 self._last_ping_s = self._clock()
@@ -144,9 +169,18 @@ class PC2DampingWatchdog:
                 self._terminate_local_process()
                 raise
 
+    @staticmethod
+    def _parse_fsm_id(line: str) -> int:
+        match = re.search(r"fsm_id\s*(?:=|:)\s*(-?\d+)", line)
+        if match is None:
+            raise RuntimeError(f"PC2 watchdog returned no parseable FSM ID: {line}")
+        return int(match.group(1))
+
     def pulse(self) -> None:
         with self._lock:
             if not self._armed:
+                if self._terminal_action is not None:
+                    return
                 raise RuntimeError("PC2 damping watchdog is not armed")
             self._check_running()
             now = self._clock()

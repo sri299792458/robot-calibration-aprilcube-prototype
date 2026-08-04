@@ -96,6 +96,59 @@ def test_live_source_waits_for_new_stationary_confirmed_frames():
     assert all(len(frame.state_window) >= 25 for frame in burst)
 
 
+def test_live_source_can_take_supported_burst_without_changing_view_history():
+    frames = ROSFrameBuffer()
+    states = StateSampleBuffer()
+    for time_s in np.arange(0.5, 1.81, 0.02):
+        states.add(
+            RobotStateSample(time_s, UTC, 5, np.zeros(29), np.zeros(29), np.zeros(29))
+        )
+    clock = ManualClock()
+    scheduled = [
+        ROSImageFrame(marker_image(), ImageTiming(time_s, UTC, index), info())
+        for index, time_s in enumerate((1.0, 1.2, 1.4), start=1)
+    ]
+
+    def wait_once(duration):
+        clock.advance(duration)
+        if scheduled:
+            frames.add(scheduled.pop(0))
+
+    source = LiveBurstFrameSource(
+        camera_frames=frames,
+        robot_states=states,
+        detector=CorrespondenceDetector(TARGET),
+        quality_evaluator=PoseQualityEvaluator(thresholds()),
+        recording_config=RecordingGateConfig(
+            calibration_arm="left",
+            state_freshness_timeout_s=0.1,
+            stationary_duration_s=0.5,
+            maximum_state_gap_s=0.1,
+            maximum_calibration_position_spread_rad=0.01,
+            minimum_samples=5,
+        ),
+        pairing_config=PairingConfig(0.05, 0.1),
+        config=LiveBurstConfig(frame_count=3, timeout_s=1, poll_interval_s=0.01),
+        clock=clock,
+        wait_once=wait_once,
+        accept_yellow=lambda _frame: True,
+    )
+
+    burst = source.capture_burst(
+        pose_id="pose",
+        capture_id="capture_001_supported",
+        remember_signature=False,
+    )
+
+    assert [frame.frame_id for frame in burst] == [
+        "capture_001_supported_000",
+        "capture_001_supported_001",
+        "capture_001_supported_002",
+    ]
+    with pytest.raises(ValueError, match="empty live-capture history"):
+        source.undo_last_signature()
+
+
 def test_live_source_keeps_frame_until_future_state_bracket_arrives():
     frames = ROSFrameBuffer()
     states = StateSampleBuffer()

@@ -18,13 +18,13 @@ from g1_aprilcube_calibration.activation_handoff import (
     ActivationHandoff,
     build_activation_handoff,
 )
+from g1_aprilcube_calibration.capture_diagnostics import supported_vs_held_metrics
 from g1_aprilcube_calibration.clock import SystemClock
 from g1_aprilcube_calibration.collision import (
     CollisionConfig,
     FCLCollisionChecker,
 )
 from g1_aprilcube_calibration.config import QualityThresholds
-from g1_aprilcube_calibration.dataset_builder import DatasetBuilder
 from g1_aprilcube_calibration.executor_driver import (
     ExecutorControlDriver,
     SynchronizedPoseExecutor,
@@ -34,6 +34,7 @@ from g1_aprilcube_calibration.executor_state_machine import (
     ExecutorState,
     PoseExecutor,
 )
+from g1_aprilcube_calibration.joint_map import arm_joint_names
 from g1_aprilcube_calibration.live_capture import LiveBurstConfig, LiveBurstFrameSource
 from g1_aprilcube_calibration.models import utc_now_iso
 from g1_aprilcube_calibration.pc2_safety import (
@@ -67,6 +68,15 @@ from g1_aprilcube_calibration.session_runner import (
     SessionExecutionPlan,
 )
 from g1_aprilcube_calibration.session_store import SessionStore
+from g1_aprilcube_calibration.teaching_controller import (
+    TeachingArmController,
+    TeachingConfig,
+    TeachingState,
+)
+from g1_aprilcube_calibration.teaching_driver import (
+    SynchronizedTeachingController,
+    TeachingControlDriver,
+)
 from g1_aprilcube_calibration.timestamp_pairing import PairingConfig
 from g1_aprilcube_calibration.transports.base import ArmCommand
 from g1_aprilcube_calibration.transports.unitree_arm_sdk import (
@@ -82,6 +92,7 @@ MOTION_ACK = (
     "I CONFIRM THE G1 IS SECURED BY THE LOAD-BEARING HARNESS "
     "AND THE WORKSPACE IS CLEAR"
 )
+LIVE_TEACHING_YELLOW_REASON = "operator accepted yellow warning in live teaching UI"
 
 
 def add_hardware_subparsers(
@@ -123,8 +134,8 @@ def add_hardware_subparsers(
     teach = subparsers.add_parser(
         "teach-poses",
         help=(
-            "manually position the arm, hold that measured pose through arm_sdk, "
-            "and record synchronized lossless calibration bursts"
+            "continuously guide the arm through arm_sdk, freeze measured poses, "
+            "and record paired supported/held calibration bursts"
         ),
     )
     _add_network_arguments(teach)
@@ -137,12 +148,18 @@ def add_hardware_subparsers(
     teach.add_argument("--target-config", type=Path, default=default_target)
     teach.add_argument("--quality-config", type=Path, default=default_quality)
     teach.add_argument("--camera-timeout-s", type=float, default=10.0)
+    teach.add_argument("--guide-camera-timeout-s", type=float, default=1.0)
     teach.add_argument("--burst-timeout-s", type=float, default=15.0)
-    teach.add_argument("--dataset-output", type=Path)
     teach.add_argument("--group", default="calibration")
     teach.add_argument("--first-pose-id", default="pose_001")
     teach.add_argument("--preview-directory", type=Path)
-    teach.add_argument("--yellow-override-reason")
+    teach.add_argument(
+        "--yellow-override-reason",
+        help=(
+            "optional custom note for yellow views; without it, SPACE accepts yellow "
+            "and stores the standard live-operator warning"
+        ),
+    )
     teach.add_argument("--confirm", required=True, help=f"must equal: {MOTION_ACK}")
     teach.add_argument("--lock-file", type=Path, default=default_lock)
     teach.set_defaults(handler=run_teach_poses)
@@ -272,7 +289,11 @@ def run_commission_damping(args: argparse.Namespace) -> int:
 
     _require_ack(args.confirm, DAMP_ACK)
     observer = UnitreeLowStateObserver(_transport_config(args))
-    watchdog = _pc2_damping_watchdog(args, args.hardware_config)
+    watchdog = _pc2_damping_watchdog(
+        args,
+        args.hardware_config,
+        require_regular=False,
+    )
     try:
         initial = _wait_for_state(observer, 5.0)
         watchdog.start()
@@ -299,6 +320,8 @@ def run_commission_damping(args: argparse.Namespace) -> int:
 
 def run_teach_poses(args: argparse.Namespace) -> int:
     _require_ack(args.confirm, MOTION_ACK)
+    if args.guide_camera_timeout_s <= 0:
+        raise ValueError("--guide-camera-timeout-s must be positive")
     hardware_bytes = args.hardware_config.read_bytes()
     target_bytes = args.target_config.read_bytes()
     collision_bytes = args.collision_config.read_bytes()
@@ -307,9 +330,8 @@ def run_teach_poses(args: argparse.Namespace) -> int:
     _validate_calibration_arm(args.hardware_config, pose_set)
     collision = _validate_collision_preflight(args.collision_config)
     _validate_hardware_preflight(hardware_bytes, pose_set, require_poses=False)
-    recording, pairing, executor_config, rate_hz = _runtime_configs(
-        args.hardware_config
-    )
+    recording, pairing, _, rate_hz = _runtime_configs(args.hardware_config)
+    teaching_config = _teaching_config(args.hardware_config)
     thresholds = QualityThresholds.from_yaml(args.quality_config)
     states = StateSampleBuffer()
 
@@ -324,10 +346,13 @@ def run_teach_poses(args: argparse.Namespace) -> int:
     camera = None
     observer = None
     transport = None
-    synchronized = None
+    teaching = None
     driver = None
     watchdog = None
-    handoff_reference_state = None
+    activation_reference_state = None
+    pending_supported_frames = ()
+    pending_pose_id = None
+    pending_capture_id = None
     held_pose_saved = False
     command_lock = CommandOwnerLock(args.lock_file)
     command_lock.acquire()
@@ -346,23 +371,7 @@ def run_teach_poses(args: argparse.Namespace) -> int:
         _wait_for_state(observer, 5.0)
         _wait_for_camera(rclpy, node, camera, args.camera_timeout_s)
         camera_info = camera.frames.latest.camera_info
-        session_store = _open_or_resume_manual_session(
-            args,
-            camera_info=camera_info,
-            pose_set=pose_set,
-            recording=recording,
-            pairing=pairing,
-            artifacts={
-                "pose_set.yaml": _pose_set_bytes(pose_set),
-                "hardware.yaml": hardware_bytes,
-                "target.json": target_bytes,
-                "collision_pairs.yaml": collision_bytes,
-                "capture_quality.yaml": quality_bytes,
-            },
-        )
-        pose_store = TransientPoseStore(
-            PoseStore(args.session_directory / "pose_set.yaml").load()
-        )
+        pose_store = TransientPoseStore(pose_set)
         detector = CorrespondenceDetector(args.target_config)
         evaluator = PoseQualityEvaluator(thresholds)
         recorder = PoseRecorder(
@@ -371,6 +380,43 @@ def run_teach_poses(args: argparse.Namespace) -> int:
             gate_config=recording,
             pairing_config=pairing,
         )
+        anchor_next = not pose_set.poses
+        latest_evaluation = None
+        last_frame_key = None
+        last_fresh_camera_s = time.monotonic()
+        capture_camera_key = None
+        capture_fresh_camera_s = time.monotonic()
+
+        def wait_during_capture(duration: float) -> None:
+            nonlocal capture_camera_key, capture_fresh_camera_s
+            _spin_driver_and_wait(rclpy, node, duration, driver)
+            current = camera.frames.latest
+            if current is not None:
+                current_key = (
+                    current.timing.receipt_monotonic_s,
+                    current.timing.header_stamp_ns,
+                )
+                if current_key != capture_camera_key:
+                    capture_camera_key = current_key
+                    capture_fresh_camera_s = time.monotonic()
+            if (
+                teaching is not None
+                and teaching.state is TeachingState.GUIDE
+                and time.monotonic() - capture_fresh_camera_s
+                > args.guide_camera_timeout_s
+            ):
+                try:
+                    teaching.protective_hold(
+                        "camera frames became stale during supported capture"
+                    )
+                except RuntimeError:
+                    driver.check()
+                    if teaching.state is not TeachingState.HOLDING:
+                        raise
+                raise RuntimeError(
+                    "camera frames became stale; the arm was secured"
+                )
+
         preview_directory = args.preview_directory or (
             args.session_directory / "preview" / "poses"
         )
@@ -393,20 +439,100 @@ def run_teach_poses(args: argparse.Namespace) -> int:
                     thresholds.stationary_burst_maximum_duration_s
                 ),
             ),
-            wait_once=lambda duration: _spin_driver_and_wait(
-                rclpy, node, duration, driver
-            ),
-            accept_yellow=lambda _frame: bool(args.yellow_override_reason),
+            wait_once=wait_during_capture,
+            accept_yellow=lambda _frame: True,
             history=tuple(history),
         )
-        anchor_next = not pose_set.poses
-        latest_evaluation = None
-        last_frame_key = None
-        finalize_requested = False
+
+        activation = _wait_for_activation_handoff(
+            observer,
+            states,
+            pose_store.load(),
+            recording,
+        )
+        activation_report = _runtime_validation_report(
+            pose_set=activation.pose_set,
+            reference_full_q=activation.reference_state.position,
+            directed_edges=((HANDOFF_POSE_ID, HANDOFF_POSE_ID),),
+            hardware_config=args.hardware_config,
+            collision_config=collision,
+        )
+        _print_dynamic_preflight(activation, activation_report)
+        activation_reference_state = activation.reference_state
+        watchdog = _pc2_damping_watchdog(args, args.hardware_config)
+        watchdog.start()
+        session_store = _open_or_resume_manual_session(
+            args,
+            camera_info=camera_info,
+            pose_set=pose_set,
+            recording=recording,
+            pairing=pairing,
+            artifacts={
+                "pose_set.yaml": _pose_set_bytes(pose_set),
+                "hardware.yaml": hardware_bytes,
+                "target.json": target_bytes,
+                "collision_pairs.yaml": collision_bytes,
+                "capture_quality.yaml": quality_bytes,
+            },
+        )
+        transport = UnitreeArmSDKTransport(
+            _transport_config(args), observer=observer
+        )
+        observer = None
+        lower_q, upper_q = _calibration_arm_limits(
+            args.hardware_config,
+            pose_set.calibration_arm,
+        )
+        raw_teaching = TeachingArmController(
+            transport=transport,
+            clock=SystemClock(),
+            calibration_arm=pose_set.calibration_arm,
+            activation_q14=(
+                *activation.reference_state.left_q,
+                *activation.reference_state.right_q,
+            ),
+            calibration_lower_q=lower_q,
+            calibration_upper_q=upper_q,
+            config=teaching_config,
+        )
+        teaching = SynchronizedTeachingController(raw_teaching)
+        driver = TeachingControlDriver(
+            teaching,
+            rate_hz=rate_hz,
+            safety_heartbeat=watchdog.pulse,
+        )
+        driver.start()
+        teaching.acquire(operator_confirmed=True)
+        _wait_for_driven_state(
+            teaching,
+            driver,
+            TeachingState.GUIDE,
+            rclpy=rclpy,
+            node=node,
+            timeout_s=teaching_config.acquisition_ramp_s + 5.0,
+        )
+
+        def finish_control_in_damp(reason: str) -> None:
+            nonlocal driver, watchdog, transport
+            assert driver is not None
+            assert watchdog is not None
+            assert transport is not None
+            driver.close()
+            _terminate_motion_safely(
+                watchdog,
+                teaching,
+                transport,
+                reason=reason,
+            )
+            driver.check()
+            driver = None
+            watchdog = None
+            transport = None
+            print("verified whole-body Damp; arm_sdk control is closed")
+
         print(
-            "manual calibration capture: while supporting the arm, S=acquire and "
-            "hold measured pose; while HOLDING, S=save burst; grip the arm then "
-            "R=release; A=toggle anchor; U=undo; P/Esc=pause; Q=finalize"
+            "SUPPORT ARM — move to a pose — SPACE records it — "
+            "Q stops safely"
         )
         while True:
             if driver is not None:
@@ -419,6 +545,7 @@ def run_teach_poses(args: argparse.Namespace) -> int:
                     frame.timing.header_stamp_ns,
                 )
                 if frame_key != last_frame_key:
+                    last_fresh_camera_s = time.monotonic()
                     correspondences = detector.detect(frame.image_bgr)
                     intrinsics = CameraIntrinsics(
                         _camera_matrix(frame.camera_info), frame.camera_info.d
@@ -428,22 +555,82 @@ def run_teach_poses(args: argparse.Namespace) -> int:
                         intrinsics=intrinsics,
                         history=history,
                     )
+                    state = teaching.state
+                    if state is TeachingState.GUIDE:
+                        control_status = (
+                            "SUPPORT ARM — MOVE TO POSE — SPACE TO RECORD"
+                        )
+                        footer_lines = (
+                            "SPACE = RECORD THIS POSE",
+                            "Q = STOP SAFELY (support arm first)",
+                        )
+                        if teaching.near_joint_limit:
+                            control_status += " | NEAR URDF LIMIT"
+                    elif state is TeachingState.ENTERING_HOLD:
+                        control_status = "KEEP SUPPORTING — SECURING POSE"
+                        footer_lines = (
+                            "WAIT — keep supporting the arm",
+                            "Q = STOP SAFELY (support arm first)",
+                        )
+                    elif state is TeachingState.HOLDING:
+                        if held_pose_saved:
+                            control_status = (
+                                "POSE SAVED — SUPPORT ARM — SPACE FOR NEXT"
+                            )
+                            footer_lines = (
+                                "SPACE = READY FOR THE NEXT POSE",
+                                "Q = STOP SAFELY (support arm first)",
+                            )
+                        elif (
+                            pending_supported_frames
+                            and teaching.hold_command_count >= 10
+                        ):
+                            control_status = (
+                                "HOLD ACTIVE — REMOVE HAND — SPACE SAVE | "
+                                "SUPPORT + R REJECT"
+                            )
+                            footer_lines = (
+                                "SPACE = SAVE THIS POSE",
+                                "R = REJECT (support arm first)",
+                                "Q = STOP SAFELY (support arm first)",
+                            )
+                        elif pending_supported_frames:
+                            control_status = "KEEP SUPPORTING — VERIFYING HOLD"
+                            footer_lines = (
+                                "WAIT — keep supporting the arm",
+                                "Q = STOP SAFELY (support arm first)",
+                            )
+                        else:
+                            control_status = (
+                                "CAPTURE CANCELLED — SUPPORT ARM — SPACE TO CONTINUE"
+                            )
+                            footer_lines = (
+                                "SPACE = CONTINUE",
+                                "Q = STOP SAFELY (support arm first)",
+                            )
+                    elif state is TeachingState.CAPTURING:
+                        control_status = "HANDS OFF — SAVING POSE"
+                        footer_lines = ("WAIT — pose capture is in progress",)
+                    elif state is TeachingState.ENTERING_GUIDE:
+                        control_status = "KEEP SUPPORTING — PREPARING NEXT POSE"
+                        footer_lines = ("WAIT — keep supporting the arm",)
+                    elif state is TeachingState.STOPPED:
+                        control_status = "DAMP CONFIRMED"
+                        footer_lines = ("Control session has ended",)
+                    else:
+                        control_status = "PLEASE WAIT"
+                        footer_lines = ("Wait for the current transition",)
                     rendered = render_operator_preview(
                         frame.image_bgr,
                         correspondences,
                         quality,
                         intrinsics=intrinsics,
                         saved_view_count=len(history),
-                    )
-                    control_status = (
-                        "HOLDING: remove hand, S=save, grip arm then R=release"
-                        if synchronized is not None
-                        else "MANUAL: support arm and press S to acquire hold"
+                        footer_lines=footer_lines,
                     )
                     cv2.putText(
                         rendered,
-                        f"next={_next_pose_id(pose_store, args.first_pose_id)} "
-                        f"anchor={'yes' if anchor_next else 'no'}",
+                        f"next={_next_pose_id(pose_store, args.first_pose_id)}",
                         (16, rendered.shape[0] - 18),
                         cv2.FONT_HERSHEY_SIMPLEX,
                         0.55,
@@ -451,14 +638,36 @@ def run_teach_poses(args: argparse.Namespace) -> int:
                         1,
                         cv2.LINE_AA,
                     )
+                    if (
+                        state is TeachingState.HOLDING
+                        and pending_supported_frames
+                        and not held_pose_saved
+                        and teaching.hold_command_count >= 10
+                    ):
+                        banner_color = (0, 145, 0)
+                    elif state in {
+                        TeachingState.ENTERING_HOLD,
+                        TeachingState.CAPTURING,
+                        TeachingState.ENTERING_GUIDE,
+                    }:
+                        banner_color = (0, 130, 210)
+                    else:
+                        banner_color = (35, 35, 35)
+                    cv2.rectangle(
+                        rendered,
+                        (0, 0),
+                        (frame.image_bgr.shape[1], 44),
+                        banner_color,
+                        -1,
+                    )
                     cv2.putText(
                         rendered,
                         control_status,
-                        (16, 26),
+                        (16, 30),
                         cv2.FONT_HERSHEY_SIMPLEX,
-                        0.55,
-                        (0, 255, 255) if synchronized is not None else (255, 255, 255),
-                        1,
+                        0.62,
+                        (255, 255, 255),
+                        2,
                         cv2.LINE_AA,
                     )
                     latest_evaluation = (
@@ -467,171 +676,163 @@ def run_teach_poses(args: argparse.Namespace) -> int:
                         rendered,
                     )
                     last_frame_key = frame_key
-                cv2.imshow("G1 measured-pose hold teaching", latest_evaluation[2])
+                cv2.imshow("G1 pose collection", latest_evaluation[2])
+            if (
+                teaching.state is TeachingState.GUIDE
+                and time.monotonic() - last_fresh_camera_s
+                > args.guide_camera_timeout_s
+            ):
+                teaching.protective_hold("camera frames became stale during GUIDE")
+                pending_supported_frames = ()
+                pending_pose_id = None
+                pending_capture_id = None
+                held_pose_saved = False
+                print(
+                    "camera became stale: protective hold active; restore the "
+                    "camera, support the arm, then press SPACE"
+                )
             key = cv2.waitKey(1) & 0xFF
             if key in (ord("q"), ord("Q")):
-                if synchronized is not None:
-                    print(
-                        "cannot finalize while arm_sdk is holding; grip/support "
-                        "the arm and press R first"
-                    )
-                    continue
-                if not pose_store.load().poses:
-                    print("cannot finalize an empty manual calibration session")
-                    continue
-                finalize_requested = True
+                print("support confirmed; requesting verified Damp...")
+                finish_control_in_damp("operator stopped manual teaching")
                 break
-            if key in (ord("p"), ord("P"), 27):
-                if synchronized is not None:
-                    print(
-                        "cannot pause while arm_sdk is holding; grip/support the "
-                        "arm and press R first"
-                    )
-                    continue
-                break
-            if key in (ord("a"), ord("A")):
-                if synchronized is not None:
-                    print("release the held arm before changing capture metadata")
-                    continue
-                anchor_next = not anchor_next
-                print(f"next pose anchor={anchor_next}")
-            elif key in (ord("u"), ord("U")):
-                if synchronized is not None:
-                    print("release the held arm before undoing a capture")
-                    continue
-                current = pose_store.load()
-                if not current.poses:
-                    print("nothing to undo")
-                    continue
-                pose_id = current.poses[-1].id
-                capture = _latest_accepted_capture_for_pose(
-                    session_store, pose_id
-                )
-                updated = pose_store.undo_last(reason="operator live undo")
-                try:
-                    session_store.undo_manual_capture(
-                        capture_id=capture.capture_id,
-                        updated_pose_set=updated,
-                        reason="operator live undo",
-                    )
-                except Exception:
-                    pose_store.initialize(current, overwrite=True)
-                    raise
-                if history:
-                    history.pop()
-                    capture_source.undo_last_signature()
-                print(f"undid final pose; {len(updated.poses)} remain")
             elif key in (ord("r"), ord("R")):
-                if synchronized is None:
-                    print("arm_sdk is not holding; nothing to release")
+                if (
+                    teaching.state is not TeachingState.HOLDING
+                    or held_pose_saved
+                    or not pending_supported_frames
+                ):
+                    print("nothing unsaved is available to reject")
                     continue
-                print("operator confirmed physical arm support; releasing arm_sdk...")
-                synchronized.begin_clean_release(operator_confirmed=True)
+                if teaching.hold_command_count < 10:
+                    print("keep supporting; hold verification is still running")
+                    continue
+                rejected_pose_id = pending_pose_id
+                print("support confirmed; rejecting this unsaved pose...")
+                teaching.resume_guide(operator_confirmed=True)
                 _wait_for_driven_state(
-                    synchronized,
+                    teaching,
                     driver,
-                    ExecutorState.STOPPED,
+                    TeachingState.GUIDE,
                     rclpy=rclpy,
                     node=node,
-                    timeout_s=executor_config.motion_timeout_s + 5.0,
+                    timeout_s=teaching_config.gain_transition_ramp_s + 5.0,
                 )
-                driver.close()
-                driver.check()
-                watchdog.disarm()
-                driver = None
-                watchdog = None
-                synchronized = None
-                transport = None
-                handoff_reference_state = None
+                pending_supported_frames = ()
+                pending_pose_id = None
+                pending_capture_id = None
                 held_pose_saved = False
-                observer = UnitreeLowStateObserver(
-                    _transport_config(args), on_sample=states.add
-                )
-                _wait_for_state(observer, 5.0)
                 last_frame_key = None
-                print("arm_sdk released at terminal weight zero; manual positioning ready")
-            elif key in (ord("s"), ord("S")) and latest_evaluation is not None:
+                print(
+                    f"POSE REJECTED: {rejected_pose_id}; move the supported arm "
+                    "and press SPACE to try again"
+                )
+                continue
+            elif key == ord(" "):
+                if teaching.state is TeachingState.STOPPED:
+                    print("arm_sdk is released; rerun the command to teach more poses")
+                    continue
+                if teaching.state is TeachingState.HOLDING and (
+                    held_pose_saved or not pending_supported_frames
+                ):
+                    print("support confirmed; preparing the arm for the next pose...")
+                    teaching.resume_guide(operator_confirmed=True)
+                    _wait_for_driven_state(
+                        teaching,
+                        driver,
+                        TeachingState.GUIDE,
+                        rclpy=rclpy,
+                        node=node,
+                        timeout_s=teaching_config.gain_transition_ramp_s + 5.0,
+                    )
+                    pending_supported_frames = ()
+                    pending_pose_id = None
+                    pending_capture_id = None
+                    held_pose_saved = False
+                    last_frame_key = None
+                    print("STEP 1 — move the arm; SPACE records the next pose")
+                    continue
+                if teaching.state not in {
+                    TeachingState.GUIDE,
+                    TeachingState.HOLDING,
+                }:
+                    print("please wait for the current transition to finish")
+                    continue
+                if latest_evaluation is None:
+                    print("waiting for a camera frame")
+                    continue
                 quality = latest_evaluation[1]
                 if quality.grade is QualityGrade.RED:
                     print("pose not saved: visual quality is red")
                     continue
-                if (
-                    quality.grade is QualityGrade.YELLOW
-                    and not args.yellow_override_reason
-                ):
-                    print("pose not saved: yellow requires --yellow-override-reason")
-                    continue
-                if synchronized is None:
-                    if observer is None:
-                        raise RuntimeError(
-                            "manual observer is unavailable before acquisition"
+                if quality.grade is QualityGrade.YELLOW:
+                    detail = "; ".join(quality.warnings) or "quality warning"
+                    print(f"visual warning recorded: {detail}")
+                if teaching.state is TeachingState.GUIDE:
+                    pending_pose_id = _next_pose_id(pose_store, args.first_pose_id)
+                    pending_capture_id = _next_manual_capture_id(session_store)
+                    print(
+                        f"keep supporting and completely still: collecting "
+                        f"{thresholds.stationary_burst_frames} supported frames..."
+                    )
+                    try:
+                        pending_supported_frames = capture_source.capture_burst(
+                            pose_id=pending_pose_id,
+                            capture_id=f"{pending_capture_id}_supported",
+                            remember_signature=False,
                         )
-                    activation = _wait_for_activation_handoff(
-                        observer,
-                        states,
-                        pose_store.load(),
-                        recording,
-                    )
-                    report = _runtime_validation_report(
-                        pose_set=activation.pose_set,
-                        reference_full_q=activation.reference_state.position,
-                        directed_edges=((HANDOFF_POSE_ID, HANDOFF_POSE_ID),),
-                        hardware_config=args.hardware_config,
-                        collision_config=collision,
-                    )
-                    _print_dynamic_preflight(activation, report)
-                    handoff_reference_state = activation.reference_state
-                    transport = UnitreeArmSDKTransport(
-                        _transport_config(args), observer=observer
-                    )
-                    observer = None
-                    watchdog = _pc2_damping_watchdog(args, args.hardware_config)
-                    raw_executor = PoseExecutor(
-                        transport=transport,
-                        clock=SystemClock(),
-                        pose_set=activation.pose_set,
-                        handoff_q=activation.handoff_q,
-                        hold_q=activation.hold_q,
-                        approved_validation_report_sha256=report.content_sha256,
-                        config=executor_config,
-                    )
-                    synchronized = SynchronizedPoseExecutor(raw_executor)
-                    driver = ExecutorControlDriver(
-                        synchronized,
-                        rate_hz=rate_hz,
-                        safety_heartbeat=watchdog.pulse,
-                    )
-                    _wait_for_state(transport, 5.0)
-                    watchdog.start()
-                    driver.start()
-                    synchronized.acquire(operator_confirmed=True)
-                    _wait_for_driven_state(
-                        synchronized,
-                        driver,
-                        ExecutorState.READY,
-                        rclpy=rclpy,
-                        node=node,
-                        timeout_s=executor_config.motion_timeout_s + 5.0,
-                    )
+                    except RuntimeError as error:
+                        pending_supported_frames = ()
+                        pending_pose_id = None
+                        pending_capture_id = None
+                        print("pose not acquired: " + str(error))
+                        continue
+                    try:
+                        teaching.begin_hold(operator_confirmed=True)
+                    except ValueError as error:
+                        pending_supported_frames = ()
+                        pending_pose_id = None
+                        pending_capture_id = None
+                        print("supported burst discarded: " + str(error))
+                        continue
+                    except RuntimeError:
+                        driver.check()
+                        pending_supported_frames = ()
+                        pending_pose_id = None
+                        pending_capture_id = None
+                        raise
                     last_frame_key = None
                     print(
-                        "HOLDING measured pose at arm_sdk weight 1; remove your "
-                        "hand, verify the preview, then press S again to save"
+                        "KEEP SUPPORTING — wait for the green REMOVE YOUR HAND "
+                        "banner"
                     )
+                    continue
+                if teaching.state is not TeachingState.HOLDING:
+                    print("please wait for the current transition to finish")
+                    continue
+                if teaching.hold_command_count < 10:
+                    print("keep supporting; hold verification is still running")
                     continue
                 if held_pose_saved:
+                    print("pose already saved; support the arm and press SPACE")
+                    continue
+                if (
+                    not pending_supported_frames
+                    or pending_pose_id is None
+                    or pending_capture_id is None
+                ):
                     print(
-                        "this held pose is already saved; grip/support the arm and "
-                        "press R before teaching the next pose"
+                        "capture was cancelled; support the arm and press SPACE "
+                        "to continue"
                     )
                     continue
-                pose_id = _next_pose_id(pose_store, args.first_pose_id)
-                capture_id = _next_manual_capture_id(session_store)
+                pose_id = pending_pose_id
+                capture_id = pending_capture_id
                 print(
                     f"collecting {thresholds.stationary_burst_frames} "
                     f"lossless stationary frames for {pose_id}..."
                 )
-                synchronized.begin_capture()
+                teaching.begin_capture()
                 try:
                     burst = capture_source.capture_burst(
                         pose_id=pose_id,
@@ -639,11 +840,19 @@ def run_teach_poses(args: argparse.Namespace) -> int:
                     )
                 except RuntimeError as error:
                     driver.check()
-                    synchronized.finish_capture(outcome="raw burst rejected")
+                    teaching.finish_capture(outcome="raw burst rejected")
                     print(f"pose not saved: {error}")
                     continue
-                synchronized.finish_capture(outcome="raw burst collected")
+                teaching.finish_capture(outcome="raw burst collected")
                 selected = SessionStore.select_medoid_frame(burst)
+                selected_supported = SessionStore.select_medoid_frame(
+                    pending_supported_frames
+                )
+                paired_metrics = supported_vs_held_metrics(
+                    selected_supported,
+                    selected,
+                    calibration_arm=pose_set.calibration_arm,
+                )
                 preview_directory.mkdir(parents=True, exist_ok=True)
                 preview_path = preview_directory / f"{pose_id}_{capture_id}.png"
                 if preview_path.exists():
@@ -659,6 +868,7 @@ def run_teach_poses(args: argparse.Namespace) -> int:
                     preview_path=preview_path,
                     yellow_override_reason=(
                         args.yellow_override_reason
+                        or LIVE_TEACHING_YELLOW_REASON
                         if selected.quality.grade is QualityGrade.YELLOW
                         else None
                     ),
@@ -691,11 +901,17 @@ def run_teach_poses(args: argparse.Namespace) -> int:
                         outcome="accepted",
                         reason="manual stationary burst passed",
                         frames=burst,
+                        supported_frames=pending_supported_frames,
                         metadata={
-                            "capture_phase": "arm_sdk_weight_1_hold",
-                            "pre_acquisition_supported_state": (
-                                handoff_reference_state.to_dict()
+                            "capture_phase": "continuous_guide_to_weight_1_hold",
+                            "operator_hands_off_confirmed": True,
+                            "activation_reference_state": (
+                                activation_reference_state.to_dict()
                             ),
+                            "hold_target_calibration_q": list(
+                                teaching.held_calibration_q or ()
+                            ),
+                            "supported_vs_held": paired_metrics,
                         },
                     )
                 except Exception:
@@ -713,46 +929,27 @@ def run_teach_poses(args: argparse.Namespace) -> int:
                 saved_capture = manifest.captures[-1]
                 if saved_capture.selected_frame_id != selected.frame_id:
                     raise RuntimeError("manual capture medoid selection changed")
+                if (
+                    saved_capture.selected_supported_frame_id
+                    != selected_supported.frame_id
+                ):
+                    raise RuntimeError(
+                        "manual supported-capture medoid selection changed"
+                    )
                 if selected.quality.signature is not None:
                     history.append(selected.quality.signature)
                 anchor_next = False
                 held_pose_saved = True
-                supported_tau_est = handoff_reference_state.arm_tau_est(
-                    pose_set.calibration_arm
-                )
-                held_tau_est = selected.pairing.nearest.arm_tau_est(
-                    pose_set.calibration_arm
-                )
                 print(
-                    f"saved {pose_id} with {len(burst)} raw frames; "
-                    f"total={len(updated.poses)}; hash={updated.content_sha256}; "
-                    f"tau_est[{pose_set.calibration_arm}]="
-                    + ",".join(f"{value:.3f}" for value in held_tau_est)
-                    + "; delta_from_supported="
-                    + ",".join(
-                        f"{value:.3f}"
-                        for value in held_tau_est - supported_tau_est
-                    )
+                    f"POSE SAVED: {pose_id} (total {len(updated.poses)}). "
+                    "Support the arm and press SPACE for the next pose."
                 )
-        if finalize_requested:
-            session_store.validate_manual_alignment(pose_store.load())
-            manifest = session_store.finalize()
-            dataset_path = args.dataset_output or (
-                args.session_directory / "dataset.json"
-            )
-            dataset = DatasetBuilder(args.session_directory).build(
-                output_path=dataset_path
-            )
-            print(
-                f"finalized manual session {manifest.session_id}: "
-                f"{len(dataset.samples)} calibration samples; "
-                f"dataset={dataset_path}"
-            )
-        else:
-            print(
-                f"paused unfinalized manual session: {args.session_directory}; "
-                "rerun the same command to resume"
-            )
+        session_store.validate_manual_alignment(pose_store.load())
+        manifest = session_store.load()
+        print(
+            f"stopped resumable manual session with {len(manifest.captures)} "
+            f"saved poses: {args.session_directory}"
+        )
         return 0
     finally:
         if driver is not None and driver.is_alive:
@@ -762,14 +959,14 @@ def run_teach_poses(args: argparse.Namespace) -> int:
                 # Stopping the heartbeat is deliberate; PC2 remains able to damp.
                 pass
         if watchdog is not None and watchdog.armed:
-            if transport is not None and transport.command_count == 0:
+            if transport is None or transport.command_count == 0:
                 watchdog.disarm()
-            elif synchronized is None or transport is None:
+            elif teaching is None:
                 watchdog.damp("manual teaching cleanup before executor creation")
             else:
                 _terminate_motion_safely(
                     watchdog,
-                    synchronized,
+                    teaching,
                     transport,
                     reason="manual teaching failed or cleanup was required",
                 )
@@ -1234,9 +1431,15 @@ def run_collect_session(args: argparse.Namespace) -> int:
 
 
 def _transport_config(args: argparse.Namespace) -> UnitreeTransportConfig:
+    with args.hardware_config.open(encoding="utf-8") as stream:
+        control = yaml.safe_load(stream)["control"]
     return UnitreeTransportConfig(
         network_interface=args.network_interface,
         domain_id=args.domain_id,
+        shoulder_elbow_kp=float(control["hold_shoulder_elbow_kp"]),
+        shoulder_elbow_kd=float(control["hold_shoulder_elbow_kd"]),
+        wrist_kp=float(control["hold_wrist_kp"]),
+        wrist_kd=float(control["hold_wrist_kd"]),
     )
 
 
@@ -1262,14 +1465,14 @@ def _wait_for_state(transport, timeout_s: float):
 
 
 def _wait_for_activation_handoff(
-    observer: UnitreeLowStateObserver,
+    observer,
     states: StateSampleBuffer,
     pose_set,
     recording: RecordingGateConfig,
     *,
     timeout_s: float = 5.0,
 ) -> ActivationHandoff:
-    """Select a stationary measured handoff while no command publisher exists."""
+    """Select a stationary measured reference from the trailing state window."""
 
     if timeout_s <= 0:
         raise ValueError("activation timeout must be positive")
@@ -1440,6 +1643,8 @@ def _terminate_motion_safely(
 def _pc2_damping_watchdog(
     args: argparse.Namespace,
     hardware_config: Path,
+    *,
+    require_regular: bool = True,
 ) -> PC2DampingWatchdog:
     with hardware_config.open(encoding="utf-8") as stream:
         data = yaml.safe_load(stream)
@@ -1450,6 +1655,12 @@ def _pc2_damping_watchdog(
         raise ValueError("hardware emergency policy must be pc2_g1_loco_damp")
     if safety.get("physical_support") != "load_bearing_harness":
         raise ValueError("whole-body damping requires the load-bearing harness")
+    control = data.get("control")
+    if not isinstance(control, dict):
+        raise TypeError("hardware config is missing the control section")
+    required_fsm_id = (
+        int(control["required_regular_fsm_id"]) if require_regular else None
+    )
     return PC2DampingWatchdog(
         PC2SafetyConfig(
             host=args.pc2_host,
@@ -1458,12 +1669,50 @@ def _pc2_damping_watchdog(
             heartbeat_timeout_s=float(safety["heartbeat_timeout_s"]),
             connect_timeout_s=float(safety["connect_timeout_s"]),
             client_timeout_s=float(safety["loco_client_timeout_s"]),
+            required_initial_fsm_id=required_fsm_id,
             remote_ros_setup=Path(safety["pc2_ros_setup"]),
             remote_cyclonedds_setup=Path(safety["pc2_cyclonedds_setup"]),
             remote_unitree_setup=Path(safety["pc2_unitree_ros2_setup"]),
             remote_cyclonedds_uri=Path(safety["pc2_cyclonedds_uri"]),
             remote_damp_executable=Path(safety["pc2_g1_loco_client"]),
         )
+    )
+
+
+def _teaching_config(path: Path) -> TeachingConfig:
+    with path.open(encoding="utf-8") as stream:
+        data = yaml.safe_load(stream)
+    control = data["control"]
+    return TeachingConfig(
+        state_freshness_timeout_s=float(control["lowstate_timeout_s"]),
+        acquisition_ramp_s=float(control["acquisition_weight_ramp_s"]),
+        gain_transition_ramp_s=float(control["gain_transition_ramp_s"]),
+        guide_kp_scale=float(control["guide_kp_scale"]),
+        guide_kd_scale=float(control["guide_kd_scale"]),
+        activation_position_tolerance_rad=float(
+            control["activation_position_tolerance_rad"]
+        ),
+        opposite_arm_hold_tolerance_rad=float(
+            control["held_arm_position_tolerance_rad"]
+        ),
+        calibration_arm_hold_tolerance_rad=float(
+            control["target_position_tolerance_rad"]
+        ),
+        guide_joint_limit_margin_rad=float(
+            control["guide_joint_limit_margin_rad"]
+        ),
+    )
+
+
+def _calibration_arm_limits(
+    hardware_config: Path,
+    calibration_arm: str,
+) -> tuple[tuple[float, ...], tuple[float, ...]]:
+    model = URDFModel(_configured_urdf(hardware_config))
+    limits = model.joint_limits(arm_joint_names(calibration_arm))
+    return (
+        tuple(limit.lower for limit in limits),
+        tuple(limit.upper for limit in limits),
     )
 
 
@@ -1593,17 +1842,6 @@ def _next_manual_capture_id(store: SessionStore) -> str:
     return f"capture_{index:03d}"
 
 
-def _latest_accepted_capture_for_pose(store: SessionStore, pose_id: str):
-    matches = [
-        capture
-        for capture in store.load().captures
-        if capture.pose_id == pose_id and capture.outcome == "accepted"
-    ]
-    if not matches:
-        raise ValueError(f"pose {pose_id} has no accepted manual capture to undo")
-    return matches[-1]
-
-
 def _pose_history(pose_set) -> list[ViewSignature]:
     history = []
     for pose in pose_set.poses:
@@ -1625,8 +1863,8 @@ def _spin_driver_and_wait(rclpy, node, duration_s: float, driver) -> None:
 
 def _wait_for_driven_state(
     executor,
-    driver: ExecutorControlDriver,
-    desired: ExecutorState,
+    driver,
+    desired,
     *,
     rclpy,
     node,
@@ -1672,9 +1910,13 @@ def _open_or_resume_manual_session(
                 "camera_info_topic": args.camera_info_topic,
                 "ros_camera_reliability": args.ros_camera_reliability,
                 "network_interface": args.network_interface,
-                "yellow_override_reason": args.yellow_override_reason,
-                "capture_control_mode": "arm_sdk_measured_pose_hold",
+                "yellow_override_reason": (
+                    args.yellow_override_reason or LIVE_TEACHING_YELLOW_REASON
+                ),
+                "yellow_policy": "SPACE_accepts_and_records_warning",
+                "capture_control_mode": "arm_sdk_continuous_guide_hold",
                 "capture_control_weight": 1.0,
+                "supported_and_held_bursts_are_equal_length": True,
                 "lowstate_fields": ["q", "dq", "tau_est"],
             },
             collection_method="manual_teaching",
@@ -1695,10 +1937,10 @@ def _open_or_resume_manual_session(
         raise ValueError("existing session was not created by manual teaching")
     if (
         manifest.provenance.get("capture_control_mode")
-        != "arm_sdk_measured_pose_hold"
+        != "arm_sdk_continuous_guide_hold"
     ):
         raise ValueError(
-            "existing session does not use the required arm_sdk measured-pose hold"
+            "existing session does not use continuous arm_sdk GUIDE/HOLD teaching"
         )
     if manifest.camera_profile_sha256 != camera_info.profile_sha256:
         raise ValueError("live camera profile changed from the resumable session")
@@ -1750,6 +1992,13 @@ def _validate_hardware_preflight(
         raise ValueError("hardware configuration must select 29-DoF mode_machine=5")
     if control["command_topic"] != "rt/arm_sdk":
         raise ValueError("hardware command topic must be exactly rt/arm_sdk")
+    required_fsm_id = control["required_regular_fsm_id"]
+    if not isinstance(required_fsm_id, int) or isinstance(required_fsm_id, bool):
+        raise TypeError("hardware Regular locomotion FSM ID must be an integer")
+    if required_fsm_id < 0:
+        raise ValueError("hardware Regular locomotion FSM ID must be non-negative")
+    if float(control["guide_joint_limit_margin_rad"]) <= 0:
+        raise ValueError("guide joint-limit warning margin must be positive")
     if control["state_topic"] != "rt/lowstate":
         raise ValueError("hardware state topic must be exactly rt/lowstate")
     if control["left_arm_motor_indices"] != list(range(15, 22)):

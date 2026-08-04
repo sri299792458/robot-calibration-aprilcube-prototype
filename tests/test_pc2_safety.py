@@ -5,6 +5,8 @@ import sys
 from pathlib import Path
 from types import SimpleNamespace
 
+import pytest
+
 from g1_aprilcube_calibration.pc2_safety import (
     PC2DampingWatchdog,
     PC2SafetyConfig,
@@ -16,7 +18,7 @@ def _fake_ssh(tmp_path: Path) -> Path:
     script.write_text(
         """import sys
 
-print("WATCHDOG_READY current fsm_id: 500", flush=True)
+print("WATCHDOG_READY current fsm_id: 4", flush=True)
 for line in sys.stdin:
     command = line.split(maxsplit=1)[0]
     if command == "DISARM":
@@ -35,7 +37,11 @@ for line in sys.stdin:
     return script
 
 
-def _subject(tmp_path: Path) -> PC2DampingWatchdog:
+def _subject(
+    tmp_path: Path,
+    *,
+    required_initial_fsm_id: int | None = None,
+) -> PC2DampingWatchdog:
     identity = tmp_path / "identity"
     identity.write_text("fake", encoding="utf-8")
     fake_ssh = _fake_ssh(tmp_path)
@@ -53,14 +59,16 @@ def _subject(tmp_path: Path) -> PC2DampingWatchdog:
         heartbeat_timeout_s=0.2,
         connect_timeout_s=0.5,
         client_timeout_s=0.5,
+        required_initial_fsm_id=required_initial_fsm_id,
     )
     return PC2DampingWatchdog(config, run=run, popen=popen)
 
 
 def test_laptop_watchdog_can_disarm_cleanly(tmp_path: Path) -> None:
-    watchdog = _subject(tmp_path)
+    watchdog = _subject(tmp_path, required_initial_fsm_id=4)
     watchdog.start()
     assert watchdog.armed
+    assert watchdog.initial_fsm_id == 4
     watchdog.pulse()
     watchdog.disarm()
     assert not watchdog.armed
@@ -73,3 +81,15 @@ def test_laptop_watchdog_can_request_and_confirm_damping(tmp_path: Path) -> None
     watchdog.damp("operator pressed ctrl-c")
     assert not watchdog.armed
     assert watchdog.terminal_action == "damped"
+    watchdog.pulse()
+
+
+def test_laptop_watchdog_refuses_non_regular_initial_fsm(tmp_path: Path) -> None:
+    watchdog = _subject(tmp_path, required_initial_fsm_id=5)
+
+    with pytest.raises(RuntimeError, match="required Regular-mode fsm_id=5"):
+        watchdog.start()
+
+    assert not watchdog.armed
+    assert watchdog.initial_fsm_id == 4
+    assert watchdog.terminal_action == "disarmed"

@@ -88,7 +88,11 @@ class LiveBurstFrameSource:
         self._history = list(history)
 
     def capture_burst(
-        self, *, pose_id: str, capture_id: str
+        self,
+        *,
+        pose_id: str,
+        capture_id: str,
+        remember_signature: bool = True,
     ) -> tuple[CaptureFrameInput, ...]:
         del pose_id
         seen = {self._frame_key(frame) for frame in self.camera_frames.snapshot()}
@@ -140,7 +144,7 @@ class LiveBurstFrameSource:
                 self.wait_once(self.config.poll_interval_s)
         selected = SessionStore.select_medoid_frame(tuple(accepted))
         signature = selected.quality.signature
-        if signature is not None:
+        if remember_signature and signature is not None:
             self._history.append(signature)
         return tuple(accepted)
 

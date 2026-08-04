@@ -185,6 +185,7 @@ class SessionStore:
         outcome: str,
         reason: str,
         frames: Sequence[CaptureFrameInput] = (),
+        supported_frames: Sequence[CaptureFrameInput] = (),
         metadata: dict | None = None,
         recorded_at_utc: str | None = None,
     ) -> SessionManifest:
@@ -202,16 +203,18 @@ class SessionStore:
         capture_utc = recorded_at_utc or utc_now_iso()
         validate_utc_iso(capture_utc)
         frame_inputs = tuple(frames)
-        if len({frame.frame_id for frame in frame_inputs}) != len(frame_inputs):
+        supported_inputs = tuple(supported_frames)
+        all_frame_inputs = (*frame_inputs, *supported_inputs)
+        if len({frame.frame_id for frame in all_frame_inputs}) != len(all_frame_inputs):
             raise ValueError("capture input contains duplicate frame IDs")
         if any(
             frame.camera_info.profile_sha256 != manifest.camera_profile_sha256
-            for frame in frame_inputs
+            for frame in all_frame_inputs
         ):
             raise ValueError("camera profile changed during the session")
         pairing_config = PairingConfig(**manifest.pairing_config)
         gate_config = RecordingGateConfig(**manifest.recording_gate_config)
-        for frame in frame_inputs:
+        for frame in all_frame_inputs:
             rebuilt_pairing = pair_state_to_image(
                 frame.image_timing,
                 frame.state_window,
@@ -230,9 +233,32 @@ class SessionStore:
                     + "; ".join(readiness.hard_failures)
                 )
         selected_frame_id = None
+        selected_supported_frame_id = None
         if outcome == "accepted":
             if not frame_inputs:
                 raise ValueError("accepted capture requires raw frames")
+            if (
+                manifest.provenance.get("collection_method") == "manual_teaching"
+                and len(supported_inputs) != len(frame_inputs)
+            ):
+                raise ValueError(
+                    "accepted manual capture requires equal supported and held bursts"
+                )
+            if (
+                manifest.provenance.get("collection_method") == "manual_teaching"
+                and supported_inputs
+                and max(
+                    frame.image_timing.receipt_monotonic_s
+                    for frame in supported_inputs
+                )
+                >= min(
+                    frame.image_timing.receipt_monotonic_s for frame in frame_inputs
+                )
+            ):
+                raise ValueError(
+                    "accepted manual capture requires the complete supported burst "
+                    "to precede the held burst"
+                )
             if any(
                 frame.quality.grade is QualityGrade.RED
                 or not frame.correspondences.valid
@@ -240,16 +266,33 @@ class SessionStore:
             ):
                 raise ValueError("accepted capture contains an invalid/red raw frame")
             selected_frame_id = self.select_medoid_frame(frame_inputs).frame_id
+            if supported_inputs:
+                if any(
+                    frame.quality.grade is QualityGrade.RED
+                    or not frame.correspondences.valid
+                    for frame in supported_inputs
+                ):
+                    raise ValueError(
+                        "accepted capture contains an invalid/red supported frame"
+                    )
+                selected_supported_frame_id = self.select_medoid_frame(
+                    supported_inputs
+                ).frame_id
 
         existing_frame_ids = {
-            frame.frame_id for capture in manifest.captures for frame in capture.frames
+            frame.frame_id
+            for capture in manifest.captures
+            for frame in capture.raw_frames
         }
-        if any(frame.frame_id in existing_frame_ids for frame in frame_inputs):
+        if any(frame.frame_id in existing_frame_ids for frame in all_frame_inputs):
             raise ValueError("session already contains one of the raw frame IDs")
 
         records: list[RawFrameRecord] = []
         for frame in frame_inputs:
             records.append(self._write_raw_frame(frame))
+        supported_records = tuple(
+            self._write_raw_frame(frame) for frame in supported_inputs
+        )
         capture = CaptureRecord(
             capture_id=capture_id,
             pose_id=pose_id,
@@ -258,6 +301,8 @@ class SessionStore:
             recorded_at_utc=capture_utc,
             metadata={} if metadata is None else metadata,
             frames=tuple(records),
+            supported_frames=supported_records,
+            selected_supported_frame_id=selected_supported_frame_id,
             selected_frame_id=selected_frame_id,
         )
         updated = replace(manifest, captures=(*manifest.captures, capture))
@@ -337,6 +382,7 @@ class SessionStore:
             capture,
             outcome="rejected",
             reason=reason.strip(),
+            selected_supported_frame_id=None,
             selected_frame_id=None,
         )
         captures = list(manifest.captures)
@@ -360,11 +406,11 @@ class SessionStore:
         referenced = {
             frame.image_path
             for capture in manifest.captures
-            for frame in capture.frames
+            for frame in capture.raw_frames
         } | {
             frame.states_path
             for capture in manifest.captures
-            for frame in capture.frames
+            for frame in capture.raw_frames
         }
         actual = {
             path.relative_to(self.directory).as_posix()
