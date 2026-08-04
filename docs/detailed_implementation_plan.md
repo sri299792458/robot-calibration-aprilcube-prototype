@@ -541,7 +541,7 @@ artifact, never the only copy of a measurement.
 `capture_poses.yaml` is versioned and schema-validated:
 
 ```yaml
-schema_version: 2
+schema_version: 3
 robot:
   model: g1_29dof_rev_1_0
   mode_machine: 5
@@ -555,8 +555,6 @@ joint_order:
   - left_wrist_pitch_joint
   - left_wrist_yaw_joint
 calibration_arm: left
-handoff_q: [0, 0, 0, 0, 0, 0, 0]  # measured left arm, naturally down
-hold_q: [0, 0, 0, 0, 0, 0, 0]  # right arm
 poses:
   - id: pose_001
     group: near_center
@@ -571,7 +569,9 @@ The recorder obtains a short stationary state window, rejects excessive
 measured-position spread, records raw `dq` only as diagnostic evidence, and
 saves the median q plus spread rather than one potentially noisy sample.
 Every edit changes the pose-set content hash and invalidates the old transition
-validation report.
+validation report. Handoff and held-arm vectors are deliberately not serialized;
+optional replay derives them from a stationary measured state immediately before
+command ownership.
 
 ### 5.2 Raw capture session
 

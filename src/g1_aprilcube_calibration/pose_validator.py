@@ -277,8 +277,12 @@ class PosePathValidator:
         reference = validate_full_joint_vector(
             reference_full_q, name="reference_full_q"
         )
+        handoff = reference[np.asarray(arm_indices(pose_set.calibration_arm))]
+        hold = reference[
+            np.asarray(arm_indices(opposite_arm(pose_set.calibration_arm)))
+        ]
         calibration_q_by_id = {
-            HANDOFF_POSE_ID: np.asarray(pose_set.handoff_q),
+            HANDOFF_POSE_ID: handoff,
             **{
                 pose.id: np.asarray(pose.measured_calibration_q)
                 for pose in pose_set.poses
@@ -302,7 +306,7 @@ class PosePathValidator:
                     target_id,
                     calibration_q_by_id[source_id],
                     calibration_q_by_id[target_id],
-                    np.asarray(pose_set.hold_q),
+                    hold,
                     pose_set.calibration_arm,
                     reference,
                 )

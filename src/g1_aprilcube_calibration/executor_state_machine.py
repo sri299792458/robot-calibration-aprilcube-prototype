@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import re
+from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import Enum
 
@@ -92,6 +93,8 @@ class PoseExecutor:
         transport: ArmTransport,
         clock: MonotonicClock,
         pose_set: PoseSet,
+        handoff_q: Sequence[float] | np.ndarray,
+        hold_q: Sequence[float] | np.ndarray,
         approved_validation_report_sha256: str,
         config: ExecutorConfig | None = None,
     ) -> None:
@@ -102,6 +105,12 @@ class PoseExecutor:
         self.transport = transport
         self.clock = clock
         self.pose_set = pose_set
+        self.handoff_q = validate_arm_vector(
+            handoff_q, side=pose_set.calibration_arm
+        )
+        self.hold_q = validate_arm_vector(
+            hold_q, side=opposite_arm(pose_set.calibration_arm)
+        )
         self.approved_validation_report_sha256 = approved_validation_report_sha256
         self.config = config or ExecutorConfig()
         self.state = ExecutorState.OBSERVING
@@ -143,7 +152,7 @@ class PoseExecutor:
         self._validate_fresh_state(sample, now)
         hold_arm = opposite_arm(self.pose_set.calibration_arm)
         hold_error = float(
-            np.max(np.abs(sample.arm_q(hold_arm) - np.asarray(self.pose_set.hold_q)))
+            np.max(np.abs(sample.arm_q(hold_arm) - self.hold_q))
         )
         if hold_error > self.config.activation_position_tolerance_rad:
             raise ValueError(
@@ -154,7 +163,7 @@ class PoseExecutor:
             np.max(
                 np.abs(
                     sample.arm_q(self.pose_set.calibration_arm)
-                    - np.asarray(self.pose_set.handoff_q)
+                    - self.handoff_q
                 )
             )
         )
@@ -163,8 +172,8 @@ class PoseExecutor:
                 f"measured {self.pose_set.calibration_arm} arm differs from "
                 f"handoff pose by {calibration_error:.4f}rad"
             )
-        self._hold_q = np.asarray(self.pose_set.hold_q)
-        self._calibration_goal_q = np.asarray(self.pose_set.handoff_q)
+        self._hold_q = self.hold_q.copy()
+        self._calibration_goal_q = self.handoff_q.copy()
         self._command_q14 = dual_arm_vector(sample.left_q, sample.right_q)
         self._goal_q14 = self._command_q14
         self.current_pose_id = HANDOFF_POSE_ID
@@ -199,7 +208,7 @@ class PoseExecutor:
         if not approval.passed:
             raise ValueError("transition validation did not pass")
         if pose_id == HANDOFF_POSE_ID:
-            calibration_target = self.pose_set.handoff_q
+            calibration_target = self.handoff_q
         else:
             matching = [pose for pose in self.pose_set.poses if pose.id == pose_id]
             if len(matching) != 1:

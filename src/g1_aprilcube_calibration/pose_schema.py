@@ -17,14 +17,12 @@ from g1_aprilcube_calibration.joint_map import (
     G1_MODE_MACHINE,
     arm_indices,
     arm_joint_names,
-    opposite_arm,
     validate_arm_side,
-    validate_arm_vector,
     validate_full_joint_vector,
 )
 from g1_aprilcube_calibration.models import validate_utc_iso
 
-POSE_SET_SCHEMA_VERSION = 2
+POSE_SET_SCHEMA_VERSION = 3
 HANDOFF_POSE_ID = "__handoff__"
 _POSE_ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$")
 _SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
@@ -173,8 +171,6 @@ class PoseSet:
     mode_machine: int
     urdf_sha256: str
     calibration_arm: str
-    handoff_q: tuple[float, ...]
-    hold_q: tuple[float, ...]
     poses: tuple[PoseRecord, ...] = ()
     audit_log: tuple[PoseAuditEvent, ...] = ()
     schema_version: int = POSE_SET_SCHEMA_VERSION
@@ -194,8 +190,6 @@ class PoseSet:
         if not _SHA256_PATTERN.fullmatch(self.urdf_sha256):
             raise ValueError("urdf_sha256 must be 64 lowercase hexadecimal characters")
         calibration_arm = validate_arm_side(self.calibration_arm)
-        handoff = validate_arm_vector(self.handoff_q, side=calibration_arm)
-        hold = validate_arm_vector(self.hold_q, side=opposite_arm(calibration_arm))
         expected_joint_order = arm_joint_names(calibration_arm)
         joint_order = tuple(self.joint_order) or expected_joint_order
         if joint_order != expected_joint_order:
@@ -229,8 +223,6 @@ class PoseSet:
         if audit_stack != pose_ids:
             raise ValueError("pose audit log does not reproduce the active pose order")
         object.__setattr__(self, "calibration_arm", calibration_arm)
-        object.__setattr__(self, "handoff_q", tuple(float(v) for v in handoff))
-        object.__setattr__(self, "hold_q", tuple(float(v) for v in hold))
         object.__setattr__(self, "poses", tuple(self.poses))
         object.__setattr__(self, "audit_log", tuple(self.audit_log))
         object.__setattr__(self, "joint_order", joint_order)
@@ -257,8 +249,6 @@ class PoseSet:
             "calibration_arm": self.calibration_arm,
             "joint_order": list(self.joint_order),
             "full_joint_order": list(self.full_joint_order),
-            "handoff_q": list(self.handoff_q),
-            "hold_q": list(self.hold_q),
             "poses": [pose.to_dict() for pose in self.poses],
             "audit_log": [event.to_dict() for event in self.audit_log],
         }
@@ -299,8 +289,6 @@ class PoseSet:
             calibration_arm=str(data["calibration_arm"]),
             joint_order=tuple(data["joint_order"]),
             full_joint_order=tuple(data["full_joint_order"]),
-            handoff_q=tuple(data["handoff_q"]),
-            hold_q=tuple(data["hold_q"]),
             poses=tuple(PoseRecord.from_dict(item) for item in data["poses"]),
             audit_log=tuple(
                 PoseAuditEvent.from_dict(item) for item in data.get("audit_log", [])

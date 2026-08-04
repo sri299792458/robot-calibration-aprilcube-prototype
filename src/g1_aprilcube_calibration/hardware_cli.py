@@ -44,8 +44,8 @@ from g1_aprilcube_calibration.pose_recorder import (
     PoseRecorder,
     PoseRecordingRequest,
 )
-from g1_aprilcube_calibration.pose_schema import HANDOFF_POSE_ID
-from g1_aprilcube_calibration.pose_store import PoseStore
+from g1_aprilcube_calibration.pose_schema import HANDOFF_POSE_ID, PoseSet
+from g1_aprilcube_calibration.pose_store import PoseStore, TransientPoseStore
 from g1_aprilcube_calibration.pose_validator import (
     PathValidationConfig,
     PosePathValidator,
@@ -128,7 +128,6 @@ def add_hardware_subparsers(
         ),
     )
     _add_network_arguments(teach)
-    teach.add_argument("--pose-set", type=Path, required=True)
     teach.add_argument("--session-directory", type=Path, required=True)
     teach.add_argument("--session-id", required=True)
     _add_camera_arguments(teach)
@@ -296,13 +295,12 @@ def run_commission_damping(args: argparse.Namespace) -> int:
 
 
 def run_teach_poses(args: argparse.Namespace) -> int:
-    pose_store = PoseStore(args.pose_set)
-    pose_set = pose_store.load()
-    _validate_calibration_arm(args.hardware_config, pose_set)
     hardware_bytes = args.hardware_config.read_bytes()
     target_bytes = args.target_config.read_bytes()
     collision_bytes = args.collision_config.read_bytes()
     quality_bytes = args.quality_config.read_bytes()
+    pose_set = _manual_pose_set_for_session(args)
+    _validate_calibration_arm(args.hardware_config, pose_set)
     _validate_collision_preflight(args.collision_config)
     _validate_hardware_preflight(hardware_bytes, pose_set, require_poses=False)
     recording, pairing, _, _ = _runtime_configs(args.hardware_config)
@@ -347,6 +345,9 @@ def run_teach_poses(args: argparse.Namespace) -> int:
                 "collision_pairs.yaml": collision_bytes,
                 "capture_quality.yaml": quality_bytes,
             },
+        )
+        pose_store = TransientPoseStore(
+            PoseStore(args.session_directory / "pose_set.yaml").load()
         )
         detector = CorrespondenceDetector(args.target_config)
         evaluator = PoseQualityEvaluator(thresholds)
@@ -626,6 +627,8 @@ def run_commission_hold(args: argparse.Namespace) -> int:
                 transport=transport,
                 clock=clock,
                 pose_set=activation.pose_set,
+                handoff_q=activation.handoff_q,
+                hold_q=activation.hold_q,
                 approved_validation_report_sha256=report.content_sha256,
                 config=config,
             )
@@ -723,6 +726,8 @@ def run_commission_pose(args: argparse.Namespace) -> int:
                 transport=transport,
                 clock=clock,
                 pose_set=activation.pose_set,
+                handoff_q=activation.handoff_q,
+                hold_q=activation.hold_q,
                 approved_validation_report_sha256=report.content_sha256,
                 config=config,
             )
@@ -900,6 +905,8 @@ def run_collect_session(args: argparse.Namespace) -> int:
                 transport=transport,
                 clock=SystemClock(),
                 pose_set=activation.pose_set,
+                handoff_q=activation.handoff_q,
+                hold_q=activation.hold_q,
                 approved_validation_report_sha256=report.content_sha256,
                 config=executor_config,
             )
@@ -1365,7 +1372,7 @@ def _wait_for_camera(rclpy, node, camera, timeout_s: float) -> None:
         rclpy.spin_once(node, timeout_sec=0.1)
 
 
-def _next_pose_id(store: PoseStore, first_pose_id: str) -> str:
+def _next_pose_id(store, first_pose_id: str) -> str:
     pose_set = store.load()
     if not pose_set.poses:
         return first_pose_id
@@ -1424,10 +1431,7 @@ def _open_or_resume_manual_session(
     store = SessionStore(args.session_directory)
     if not args.session_directory.exists():
         if pose_set.poses:
-            raise ValueError(
-                "a new manual calibration session requires an empty pose set; "
-                "resume its existing session or initialize a fresh pose-set file"
-            )
+            raise ValueError("new manual session pose set must be empty")
         store.create(
             session_id=args.session_id,
             created_at_utc=utc_now_iso(),
@@ -1465,9 +1469,7 @@ def _open_or_resume_manual_session(
     if manifest.camera_profile_sha256 != camera_info.profile_sha256:
         raise ValueError("live camera profile changed from the resumable session")
     if manifest.pose_set_content_sha256 != pose_set.content_sha256:
-        raise ValueError(
-            "external pose set differs from the resumable session snapshot"
-        )
+        raise ValueError("session pose set differs from its manifest")
     for name, content in artifacts.items():
         expected = manifest.artifact_sha256.get(name)
         if expected != hashlib.sha256(content).hexdigest():
@@ -1475,6 +1477,30 @@ def _open_or_resume_manual_session(
     store.verify_artifacts()
     store.validate_manual_alignment(pose_set)
     return store
+
+
+def _manual_pose_set_for_session(args) -> PoseSet:
+    session_directory = Path(args.session_directory)
+    if session_directory.exists():
+        manifest_path = session_directory / "manifest.json"
+        if not manifest_path.is_file():
+            raise ValueError(
+                "session directory exists without a manifest: "
+                f"{session_directory}"
+            )
+        return PoseStore(session_directory / "pose_set.yaml").load()
+
+    with args.hardware_config.open(encoding="utf-8") as stream:
+        hardware = yaml.safe_load(stream)
+    if not isinstance(hardware, dict):
+        raise TypeError("hardware configuration must contain a mapping")
+    model = URDFModel(_configured_urdf(args.hardware_config))
+    return PoseSet(
+        robot_model=model.name,
+        mode_machine=int(hardware["robot"]["mode_machine"]),
+        urdf_sha256=model.sha256,
+        calibration_arm=str(hardware["control"]["calibration_arm"]),
+    )
 
 
 def _validate_hardware_preflight(

@@ -485,8 +485,6 @@ class SessionStore:
             "mode_machine",
             "urdf_sha256",
             "calibration_arm",
-            "handoff_q",
-            "hold_q",
         )
         if any(
             getattr(existing, field) != getattr(pose_set, field)

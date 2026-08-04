@@ -93,3 +93,42 @@ class PoseStore:
         finally:
             if temporary_path.exists():
                 temporary_path.unlink()
+
+
+class TransientPoseStore:
+    """PoseStore-compatible draft state whose persistence is owned by a session."""
+
+    def __init__(self, pose_set: PoseSet) -> None:
+        self._pose_set = pose_set
+
+    def initialize(self, pose_set: PoseSet, *, overwrite: bool = False) -> None:
+        if not overwrite:
+            raise FileExistsError("transient pose store is already initialized")
+        self._pose_set = pose_set
+
+    def load(self) -> PoseSet:
+        return self._pose_set
+
+    def append(self, pose: PoseRecord, *, details: dict | None = None) -> PoseSet:
+        event = PoseAuditEvent(
+            action="add",
+            pose_id=pose.id,
+            occurred_at_utc=utc_now_iso(),
+            details={} if details is None else details,
+        )
+        self._pose_set = self._pose_set.with_pose(pose, event)
+        return self._pose_set
+
+    def undo_last(self, *, reason: str) -> PoseSet:
+        if not reason.strip():
+            raise ValueError("undo reason must be non-empty")
+        if not self._pose_set.poses:
+            raise ValueError("cannot undo an empty pose store")
+        event = PoseAuditEvent(
+            action="undo",
+            pose_id=self._pose_set.poses[-1].id,
+            occurred_at_utc=utc_now_iso(),
+            details={"reason": reason},
+        )
+        self._pose_set = self._pose_set.without_last_pose(event)
+        return self._pose_set

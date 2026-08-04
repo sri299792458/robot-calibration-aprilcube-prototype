@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://example.invalid/g1-calibration/pose-set-v2.schema.json",
+  "$id": "https://example.invalid/g1-calibration/pose-set-v3.schema.json",
   "title": "G1 calibration pose set",
   "type": "object",
   "additionalProperties": false,
@@ -10,14 +10,12 @@
     "calibration_arm",
     "joint_order",
     "full_joint_order",
-    "handoff_q",
-    "hold_q",
     "poses",
     "audit_log",
     "content_sha256"
   ],
   "properties": {
-    "schema_version": {"const": 2},
+    "schema_version": {"const": 3},
     "robot": {
       "type": "object",
       "additionalProperties": false,
@@ -41,8 +39,6 @@
       "items": {"type": "string"}
     },
     "calibration_arm": {"enum": ["left", "right"]},
-    "handoff_q": {"$ref": "#/$defs/vector7"},
-    "hold_q": {"$ref": "#/$defs/vector7"},
     "poses": {
       "type": "array",
       "items": {"$ref": "#/$defs/pose"}

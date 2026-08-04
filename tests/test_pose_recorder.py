@@ -34,8 +34,6 @@ def recorder(tmp_path, *, hold_offset_rad: float = 0.0) -> PoseRecorder:
             mode_machine=5,
             urdf_sha256="a" * 64,
             calibration_arm="left",
-            handoff_q=tuple(np.arange(15, 22) / 100.0),
-            hold_q=tuple(np.arange(22, 29) / 100.0),
         )
     )
     buffer = StateSampleBuffer()

@@ -8,12 +8,14 @@ from aprilcube.generate import DICT_MAP
 from g1_aprilcube_calibration.cli import main
 from g1_aprilcube_calibration.hardware_cli import (
     _load_session_plan,
+    _manual_pose_set_for_session,
     _next_pose_id,
     _unique_route_edges,
 )
-from g1_aprilcube_calibration.models import RobotStateSample
-from g1_aprilcube_calibration.pose_schema import PoseRecord
+from g1_aprilcube_calibration.pose_schema import PoseRecord, PoseSet
 from g1_aprilcube_calibration.pose_store import PoseStore
+
+ROOT = Path(__file__).parents[1]
 
 
 def _write_marker(path: Path, tag_id: int = 0) -> None:
@@ -65,100 +67,40 @@ def test_headless_preview_returns_nonzero_for_no_detection(tmp_path: Path) -> No
     assert exit_code == 1
 
 
-def test_pose_set_cli_initializes_and_summarizes_measured_state(tmp_path, capsys):
-    state_path = tmp_path / "state.json"
+def test_pose_set_cli_summarizes_session_owned_pose_set(tmp_path, capsys):
     pose_path = tmp_path / "poses.yaml"
-    state = RobotStateSample(
-        1.0,
-        "2026-08-02T12:00:00Z",
-        5,
-        np.arange(29) / 100,
-        np.zeros(29),
+    pose_set = PoseSet(
+        robot_model="g1_29dof_rev_1_0",
+        mode_machine=5,
+        urdf_sha256="a" * 64,
+        calibration_arm="left",
     )
-    state_path.write_text(json.dumps(state.to_dict()))
-    assert (
-        main(
-            [
-                "init-pose-set",
-                "--state-json",
-                str(state_path),
-                "--output",
-                str(pose_path),
-            ]
-        )
-        == 0
-    )
-    capsys.readouterr()
-    initialized = PoseStore(pose_path).load()
-    assert initialized.calibration_arm == "left"
-    assert np.allclose(initialized.handoff_q, state.position[15:22])
-    assert np.allclose(initialized.hold_q, state.position[22:29])
+    PoseStore(pose_path).initialize(pose_set)
+
     assert main(["pose-summary", "--pose-set", str(pose_path)]) == 0
     output = json.loads(capsys.readouterr().out)
     assert output["pose_count"] == 0
     assert len(output["content_sha256"]) == 64
 
 
-def test_pose_set_cli_can_select_right_calibration_arm(tmp_path, capsys):
-    state_path = tmp_path / "state.json"
-    pose_path = tmp_path / "poses.yaml"
-    state = RobotStateSample(
-        1.0,
-        "2026-08-02T12:00:00Z",
-        5,
-        np.arange(29) / 100,
-        np.zeros(29),
-    )
-    state_path.write_text(json.dumps(state.to_dict()))
-    assert (
-        main(
-            [
-                "init-pose-set",
-                "--state-json",
-                str(state_path),
-                "--output",
-                str(pose_path),
-                "--calibration-arm",
-                "right",
-            ]
-        )
-        == 0
-    )
-    capsys.readouterr()
-    initialized = PoseStore(pose_path).load()
-    assert initialized.calibration_arm == "right"
-    assert np.allclose(initialized.handoff_q, state.position[22:29])
-    assert np.allclose(initialized.hold_q, state.position[15:22])
+def test_manual_teacher_builds_empty_pose_set_from_hardware(tmp_path):
+    args = type(
+        "Args",
+        (),
+        {
+            "session_directory": tmp_path / "session",
+            "hardware_config": ROOT / "config" / "hardware.yaml",
+        },
+    )()
 
+    pose_set = _manual_pose_set_for_session(args)
 
-def test_pose_set_initialization_keeps_raw_dq_as_diagnostic(tmp_path, capsys):
-    state_path = tmp_path / "state.json"
-    pose_path = tmp_path / "poses.yaml"
-    velocity = np.zeros(29)
-    velocity[15] = 0.04
-    state = RobotStateSample(
-        1.0,
-        "2026-08-02T12:00:00Z",
-        5,
-        np.zeros(29),
-        velocity,
-    )
-    state_path.write_text(json.dumps(state.to_dict()))
-    assert (
-        main(
-            [
-                "init-pose-set",
-                "--state-json",
-                str(state_path),
-                "--output",
-                str(pose_path),
-            ]
-        )
-        == 0
-    )
-    result = json.loads(capsys.readouterr().out)
-    assert result["maximum_measured_arm_velocity_rad_s"] == 0.04
-    assert pose_path.is_file()
+    assert pose_set.schema_version == 3
+    assert pose_set.robot_model == "g1_29dof_rev_1_0"
+    assert pose_set.calibration_arm == "left"
+    assert pose_set.poses == ()
+    assert "handoff_q" not in pose_set.to_dict()
+    assert "hold_q" not in pose_set.to_dict()
 
 
 def test_session_plan_contains_only_camera_capture_poses(tmp_path):
@@ -212,27 +154,14 @@ def test_commissioning_acknowledgement_fails_before_sdk_import(capsys):
 
 
 def test_pose_teacher_allocates_first_calibration_pose_then_next_number(tmp_path):
-    state_path = tmp_path / "state.json"
     pose_path = tmp_path / "poses.yaml"
-    state = RobotStateSample(
-        1.0,
-        "2026-08-02T12:00:00Z",
-        5,
-        np.zeros(29),
-        np.zeros(29),
-    )
-    state_path.write_text(json.dumps(state.to_dict()))
-    assert (
-        main(
-            [
-                "init-pose-set",
-                "--state-json",
-                str(state_path),
-                "--output",
-                str(pose_path),
-            ]
+    PoseStore(pose_path).initialize(
+        PoseSet(
+            robot_model="g1_29dof_rev_1_0",
+            mode_machine=5,
+            urdf_sha256="a" * 64,
+            calibration_arm="left",
         )
-        == 0
     )
     store = PoseStore(pose_path)
     assert _next_pose_id(store, "pose_001") == "pose_001"

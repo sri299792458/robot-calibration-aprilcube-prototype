@@ -48,8 +48,6 @@ def make_pose_set() -> PoseSet:
         5,
         "a" * 64,
         "left",
-        (0.0,) * 7,
-        (0.0,) * 7,
     )
     for pose in (make_pose("near", 0.04), make_pose("far", 0.08)):
         result = result.with_pose(pose, PoseAuditEvent("add", pose.id, UTC))
@@ -121,6 +119,8 @@ def make_subject(*, initial_left=0.0):
         transport=transport,
         clock=clock,
         pose_set=pose_set,
+        handoff_q=(0.0,) * 7,
+        hold_q=(0.0,) * 7,
         approved_validation_report_sha256=validation.content_sha256,
         config=ExecutorConfig(
             maximum_joint_velocity_rad_s=0.2,

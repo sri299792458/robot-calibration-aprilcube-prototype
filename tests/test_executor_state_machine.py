@@ -42,8 +42,6 @@ def pose_set() -> PoseSet:
         mode_machine=5,
         urdf_sha256="a" * 64,
         calibration_arm="left",
-        handoff_q=(0.0,) * 7,
-        hold_q=(0.0,) * 7,
     )
     for item in (pose("pose_001", np.full(7, 0.08)),):
         result = result.with_pose(item, PoseAuditEvent("add", item.id, UTC))
@@ -74,6 +72,8 @@ def subject() -> tuple[ManualClock, FakeArmTransport, PoseExecutor]:
         transport=transport,
         clock=clock,
         pose_set=pose_set(),
+        handoff_q=(0.0,) * 7,
+        hold_q=(0.0,) * 7,
         approved_validation_report_sha256=REPORT_HASH,
         config=config(),
     )

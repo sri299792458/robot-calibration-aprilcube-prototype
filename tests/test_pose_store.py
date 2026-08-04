@@ -10,7 +10,7 @@ from g1_aprilcube_calibration.pose_schema import (
     PoseRecord,
     PoseSet,
 )
-from g1_aprilcube_calibration.pose_store import PoseStore
+from g1_aprilcube_calibration.pose_store import PoseStore, TransientPoseStore
 
 UTC = "2026-08-02T12:00:00Z"
 
@@ -36,8 +36,6 @@ def empty_pose_set() -> PoseSet:
         mode_machine=5,
         urdf_sha256="a" * 64,
         calibration_arm="left",
-        handoff_q=(0.0,) * 7,
-        hold_q=(0.0,) * 7,
     )
 
 
@@ -83,6 +81,19 @@ def test_store_refuses_overwrite_by_default(tmp_path) -> None:
         store.initialize(empty_pose_set())
 
 
+def test_transient_store_updates_without_creating_files(tmp_path) -> None:
+    store = TransientPoseStore(empty_pose_set())
+
+    updated = store.append(make_pose(), details={"operator": "test"})
+
+    assert store.load() == updated
+    assert [pose.id for pose in updated.poses] == ["pose_001"]
+    assert list(tmp_path.iterdir()) == []
+
+    restored = store.undo_last(reason="test rollback")
+    assert restored.poses == ()
+
+
 def test_duplicate_pose_id_is_rejected(tmp_path) -> None:
     store = PoseStore(tmp_path / "poses.yaml")
     store.initialize(empty_pose_set())
@@ -121,8 +132,6 @@ def test_schema_and_audit_sequence_are_validated() -> None:
             mode_machine=5,
             urdf_sha256=pose_set.urdf_sha256,
             calibration_arm=pose_set.calibration_arm,
-            handoff_q=pose_set.handoff_q,
-            hold_q=pose_set.hold_q,
             poses=(pose,),
             audit_log=(),
         )

@@ -1,5 +1,17 @@
 schema_version: 1
 
+# Native joint/frame optimizer used after the G1-specific immutable capture step.
+robot_calibration:
+  url: https://github.com/mikeferguson/robot_calibration.git
+  branch: ros2
+  revision: db991b040d1dc28af09d8865fc72f09720e12b73
+
+# Built in a private prefix with Eigen dense/sparse backends; no system install.
+ceres_solver:
+  url: https://github.com/ceres-solver/ceres-solver.git
+  tag: 2.0.0
+  revision: 399cda773035d99eaf1f4a129a666b3c4df9d1b1
+
 # Read-only reference implementation for the official G1 arm_sdk command path.
 xr_teleoperate:
   url: https://github.com/unitreerobotics/xr_teleoperate.git

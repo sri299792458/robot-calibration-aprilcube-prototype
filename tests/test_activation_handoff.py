@@ -20,8 +20,6 @@ def pose_set() -> PoseSet:
         mode_machine=5,
         urdf_sha256="a" * 64,
         calibration_arm="left",
-        handoff_q=(0.0,) * 7,
-        hold_q=(0.0,) * 7,
     )
 
 
@@ -70,12 +68,12 @@ def test_build_activation_replaces_only_run_handoff_from_window_median() -> None
     )
 
     expected = np.arange(29, dtype=np.float64) / 100.0 + 0.00025
-    np.testing.assert_allclose(result.pose_set.handoff_q, expected[15:22])
-    np.testing.assert_allclose(result.pose_set.hold_q, expected[22:29])
+    np.testing.assert_allclose(result.handoff_q, expected[15:22])
+    np.testing.assert_allclose(result.hold_q, expected[22:29])
     np.testing.assert_allclose(result.reference_state.position, expected)
     assert result.pose_set.poses == source.poses
     assert result.source_pose_set_sha256 == source.content_sha256
-    assert result.pose_set.content_sha256 != source.content_sha256
+    assert result.pose_set.content_sha256 == source.content_sha256
     assert result.readiness.ready
 
 

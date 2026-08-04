@@ -26,12 +26,13 @@ from g1_aprilcube_calibration.camera_initialization import (
 )
 from g1_aprilcube_calibration.collision import CollisionConfig, FCLCollisionChecker
 from g1_aprilcube_calibration.dataset_builder import CalibrationDataset, DatasetBuilder
-from g1_aprilcube_calibration.joint_map import arm_indices, opposite_arm
 from g1_aprilcube_calibration.models import RobotStateSample
-from g1_aprilcube_calibration.pose_schema import PoseSet
 from g1_aprilcube_calibration.pose_store import PoseStore
 from g1_aprilcube_calibration.pose_validator import PosePathValidator
 from g1_aprilcube_calibration.residual_report import validate_exported_result
+from g1_aprilcube_calibration.robot_calibration_bridge import (
+    export_robot_calibration_dataset,
+)
 from g1_aprilcube_calibration.session_store import SessionStore
 from g1_aprilcube_calibration.synthetic import (
     make_synthetic_dataset,
@@ -78,18 +79,6 @@ def add_workflow_subparsers(
     hardware.add_argument("--timeout-s", type=float, default=5.0)
     hardware.add_argument("--state-json", type=Path)
     hardware.set_defaults(handler=run_inspect_hardware)
-
-    initialize = subparsers.add_parser(
-        "init-pose-set",
-        help="initialize measured handoff and an empty taught-pose set",
-    )
-    initialize.add_argument("--state-json", type=Path, required=True)
-    initialize.add_argument("--output", type=Path, required=True)
-    initialize.add_argument("--urdf", type=Path, default=default_urdf)
-    initialize.add_argument(
-        "--calibration-arm", choices=("left", "right"), default="left"
-    )
-    initialize.set_defaults(handler=run_init_pose_set)
 
     summary = subparsers.add_parser(
         "pose-summary", help="validate and summarize a content-hashed pose set"
@@ -142,6 +131,24 @@ def add_workflow_subparsers(
     solve.add_argument("--bootstrap-trials", type=int, default=50)
     solve.add_argument("--bootstrap-seed", type=int, default=17)
     solve.set_defaults(handler=run_solve)
+
+    robot_calibration = subparsers.add_parser(
+        "export-robot-calibration",
+        help="export an immutable dataset for mikeferguson/robot_calibration",
+    )
+    robot_calibration.add_argument("--dataset", type=Path, required=True)
+    robot_calibration.add_argument("--output-directory", type=Path, required=True)
+    robot_calibration.add_argument("--urdf", type=Path, default=default_urdf)
+    robot_calibration.add_argument(
+        "--robot-calibration-directory",
+        type=Path,
+        default=workspace_root / "robot_calibration",
+    )
+    robot_calibration.add_argument("--pnp-sample-index", type=int, default=0)
+    robot_calibration.add_argument(
+        "--shoulder-roll-prior-sigma-deg", type=float, default=5.0
+    )
+    robot_calibration.set_defaults(handler=run_export_robot_calibration)
 
     synthetic = subparsers.add_parser(
         "synthetic-check",
@@ -226,40 +233,6 @@ def run_inspect_hardware(args: argparse.Namespace) -> int:
         observer.close()
 
 
-def run_init_pose_set(args: argparse.Namespace) -> int:
-    state = _load_state(args.state_json)
-    if not state.is_mode5:
-        raise ValueError("state JSON is not mode_machine=5")
-    maximum_arm_velocity = float(np.max(np.abs(state.velocity[15:29])))
-    model = URDFModel(args.urdf)
-    pose_set = PoseSet(
-        robot_model="g1_29dof_rev_1_0",
-        mode_machine=5,
-        urdf_sha256=model.sha256,
-        calibration_arm=args.calibration_arm,
-        handoff_q=tuple(
-            state.position[np.asarray(arm_indices(args.calibration_arm))]
-        ),
-        hold_q=tuple(
-            state.position[np.asarray(arm_indices(opposite_arm(args.calibration_arm)))]
-        ),
-    )
-    PoseStore(args.output).initialize(pose_set)
-    _print_json(
-        {
-            "path": str(args.output.resolve()),
-            "pose_count": 0,
-            "content_sha256": pose_set.content_sha256,
-            "urdf_sha256": model.sha256,
-            "calibration_arm": pose_set.calibration_arm,
-            "handoff_q": list(pose_set.handoff_q),
-            "hold_q": list(pose_set.hold_q),
-            "maximum_measured_arm_velocity_rad_s": maximum_arm_velocity,
-        }
-    )
-    return 0
-
-
 def run_pose_summary(args: argparse.Namespace) -> int:
     pose_set = PoseStore(args.pose_set).load()
     _print_json(
@@ -271,8 +244,6 @@ def run_pose_summary(args: argparse.Namespace) -> int:
             "content_sha256": pose_set.content_sha256,
             "urdf_sha256": pose_set.urdf_sha256,
             "calibration_arm": pose_set.calibration_arm,
-            "handoff_q": list(pose_set.handoff_q),
-            "hold_q": list(pose_set.hold_q),
         }
     )
     return 0
@@ -398,6 +369,30 @@ def run_solve(args: argparse.Namespace) -> int:
         },
     )
     _print_pipeline_result(result, args.output_directory)
+    return 0
+
+
+def run_export_robot_calibration(args: argparse.Namespace) -> int:
+    dataset = CalibrationDataset.from_json(args.dataset)
+    artifacts = export_robot_calibration_dataset(
+        dataset,
+        URDFModel(args.urdf),
+        args.output_directory,
+        pnp_sample_index=args.pnp_sample_index,
+        shoulder_roll_prior_sigma_deg=args.shoulder_roll_prior_sigma_deg,
+        robot_calibration_directory=args.robot_calibration_directory,
+    )
+    _print_json(
+        {
+            "output_directory": str(artifacts.output_directory),
+            "bag_directory": str(artifacts.bag_directory),
+            "robot_description": str(artifacts.robot_description_path),
+            "extrinsics_config": str(artifacts.extrinsics_config_path),
+            "shoulder_roll_config": str(artifacts.shoulder_roll_config_path),
+            "provenance": str(artifacts.provenance_path),
+            "sample_count": artifacts.sample_count,
+        }
+    )
     return 0
 
 

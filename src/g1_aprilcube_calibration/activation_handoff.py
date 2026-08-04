@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 
 import numpy as np
 
@@ -19,10 +19,12 @@ from g1_aprilcube_calibration.readiness import (
 
 @dataclass(frozen=True, slots=True)
 class ActivationHandoff:
-    """A stationary measured run origin and the pose set bound to it."""
+    """A stationary measured run origin derived before command ownership."""
 
     source_pose_set_sha256: str
     pose_set: PoseSet
+    handoff_q: tuple[float, ...]
+    hold_q: tuple[float, ...]
     reference_state: RobotStateSample
     readiness: ReadinessReport
 
@@ -91,14 +93,11 @@ def build_activation_handoff(
     )
     calibration_indices = np.asarray(arm_indices(pose_set.calibration_arm))
     hold_indices = np.asarray(arm_indices(opposite_arm(pose_set.calibration_arm)))
-    dynamic_pose_set = replace(
-        pose_set,
-        handoff_q=tuple(measured_position[calibration_indices]),
-        hold_q=tuple(measured_position[hold_indices]),
-    )
     return ActivationHandoff(
         source_pose_set_sha256=pose_set.content_sha256,
-        pose_set=dynamic_pose_set,
+        pose_set=pose_set,
+        handoff_q=tuple(measured_position[calibration_indices]),
+        hold_q=tuple(measured_position[hold_indices]),
         reference_state=reference_state,
         readiness=readiness,
     )

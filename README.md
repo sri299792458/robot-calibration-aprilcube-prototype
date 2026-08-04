@@ -4,8 +4,10 @@ This workspace is building a lightweight calibration path for the head-mounted
 RealSense on a mode-5 Unitree G1. The camera observes the rounded AprilCube
 rigidly taped to the palm of the left dummy hand. The arm side is a pose-set and
 runtime argument (`calibration_arm: left` here), not a separate hard-coded
-workflow. The optimizer jointly estimates `torso_T_color_camera` and
-`left_rubber_hand_T_aprilcube` from raw image corners and measured joint states.
+workflow. Mike Ferguson's `robot_calibration` optimizer jointly estimates the
+camera mount, hand-to-AprilCube mount, and explicitly selected G1 kinematic
+parameters from raw image corners and measured joint states. The local SciPy
+twelve-parameter solver remains an offline diagnostic and synthetic-test oracle.
 
 The codebase now covers the full workflow: read-only teaching, offline path
 validation, staged G1 commissioning, immutable rectified capture, deterministic
@@ -148,30 +150,16 @@ Closing the viewer leaves the raw stream running for calibration. Pass
 
 ## Manual capture and calibration
 
-Inspect one stationary mode-5 state without creating a publisher. Initializing
-the content-hashed pose set records the robot/URDF identity and schema-compatible
-handoff seeds. Start each manual calibration session with a fresh, empty pose
-set and a new session directory:
-
-```bash
-./tools/g1_calib_hardware.sh inspect-hardware \
-  --network-interface enp134s0 --state-json work/initial_state.json
-
-.venv/bin/g1-calib init-pose-set \
-  --state-json work/initial_state.json \
-  --output work/manual_run_001_poses.yaml \
-  --calibration-arm left
-```
-
-Run the live teacher against the RealSense topics. This is the normal data
-collection path; it observes `rt/lowstate` but creates no arm command publisher:
+Run the live teacher against the RealSense topics with a new session directory.
+This is the normal data-collection path; it creates a version-3, content-hashed
+pose set inside the session from the configured URDF and observes `rt/lowstate`,
+but creates no arm command publisher and needs no initialization state:
 
 ```bash
 ./tools/g1_calib_hardware.sh teach-poses \
   --network-interface enp134s0 \
-  --pose-set work/manual_run_001_poses.yaml \
-  --session-directory sessions/manual_run_001 \
-  --session-id manual_run_001 \
+  --session-directory sessions/manual_run_002 \
+  --session-id manual_run_002 \
   --image-topic /camera/color/image_raw \
   --camera-info-topic /camera/color/camera_info \
   --camera-name g1_head_color \
@@ -193,7 +181,7 @@ and spread; commanded positions are never used. `U` removes the active pose but
 keeps its raw capture marked rejected for auditability.
 
 `Q` verifies the one-to-one pose/capture binding, freezes the session read-only,
-and automatically writes `sessions/manual_run_001/dataset.json`. The camera
+and automatically writes `sessions/manual_run_002/dataset.json`. The camera
 mount and head pitch must remain fixed for that session. The joint poses remain
 useful if optional replay is desired for a later camera configuration, but the
 images themselves belong only to the camera configuration under which they
@@ -203,8 +191,8 @@ Solve directly from that dataset:
 
 ```bash
 .venv/bin/g1-calib solve \
-  --dataset sessions/manual_run_001/dataset.json \
-  --output-directory runs/manual_run_001
+  --dataset sessions/manual_run_002/dataset.json \
+  --output-directory runs/manual_run_002
 ```
 
 The dataset can also be rebuilt deterministically from the finalized raw
@@ -213,12 +201,64 @@ live/offline correspondence hash:
 
 ```bash
 .venv/bin/g1-calib build-dataset \
-  --session sessions/manual_run_001 \
-  --output sessions/manual_run_001/dataset_rebuilt.json
+  --session sessions/manual_run_002 \
+  --output sessions/manual_run_002/dataset_rebuilt.json
 ```
 
 Do not accept the calibration from RMS alone. Inspect `report.md`, held-out and
 per-capture residuals, tag grouping, and calibration-joint correlations.
+
+### Mike Ferguson optimizer bridge
+
+The ignored `robot_calibration/` checkout is pinned in
+`config/upstream_pins.yaml`. First install and build the pinned optimizer
+entirely under this account—without `sudo` or changes to `/opt/ros`:
+
+```bash
+./tools/install_robot_calibration_local.sh
+```
+
+Then export the immutable G1 dataset into its native ROS 2 `CalibrationData`
+bag and generated parameter files through the account-local environment:
+
+```bash
+./tools/g1_robot_calibration.sh .venv/bin/g1-calib \
+  export-robot-calibration \
+  --dataset sessions/manual_run_001/dataset.json \
+  --output-directory runs/manual_run_001/robot_calibration
+```
+
+The bridge preserves all 29 measured joints and creates two ordered, matched
+observations per capture: known AprilCube corners in `aprilcube_target` and raw
+detected pixels in `camera_color_optical_frame`. It also adds only the missing
+REP-103 optical frame to a copied URDF. The generated configurations use the
+native `Chain3dToCamera2d` residual with free `d435_joint` and
+`aprilcube_target` frames. `calibrate_shoulder_roll.yaml` additionally frees
+`left_shoulder_roll_joint` with a dataset-size-normalized Gaussian-style prior;
+it is a model-comparison candidate, not an encoder-zero claim.
+
+Run either generated configuration against the same bag:
+
+```bash
+./tools/g1_robot_calibration.sh \
+  ros2 run robot_calibration calibrate --from-bag \
+  runs/manual_run_001/robot_calibration/calibration_data \
+  --ros-args --params-file \
+  runs/manual_run_001/robot_calibration/calibrate_extrinsics.yaml
+```
+
+The installer builds Ceres 2.0.0 with its Eigen backend under
+`deps/ceres_prefix`, unpacks the few missing Humble binary interfaces into
+`deps/robot_calibration_prefix`, and builds the exact pinned optimizer into the
+workspace `install/` tree. All of those paths are gitignored and owned by the
+current user.
+
+Upstream currently uses plain squared loss and exports timestamped results to
+`/tmp`; its output still requires our pose-level holdout, residual, and
+observability checks before deployment.
+
+The 39-sample native fit and pose-level cross-validation are summarized in
+[`docs/manual_run_001_analysis.md`](docs/manual_run_001_analysis.md).
 
 ## Optional replay and repeated-anchor qualification
 
@@ -233,9 +273,12 @@ edges file based on `config/edges.example.yaml`. Do not add handoff edges: they
 depend on the live Ready state and are validated again during every run.
 
 ```bash
+./tools/g1_calib_hardware.sh inspect-hardware \
+  --network-interface enp134s0 --state-json work/replay_reference_state.json
+
 .venv/bin/g1-calib validate-poses \
-  --pose-set work/manual_run_001_poses.yaml \
-  --reference-state-json work/initial_state.json \
+  --pose-set sessions/manual_run_002/pose_set.yaml \
+  --reference-state-json work/replay_reference_state.json \
   --edges-yaml work/edges.yaml \
   --output work/validation_report.json
 ```
@@ -249,11 +292,11 @@ stage, and use only the actual robot network interface:
   --confirm 'I UNDERSTAND THIS WRITES RT/ARM_SDK'
 
 ./tools/g1_calib_hardware.sh commission-hold --network-interface enp134s0 \
-  --pose-set work/manual_run_001_poses.yaml \
+  --pose-set sessions/manual_run_002/pose_set.yaml \
   --confirm 'I CONFIRM THE G1 IS SECURED BY THE LOAD-BEARING HARNESS AND THE WORKSPACE IS CLEAR'
 
 ./tools/g1_calib_hardware.sh commission-pose --network-interface enp134s0 \
-  --pose-set work/manual_run_001_poses.yaml \
+  --pose-set sessions/manual_run_002/pose_set.yaml \
   --validation-report work/validation_report.json \
   --target-pose pose_001 \
   --confirm 'I CONFIRM THE G1 IS SECURED BY THE LOAD-BEARING HARNESS AND THE WORKSPACE IS CLEAR'
@@ -277,7 +320,7 @@ automatically before the first capture and after the last:
 ```bash
 ./tools/g1_calib_hardware.sh collect-session \
   --network-interface enp134s0 \
-  --pose-set work/manual_run_001_poses.yaml \
+  --pose-set sessions/manual_run_002/pose_set.yaml \
   --validation-report work/validation_report.json \
   --plan-yaml work/session_plan.yaml \
   --session-directory sessions/run_001 --session-id run_001 \
@@ -303,9 +346,9 @@ automatically before the first capture and after the last:
 
 Replay collection requires a passed policy report bound to the source pose-set,
 URDF, and collision-config hashes. Before publisher creation it derives the live
-handoff, revalidates the complete run route, and freezes that dynamic pose set,
-runtime report, activation state, camera, and target inputs into the immutable
-session. Each move is confirmed interactively unless
+handoff, revalidates the complete run route, and freezes the source pose set,
+runtime report, measured activation state, camera, and target inputs into the
+immutable session. Each move is confirmed interactively unless
 `--auto-confirm-transitions` is explicitly supplied. The 250 Hz command tick
 runs on a dedicated synchronized thread, so detection and lossless disk writes
 cannot starve arm holding. A run returns to its per-run measured handoff,

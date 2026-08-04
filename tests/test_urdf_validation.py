@@ -49,8 +49,6 @@ def make_pose_set(model: URDFModel, target: np.ndarray) -> PoseSet:
         mode_machine=5,
         urdf_sha256=model.sha256,
         calibration_arm="left",
-        handoff_q=(0.0,) * 7,
-        hold_q=(0.0,) * 7,
     )
     for item in (make_pose("target", target, model.sha256),):
         result = result.with_pose(item, PoseAuditEvent("add", item.id, UTC))
@@ -219,8 +217,6 @@ def test_path_validator_rejects_joint_limit_and_stale_urdf() -> None:
         mode_machine=5,
         urdf_sha256="d" * 64,
         calibration_arm=pose_set.calibration_arm,
-        handoff_q=pose_set.handoff_q,
-        hold_q=pose_set.hold_q,
     )
     with pytest.raises(ValueError, match="different URDF"):
         validator.validate(stale, directed_edges=(), reference_full_q=np.zeros(29))

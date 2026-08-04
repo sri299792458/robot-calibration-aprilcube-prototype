@@ -106,8 +106,6 @@ def create_store(tmp_path) -> SessionStore:
         mode_machine=5,
         urdf_sha256="a" * 64,
         calibration_arm="left",
-        handoff_q=(0.0,) * 7,
-        hold_q=(0.0,) * 7,
     )
     collision = CollisionConfig.from_yaml(COLLISIONS)
     validation = ValidationReport(
@@ -179,8 +177,6 @@ def create_manual_store(tmp_path) -> tuple[SessionStore, PoseSet]:
         mode_machine=5,
         urdf_sha256="a" * 64,
         calibration_arm="left",
-        handoff_q=(0.0,) * 7,
-        hold_q=(0.0,) * 7,
     )
     store.create(
         session_id="manual_session",
