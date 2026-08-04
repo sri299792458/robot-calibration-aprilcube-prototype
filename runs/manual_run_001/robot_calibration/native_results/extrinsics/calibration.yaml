@@ -1,0 +1,15 @@
+d435_joint_x: 0.0089406
+d435_joint_y: 0.0239586
+d435_joint_z: 0.00821966
+d435_joint_a: 0.00677073
+d435_joint_b: 0.183777
+d435_joint_c: -0.046897
+aprilcube_target_x: 0.0423512
+aprilcube_target_y: 0.0294798
+aprilcube_target_z: 0.000580656
+aprilcube_target_a: 1.21319
+aprilcube_target_b: 1.22895
+aprilcube_target_c: -1.15691
+depth_info: depth_2026_08_03_21_11_18.yaml
+rgb_info: rgb_2026_08_03_21_11_18.yaml
+urdf: calibrated_2026_08_03_21_11_18.urdf

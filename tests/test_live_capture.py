@@ -4,6 +4,7 @@ from pathlib import Path
 
 import cv2
 import numpy as np
+import pytest
 from aprilcube.generate import DICT_MAP
 
 from aprilcube import CorrespondenceDetector
@@ -136,3 +137,135 @@ def test_live_source_keeps_frame_until_future_state_bracket_arrives():
     burst = source.capture_burst(pose_id="pose", capture_id="capture_001")
     assert burst[0].frame_id == "capture_001_000"
     assert burst[0].state_window[-1].receipt_monotonic_s >= 1.25
+
+
+def test_live_source_rejects_after_camera_gap_and_arm_move():
+    frames = ROSFrameBuffer()
+    states = StateSampleBuffer()
+    for time_s in np.arange(0.5, 4.51, 0.01):
+        position = np.zeros(29)
+        if time_s >= 2.0:
+            position[15] = 0.5
+        states.add(RobotStateSample(time_s, UTC, 5, position, np.zeros(29)))
+    scheduled = [
+        ROSImageFrame(marker_image(), ImageTiming(time_s, UTC, index), info())
+        for index, time_s in enumerate((1.0, 4.0, 4.1), start=1)
+    ]
+    clock = ManualClock()
+
+    def wait_once(duration):
+        clock.advance(duration)
+        if scheduled:
+            frames.add(scheduled.pop(0))
+
+    source = LiveBurstFrameSource(
+        camera_frames=frames,
+        robot_states=states,
+        detector=CorrespondenceDetector(TARGET),
+        quality_evaluator=PoseQualityEvaluator(thresholds()),
+        recording_config=RecordingGateConfig(
+            calibration_arm="left",
+            state_freshness_timeout_s=0.1,
+            stationary_duration_s=0.5,
+            maximum_state_gap_s=0.1,
+            maximum_calibration_position_spread_rad=0.01,
+            minimum_samples=5,
+        ),
+        pairing_config=PairingConfig(0.05, 0.1),
+        config=LiveBurstConfig(frame_count=2, timeout_s=1, poll_interval_s=0.01),
+        clock=clock,
+        wait_once=wait_once,
+        accept_yellow=lambda _frame: True,
+    )
+
+    with pytest.raises(RuntimeError, match="image gap is 3.000s"):
+        source.capture_burst(pose_id="pose", capture_id="capture_001")
+
+
+def test_live_source_rejects_when_individually_stable_frames_span_arm_motion():
+    frames = ROSFrameBuffer()
+    states = StateSampleBuffer()
+    for time_s in np.arange(0.5, 1.61, 0.01):
+        position = np.zeros(29)
+        if time_s >= 1.1:
+            position[15] = 0.5
+        states.add(RobotStateSample(time_s, UTC, 5, position, np.zeros(29)))
+    scheduled = [
+        ROSImageFrame(marker_image(), ImageTiming(time_s, UTC, index), info())
+        for index, time_s in enumerate((1.0, 1.2, 1.3), start=1)
+    ]
+    clock = ManualClock()
+
+    def wait_once(duration):
+        clock.advance(duration)
+        if scheduled:
+            frames.add(scheduled.pop(0))
+
+    source = LiveBurstFrameSource(
+        camera_frames=frames,
+        robot_states=states,
+        detector=CorrespondenceDetector(TARGET),
+        quality_evaluator=PoseQualityEvaluator(thresholds()),
+        recording_config=RecordingGateConfig(
+            calibration_arm="left",
+            state_freshness_timeout_s=0.1,
+            stationary_duration_s=0.1,
+            maximum_state_gap_s=0.02,
+            maximum_calibration_position_spread_rad=0.01,
+            minimum_samples=5,
+        ),
+        pairing_config=PairingConfig(0.05, 0.1),
+        config=LiveBurstConfig(frame_count=2, timeout_s=1, poll_interval_s=0.01),
+        clock=clock,
+        wait_once=wait_once,
+        accept_yellow=lambda _frame: True,
+    )
+
+    with pytest.raises(RuntimeError, match="left-arm position spread is 0.5000rad"):
+        source.capture_burst(pose_id="pose", capture_id="capture_001")
+
+
+def test_live_source_rejects_when_total_burst_duration_is_too_long():
+    frames = ROSFrameBuffer()
+    states = StateSampleBuffer()
+    for time_s in np.arange(0.5, 2.51, 0.01):
+        states.add(RobotStateSample(time_s, UTC, 5, np.zeros(29), np.zeros(29)))
+    scheduled = [
+        ROSImageFrame(marker_image(), ImageTiming(time_s, UTC, index), info())
+        for index, time_s in enumerate((1.0, 1.4, 1.8, 1.9, 2.0), start=1)
+    ]
+    clock = ManualClock()
+
+    def wait_once(duration):
+        clock.advance(duration)
+        if scheduled:
+            frames.add(scheduled.pop(0))
+
+    source = LiveBurstFrameSource(
+        camera_frames=frames,
+        robot_states=states,
+        detector=CorrespondenceDetector(TARGET),
+        quality_evaluator=PoseQualityEvaluator(thresholds()),
+        recording_config=RecordingGateConfig(
+            calibration_arm="left",
+            state_freshness_timeout_s=0.1,
+            stationary_duration_s=0.5,
+            maximum_state_gap_s=0.1,
+            maximum_calibration_position_spread_rad=0.01,
+            minimum_samples=5,
+        ),
+        pairing_config=PairingConfig(0.05, 0.1),
+        config=LiveBurstConfig(
+            frame_count=3,
+            timeout_s=1,
+            poll_interval_s=0.01,
+            maximum_inter_frame_gap_s=0.5,
+            maximum_duration_s=0.7,
+        ),
+        clock=clock,
+        wait_once=wait_once,
+        accept_yellow=lambda _frame: True,
+    )
+
+    with pytest.raises(RuntimeError, match="burst duration is 0.800s"):
+        source.capture_burst(pose_id="pose", capture_id="capture_001")

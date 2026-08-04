@@ -1,0 +1,4957 @@
+schema_version: 2
+robot:
+  model: g1_29dof_rev_1_0
+  mode_machine: 5
+  urdf_sha256: c0ae739c640c3e2c00d1bdd8810b5d6e59601487bd1a3995859f9543269ee5c8
+calibration_arm: left
+joint_order:
+- left_shoulder_pitch_joint
+- left_shoulder_roll_joint
+- left_shoulder_yaw_joint
+- left_elbow_joint
+- left_wrist_roll_joint
+- left_wrist_pitch_joint
+- left_wrist_yaw_joint
+full_joint_order:
+- left_hip_pitch_joint
+- left_hip_roll_joint
+- left_hip_yaw_joint
+- left_knee_joint
+- left_ankle_pitch_joint
+- left_ankle_roll_joint
+- right_hip_pitch_joint
+- right_hip_roll_joint
+- right_hip_yaw_joint
+- right_knee_joint
+- right_ankle_pitch_joint
+- right_ankle_roll_joint
+- waist_yaw_joint
+- waist_roll_joint
+- waist_pitch_joint
+- left_shoulder_pitch_joint
+- left_shoulder_roll_joint
+- left_shoulder_yaw_joint
+- left_elbow_joint
+- left_wrist_roll_joint
+- left_wrist_pitch_joint
+- left_wrist_yaw_joint
+- right_shoulder_pitch_joint
+- right_shoulder_roll_joint
+- right_shoulder_yaw_joint
+- right_elbow_joint
+- right_wrist_roll_joint
+- right_wrist_pitch_joint
+- right_wrist_yaw_joint
+handoff_q:
+- 0.06959239393472672
+- 0.07572752237319946
+- -0.17392705380916595
+- 1.4071877002716064
+- 1.2743066549301147
+- -0.0018695391481742263
+- 1.1686776876449585
+hold_q:
+- 0.2145056426525116
+- -0.02510615438222885
+- 0.00589623861014843
+- 1.223637342453003
+- -0.11007510870695114
+- 0.028378644958138466
+- -0.0607600212097168
+poses:
+- id: pose_001
+  group: calibration
+  measured_calibration_q:
+  - -0.07250456511974335
+  - 0.047804273664951324
+  - -0.5662007033824921
+  - 0.38608381152153015
+  - 1.1221189498901367
+  - -0.046726495027542114
+  - 0.38488537073135376
+  measured_full_q:
+  - -0.22833304107189178
+  - -0.032460737973451614
+  - -0.007044136989861727
+  - 0.47120481729507446
+  - -0.34894096851348877
+  - 0.021879814565181732
+  - -0.24756745994091034
+  - 0.016703346744179726
+  - 0.023549648001790047
+  - 0.4696282148361206
+  - -0.3416159451007843
+  - -0.008240864612162113
+  - -0.013472246937453747
+  - -0.034451212733983994
+  - -0.16386942565441132
+  - -0.07250456511974335
+  - 0.047804273664951324
+  - -0.5662007033824921
+  - 0.38608381152153015
+  - 1.1221189498901367
+  - -0.046726495027542114
+  - 0.38488537073135376
+  - 0.21481724083423615
+  - -0.02521400898694992
+  - 0.005788380745798349
+  - 1.223697304725647
+  - -0.11005114018917084
+  - 0.028438566252589226
+  - -0.06127534434199333
+  calibration_q_spread:
+  - 0.0004913583397865295
+  - 0.002408824861049652
+  - 0.0009227991104125977
+  - 0.0004913508892059326
+  - 0.00010788440704345703
+  - 0.0006950832903385162
+  - 0.00011983513832092285
+  recorded_at_utc: '2026-08-03T23:05:12.989489Z'
+  recorded_monotonic_s: 28637.901807087
+  source: manual_teaching
+  anchor: true
+  preview_path: sessions/manual_run_001/preview/poses/pose_001_capture_001.png
+  visual_quality:
+    grade: yellow
+    hard_failures: []
+    metrics:
+      duplicate_tag_ids: []
+      ignored_tag_ids:
+      - 17
+      minimum_corner_image_margin_px: 172.9736328125
+      minimum_quad_quality: 0.7684868721422304
+      minimum_tag_short_side_px: 31.876174334747
+      novel_view: true
+      opencv_rejected_candidates: 734
+      pnp_depth_m: 0.4620706070367498
+      pnp_reprojection_error_px: 1.3673549561057206
+      quality_rejected_detections: 0
+      tag_count: 3
+      tag_ids:
+      - 1
+      - 3
+      - 5
+      visible_faces:
+      - -X
+      - -Y
+      - -Z
+    save_allowed: true
+    signature:
+      image_cell:
+      - 1
+      - 2
+      normalized_centroid:
+      - 0.49586144418246675
+      - 0.6870844898038182
+      rvec:
+      - -0.5842769236683747
+      - -0.7945973399260856
+      - -2.638239452263266
+      tag_ids:
+      - 1
+      - 3
+      - 5
+      tvec_m:
+      - -0.010453216567610227
+      - 0.05949607879238788
+      - 0.4620706070367498
+      visible_faces:
+      - -X
+      - -Y
+      - -Z
+    state_readiness:
+      calibration_arm: left
+      duration_s: 0.5003663830029836
+      hard_failures: []
+      maximum_calibration_position_spread_rad: 0.002408824861049652
+      maximum_calibration_velocity_rad_s: 0.04448544606566429
+      maximum_hold_position_spread_rad: 7.190555334091187e-05
+      maximum_hold_velocity_rad_s: 0.04295146465301514
+      maximum_state_gap_s: 0.005035202997532906
+      ready: true
+      sample_count: 522
+    timestamp_pairing:
+      after_state_monotonic_s: 28637.902742449
+      before_state_monotonic_s: 28637.900318826
+      bracket_span_s: 0.0024236230019596405
+      image_header_stamp_ns: 445515027079557
+      image_receipt_monotonic_s: 28637.901807087
+      image_receipt_utc: '2026-08-03T23:05:12.989489Z'
+      nearest_delta_s: 0.000935362000745954
+      nearest_state_monotonic_s: 28637.902742449
+    warnings:
+    - 'tag size is marginal: 31.9px; prefer 40.0px'
+    yellow_override_reason: manual tabletop capture; warning reviewed in live preview
+- id: pose_002
+  group: calibration
+  measured_calibration_q:
+  - -0.0791078731417656
+  - 0.03808506578207016
+  - -0.7616094946861267
+  - 0.10135059058666229
+  - 1.0595133304595947
+  - -0.06895723193883896
+  - 0.3868028521537781
+  measured_full_q:
+  - -0.22872506082057953
+  - -0.032588567584753036
+  - -0.007070920895785093
+  - 0.4711451530456543
+  - -0.34893283247947693
+  - 0.021879814565181732
+  - -0.24743109941482544
+  - 0.016703346744179726
+  - 0.023583129048347473
+  - 0.4697219431400299
+  - -0.3415335714817047
+  - -0.008401641622185707
+  - -0.013365112245082855
+  - -0.034195370972156525
+  - -0.16366882622241974
+  - -0.0791078731417656
+  - 0.03808506578207016
+  - -0.7616094946861267
+  - 0.10135059058666229
+  - 1.0595133304595947
+  - -0.06895723193883896
+  - 0.3868028521537781
+  - 0.2148531973361969
+  - -0.025202028453350067
+  - 0.0057524279691278934
+  - 1.223709225654602
+  - -0.11005114018917084
+  - 0.028438566252589226
+  - -0.061287328600883484
+  calibration_q_spread:
+  - 0.00019174814224243164
+  - 0.00014381110668182373
+  - 0.0008867979049682617
+  - 0.0008388906717300415
+  - 5.984306335449219e-05
+  - 0.0001797601580619812
+  - 5.990266799926758e-05
+  recorded_at_utc: '2026-08-03T23:05:23.778070Z'
+  recorded_monotonic_s: 28648.690573781
+  source: manual_teaching
+  anchor: false
+  preview_path: sessions/manual_run_001/preview/poses/pose_002_capture_002.png
+  visual_quality:
+    grade: yellow
+    hard_failures: []
+    metrics:
+      duplicate_tag_ids: []
+      ignored_tag_ids: []
+      minimum_corner_image_margin_px: 174.24896240234375
+      minimum_quad_quality: 0.7495481949799039
+      minimum_tag_short_side_px: 37.74333259477579
+      novel_view: true
+      opencv_rejected_candidates: 726
+      pnp_depth_m: 0.38245104623573817
+      pnp_reprojection_error_px: 0.31775007910313824
+      quality_rejected_detections: 0
+      tag_count: 2
+      tag_ids:
+      - 1
+      - 5
+      visible_faces:
+      - -X
+      - -Z
+    save_allowed: true
+    signature:
+      image_cell:
+      - 1
+      - 2
+      normalized_centroid:
+      - 0.5982815859558248
+      - 0.6704997034828918
+      rvec:
+      - -0.8717274876744758
+      - -0.46324090049520317
+      - -2.43168844922666
+      tag_ids:
+      - 1
+      - 5
+      tvec_m:
+      - 0.044130790707059726
+      - 0.04725600596230338
+      - 0.38245104623573817
+      visible_faces:
+      - -X
+      - -Z
+    state_readiness:
+      calibration_arm: left
+      duration_s: 0.5013581409984909
+      hard_failures: []
+      maximum_calibration_position_spread_rad: 0.0008867979049682617
+      maximum_calibration_velocity_rad_s: 0.04141748324036598
+      maximum_hold_position_spread_rad: 9.587407112121582e-05
+      maximum_hold_velocity_rad_s: 0.03681553900241852
+      maximum_state_gap_s: 0.006613379002374131
+      ready: true
+      sample_count: 523
+    timestamp_pairing:
+      after_state_monotonic_s: 28648.690615438
+      before_state_monotonic_s: 28648.688980129
+      bracket_span_s: 0.0016353089995391201
+      image_header_stamp_ns: 445525768014760
+      image_receipt_monotonic_s: 28648.690573781
+      image_receipt_utc: '2026-08-03T23:05:23.778070Z'
+      nearest_delta_s: 4.165700011071749e-05
+      nearest_state_monotonic_s: 28648.690615438
+    warnings:
+    - 'tag size is marginal: 37.7px; prefer 40.0px'
+    yellow_override_reason: manual tabletop capture; warning reviewed in live preview
+- id: pose_003
+  group: calibration
+  measured_calibration_q:
+  - -0.10190186649560928
+  - -0.041190579533576965
+  - 0.3190200626850128
+  - 0.026041721925139427
+  - 1.6458415985107422
+  - -1.1570769548416138
+  - 0.3906857371330261
+  measured_full_q:
+  - -0.213973268866539
+  - -0.0325118713080883
+  - -0.006963785737752914
+  - 0.47080427408218384
+  - -0.35177263617515564
+  - 0.026596211828291416
+  - -0.24682602286338806
+  - 0.016524381935596466
+  - 0.026027148589491844
+  - 0.4699520468711853
+  - -0.34158292412757874
+  - -0.008328397758305073
+  - -0.014958747662603855
+  - -0.03139989823102951
+  - -0.1620488315820694
+  - -0.10190186649560928
+  - -0.041190579533576965
+  - 0.3190200626850128
+  - 0.026041721925139427
+  - 1.6458415985107422
+  - -1.1570769548416138
+  - 0.3906857371330261
+  - 0.21439778804779053
+  - -0.02526194602251053
+  - 0.004805674310773611
+  - 1.2236613035202026
+  - -0.11002717167139053
+  - 0.028426581993699074
+  - -0.061538998037576675
+  calibration_q_spread:
+  - 0.0006351619958877563
+  - 0.0001078583300113678
+  - 0.0009827017784118652
+  - 0.0005872268229722977
+  - 8.392333984375e-05
+  - 0.0002995729446411133
+  - 0.00027564167976379395
+  recorded_at_utc: '2026-08-03T23:05:39.537557Z'
+  recorded_monotonic_s: 28664.449833849
+  source: manual_teaching
+  anchor: false
+  preview_path: sessions/manual_run_001/preview/poses/pose_003_capture_003.png
+  visual_quality:
+    grade: yellow
+    hard_failures: []
+    metrics:
+      duplicate_tag_ids: []
+      ignored_tag_ids:
+      - 37
+      minimum_corner_image_margin_px: 237.76876831054688
+      minimum_quad_quality: 0.6850383339087166
+      minimum_tag_short_side_px: 29.362437843581986
+      novel_view: true
+      opencv_rejected_candidates: 699
+      pnp_depth_m: 0.3576894817205527
+      pnp_reprojection_error_px: 0.6566502574635562
+      quality_rejected_detections: 0
+      tag_count: 2
+      tag_ids:
+      - 1
+      - 5
+      visible_faces:
+      - -X
+      - -Z
+    save_allowed: true
+    signature:
+      image_cell:
+      - 1
+      - 1
+      normalized_centroid:
+      - 0.37391180913834204
+      - 0.5973075314921032
+      rvec:
+      - -0.37532474604565874
+      - -0.12456439678396572
+      - -2.3268650192717937
+      tag_ids:
+      - 1
+      - 5
+      tvec_m:
+      - -0.07053551817568825
+      - 0.018463777651432155
+      - 0.3576894817205527
+      visible_faces:
+      - -X
+      - -Z
+    state_readiness:
+      calibration_arm: left
+      duration_s: 0.5004634630022338
+      hard_failures: []
+      maximum_calibration_position_spread_rad: 0.0009827017784118652
+      maximum_calibration_velocity_rad_s: 0.03681553900241852
+      maximum_hold_position_spread_rad: 8.388981223106384e-05
+      maximum_hold_velocity_rad_s: 0.03681553900241852
+      maximum_state_gap_s: 0.009686490000603953
+      ready: true
+      sample_count: 522
+    timestamp_pairing:
+      after_state_monotonic_s: 28664.450566178
+      before_state_monotonic_s: 28664.448791571
+      bracket_span_s: 0.001774606997059891
+      image_header_stamp_ns: 445541578931974
+      image_receipt_monotonic_s: 28664.449833849
+      image_receipt_utc: '2026-08-03T23:05:39.537557Z'
+      nearest_delta_s: 0.000732328997401055
+      nearest_state_monotonic_s: 28664.450566178
+    warnings:
+    - 'tag size is marginal: 29.4px; prefer 40.0px'
+    yellow_override_reason: manual tabletop capture; warning reviewed in live preview
+- id: pose_004
+  group: calibration
+  measured_calibration_q:
+  - -0.07907191663980484
+  - -0.08152948319911957
+  - -0.09553824365139008
+  - 0.2506500780582428
+  - 1.2537657022476196
+  - -0.7885739803314209
+  - -0.2030726969242096
+  measured_full_q:
+  - -0.21329151093959808
+  - -0.03165965899825096
+  - -0.007070920895785093
+  - 0.47052302956581116
+  - -0.35435202717781067
+  - 0.031017618253827095
+  - -0.24674932658672333
+  - 0.01679708994925022
+  - 0.033171724528074265
+  - 0.4708724319934845
+  - -0.3415089547634125
+  - -0.008423641324043274
+  - -0.013646341860294342
+  - -0.030005961656570435
+  - -0.16105130314826965
+  - -0.07907191663980484
+  - -0.08152948319911957
+  - -0.09553824365139008
+  - 0.2506500780582428
+  - 1.2537657022476196
+  - -0.7885739803314209
+  - -0.2030726969242096
+  - 0.2145056426525116
+  - -0.02546568214893341
+  - 0.004649879410862923
+  - 1.223697304725647
+  - -0.11001519113779068
+  - 0.028438566252589226
+  - -0.061598919332027435
+  calibration_q_spread:
+  - 0.0002157166600227356
+  - 9.587407112121582e-05
+  - 0.0001318231225013733
+  - 0.00014382600784301758
+  - 0.00017976760864257812
+  - 0.00010788440704345703
+  - 0.00010785460472106934
+  recorded_at_utc: '2026-08-03T23:05:57.722831Z'
+  recorded_monotonic_s: 28682.635147222
+  source: manual_teaching
+  anchor: false
+  preview_path: sessions/manual_run_001/preview/poses/pose_004_capture_004.png
+  visual_quality:
+    grade: green
+    hard_failures: []
+    metrics:
+      duplicate_tag_ids: []
+      ignored_tag_ids: []
+      minimum_corner_image_margin_px: 201.0
+      minimum_quad_quality: 0.8561417300301002
+      minimum_tag_short_side_px: 43.81572847980555
+      novel_view: true
+      opencv_rejected_candidates: 728
+      pnp_depth_m: 0.4275157105959787
+      pnp_reprojection_error_px: 1.442134226435656
+      quality_rejected_detections: 0
+      tag_count: 3
+      tag_ids:
+      - 1
+      - 3
+      - 5
+      visible_faces:
+      - -X
+      - -Y
+      - -Z
+    save_allowed: true
+    signature:
+      image_cell:
+      - 1
+      - 1
+      normalized_centroid:
+      - 0.5222461055211794
+      - 0.6311778783466621
+      rvec:
+      - -0.6870928347769313
+      - -0.8641819136132395
+      - -2.118642148060191
+      tag_ids:
+      - 1
+      - 3
+      - 5
+      tvec_m:
+      - 0.00952731106926376
+      - 0.03758432086155333
+      - 0.4275157105959787
+      visible_faces:
+      - -X
+      - -Y
+      - -Z
+    state_readiness:
+      calibration_arm: left
+      duration_s: 0.5011228500006837
+      hard_failures: []
+      maximum_calibration_position_spread_rad: 0.0002157166600227356
+      maximum_calibration_velocity_rad_s: 0.04295146465301514
+      maximum_hold_position_spread_rad: 8.38935375213623e-05
+      maximum_hold_velocity_rad_s: 0.04908738657832146
+      maximum_state_gap_s: 0.006522193998534931
+      ready: true
+      sample_count: 523
+    timestamp_pairing:
+      after_state_monotonic_s: 28682.635553809
+      before_state_monotonic_s: 28682.633737322
+      bracket_span_s: 0.0018164869979955256
+      image_header_stamp_ns: 445559791466273
+      image_receipt_monotonic_s: 28682.635147222
+      image_receipt_utc: '2026-08-03T23:05:57.722831Z'
+      nearest_delta_s: 0.0004065869979967829
+      nearest_state_monotonic_s: 28682.635553809
+    warnings: []
+    yellow_override_reason: null
+- id: pose_005
+  group: calibration
+  measured_calibration_q:
+  - -0.04056660085916519
+  - -0.07924049347639084
+  - -0.3707679510116577
+  - 0.1454046070575714
+  - 1.2540173530578613
+  - -0.7880946397781372
+  - -0.20361198484897614
+  measured_full_q:
+  - -0.21326594054698944
+  - -0.031617049127817154
+  - -0.007070920895785093
+  - 0.4705145061016083
+  - -0.3543398082256317
+  - 0.031025083735585213
+  - -0.24681751430034637
+  - 0.016814133152365685
+  - 0.0330645889043808
+  - 0.470906525850296
+  - -0.341256707906723
+  - -0.007968253456056118
+  - -0.013726692646741867
+  - -0.029252268373966217
+  - -0.16051289439201355
+  - -0.04056660085916519
+  - -0.07924049347639084
+  - -0.3707679510116577
+  - 0.1454046070575714
+  - 1.2540173530578613
+  - -0.7880946397781372
+  - -0.20361198484897614
+  - 0.21442176401615143
+  - -0.025405757129192352
+  - 0.004637895151972771
+  - 1.2236852645874023
+  - -0.11002717167139053
+  - 0.028426581993699074
+  - -0.06156296655535698
+  calibration_q_spread:
+  - 0.00016777962446212769
+  - 9.58666205406189e-05
+  - 0.00013184547424316406
+  - 0.00020372867584228516
+  - 5.996227264404297e-05
+  - 0.00013178586959838867
+  - 4.793703556060791e-05
+  recorded_at_utc: '2026-08-03T23:06:05.308990Z'
+  recorded_monotonic_s: 28690.221324072
+  source: manual_teaching
+  anchor: false
+  preview_path: sessions/manual_run_001/preview/poses/pose_005_capture_005.png
+  visual_quality:
+    grade: green
+    hard_failures: []
+    metrics:
+      duplicate_tag_ids: []
+      ignored_tag_ids: []
+      minimum_corner_image_margin_px: 120.8206787109375
+      minimum_quad_quality: 0.7925366333501029
+      minimum_tag_short_side_px: 42.292446787710155
+      novel_view: true
+      opencv_rejected_candidates: 704
+      pnp_depth_m: 0.38243204939341535
+      pnp_reprojection_error_px: 0.47273023657765645
+      quality_rejected_detections: 0
+      tag_count: 2
+      tag_ids:
+      - 1
+      - 5
+      visible_faces:
+      - -X
+      - -Z
+    save_allowed: true
+    signature:
+      image_cell:
+      - 1
+      - 2
+      normalized_centroid:
+      - 0.647131215230481
+      - 0.7381943077968125
+      rvec:
+      - -0.6530424850486205
+      - -0.7398124755206866
+      - -1.8727815039496143
+      tag_ids:
+      - 1
+      - 5
+      tvec_m:
+      - 0.06872787664399303
+      - 0.06724850851849071
+      - 0.38243204939341535
+      visible_faces:
+      - -X
+      - -Z
+    state_readiness:
+      calibration_arm: left
+      duration_s: 0.5015026430010039
+      hard_failures: []
+      maximum_calibration_position_spread_rad: 0.00020372867584228516
+      maximum_calibration_velocity_rad_s: 0.03681553900241852
+      maximum_hold_position_spread_rad: 7.190555334091187e-05
+      maximum_hold_velocity_rad_s: 0.03681553900241852
+      maximum_state_gap_s: 0.0244070280023152
+      ready: true
+      sample_count: 517
+    timestamp_pairing:
+      after_state_monotonic_s: 28690.221880635
+      before_state_monotonic_s: 28690.219671472
+      bracket_span_s: 0.002209162998042302
+      image_header_stamp_ns: 445567330226925
+      image_receipt_monotonic_s: 28690.221324072
+      image_receipt_utc: '2026-08-03T23:06:05.308990Z'
+      nearest_delta_s: 0.0005565629980992526
+      nearest_state_monotonic_s: 28690.221880635
+    warnings: []
+    yellow_override_reason: null
+- id: pose_006
+  group: calibration
+  measured_calibration_q:
+  - -0.16317720711231232
+  - -0.0769035741686821
+  - -0.42195257544517517
+  - -0.33827874064445496
+  - 1.270915150642395
+  - -0.41623610258102417
+  - -0.19531890749931335
+  measured_full_q:
+  - -0.19698017835617065
+  - -0.03160000219941139
+  - -0.007070920895785093
+  - 0.4705059826374054
+  - -0.3551264703273773
+  - 0.03147652745246887
+  - -0.2467663735151291
+  - 0.01689935475587845
+  - 0.03445734828710556
+  - 0.47101733088493347
+  - -0.3413010835647583
+  - -0.008047794923186302
+  - -0.01577565260231495
+  - -0.02921326272189617
+  - -0.1607721745967865
+  - -0.16317720711231232
+  - -0.0769035741686821
+  - -0.42195257544517517
+  - -0.33827874064445496
+  - 1.270915150642395
+  - -0.41623610258102417
+  - -0.19531890749931335
+  - 0.2141820788383484
+  - -0.025309883058071136
+  - 0.004542021546512842
+  - 1.2236613035202026
+  - -0.11005114018917084
+  - 0.028426581993699074
+  - -0.06152701377868652
+  calibration_q_spread:
+  - 0.0003834962844848633
+  - 0.00011984258890151978
+  - 0.0002276897430419922
+  - 0.0001557767391204834
+  - 0.0001558065414428711
+  - 0.00028762221336364746
+  - 0.0001677870750427246
+  recorded_at_utc: '2026-08-03T23:06:14.034873Z'
+  recorded_monotonic_s: 28698.946838383
+  source: manual_teaching
+  anchor: false
+  preview_path: sessions/manual_run_001/preview/poses/pose_006_capture_006.png
+  visual_quality:
+    grade: yellow
+    hard_failures: []
+    metrics:
+      duplicate_tag_ids: []
+      ignored_tag_ids: []
+      minimum_corner_image_margin_px: 225.29617309570312
+      minimum_quad_quality: 0.6384056561416965
+      minimum_tag_short_side_px: 31.00829379923593
+      novel_view: true
+      opencv_rejected_candidates: 651
+      pnp_depth_m: 0.27183528328410644
+      pnp_reprojection_error_px: 0.8051825510883961
+      quality_rejected_detections: 0
+      tag_count: 2
+      tag_ids:
+      - 1
+      - 5
+      visible_faces:
+      - -X
+      - -Z
+    save_allowed: true
+    signature:
+      image_cell:
+      - 1
+      - 1
+      normalized_centroid:
+      - 0.6425820500520731
+      - 0.45764308181359475
+      rvec:
+      - -0.5270611975294727
+      - -0.19298902048746172
+      - -2.2407545223910046
+      tag_ids:
+      - 1
+      - 5
+      tvec_m:
+      - 0.0456201559838647
+      - -0.014959445300848867
+      - 0.27183528328410644
+      visible_faces:
+      - -X
+      - -Z
+    state_readiness:
+      calibration_arm: left
+      duration_s: 0.5021510520018637
+      hard_failures: []
+      maximum_calibration_position_spread_rad: 0.0003834962844848633
+      maximum_calibration_velocity_rad_s: 0.03988350182771683
+      maximum_hold_position_spread_rad: 7.190555334091187e-05
+      maximum_hold_velocity_rad_s: 0.04295146465301514
+      maximum_state_gap_s: 0.018715866001002723
+      ready: true
+      sample_count: 512
+    timestamp_pairing:
+      after_state_monotonic_s: 28698.947095383
+      before_state_monotonic_s: 28698.945827647
+      bracket_span_s: 0.0012677359991357662
+      image_header_stamp_ns: 445576069346062
+      image_receipt_monotonic_s: 28698.946838383
+      image_receipt_utc: '2026-08-03T23:06:14.034873Z'
+      nearest_delta_s: 0.0002569999996921979
+      nearest_state_monotonic_s: 28698.947095383
+    warnings:
+    - 'tag size is marginal: 31.0px; prefer 40.0px'
+    yellow_override_reason: manual tabletop capture; warning reviewed in live preview
+- id: pose_007
+  group: calibration
+  measured_calibration_q:
+  - -0.1706913262605667
+  - -0.05173669755458832
+  - -0.682693362236023
+  - -0.33958500623703003
+  - 1.2728685140609741
+  - -0.5596153736114502
+  - -0.19518707692623138
+  measured_full_q:
+  - -0.19697165489196777
+  - -0.03165113553404808
+  - -0.00705752894282341
+  - 0.47039520740509033
+  - -0.35517123341560364
+  - 0.03141791746020317
+  - -0.24679194390773773
+  - 0.016941964626312256
+  - 0.03345295414328575
+  - 0.47102585434913635
+  - -0.341305136680603
+  - -0.008055023849010468
+  - -0.024132195860147476
+  - -0.029198363423347473
+  - -0.16073539853096008
+  - -0.1706913262605667
+  - -0.05173669755458832
+  - -0.682693362236023
+  - -0.33958500623703003
+  - 1.2728685140609741
+  - -0.5596153736114502
+  - -0.19518707692623138
+  - 0.21115006506443024
+  - -0.02521400898694992
+  - 0.004554005805402994
+  - 1.2237931489944458
+  - -0.11005114018917084
+  - 0.028438566252589226
+  - -0.061479076743125916
+  calibration_q_spread:
+  - 0.0016777962446212769
+  - 0.00016777589917182922
+  - 0.00027567148208618164
+  - 0.00028762221336364746
+  - 9.584426879882812e-05
+  - 0.00014382600784301758
+  - 7.191300392150879e-05
+  recorded_at_utc: '2026-08-03T23:06:19.976143Z'
+  recorded_monotonic_s: 28704.887966637
+  source: manual_teaching
+  anchor: false
+  preview_path: sessions/manual_run_001/preview/poses/pose_007_capture_007.png
+  visual_quality:
+    grade: yellow
+    hard_failures: []
+    metrics:
+      duplicate_tag_ids: []
+      ignored_tag_ids: []
+      minimum_corner_image_margin_px: 113.645263671875
+      minimum_quad_quality: 0.9756927576282941
+      minimum_tag_short_side_px: 121.5076571674793
+      novel_view: true
+      opencv_rejected_candidates: 613
+      pnp_depth_m: 0.24532427918367075
+      pnp_reprojection_error_px: 0.2603745245005285
+      quality_rejected_detections: 0
+      tag_count: 1
+      tag_ids:
+      - 5
+      visible_faces:
+      - -Z
+    save_allowed: true
+    signature:
+      image_cell:
+      - 2
+      - 2
+      normalized_centroid:
+      - 0.8041246546908596
+      - 0.7370242674592805
+      rvec:
+      - -0.4833984076234721
+      - -0.12586625962511702
+      - -1.8497032178543662
+      tag_ids:
+      - 5
+      tvec_m:
+      - 0.09929684395504945
+      - 0.04654102070900462
+      - 0.24532427918367075
+      visible_faces:
+      - -Z
+    state_readiness:
+      calibration_arm: left
+      duration_s: 0.5002656889992068
+      hard_failures: []
+      maximum_calibration_position_spread_rad: 0.0016777962446212769
+      maximum_calibration_velocity_rad_s: 0.04908738657832146
+      maximum_hold_position_spread_rad: 8.388608694076538e-05
+      maximum_hold_velocity_rad_s: 0.04295146465301514
+      maximum_state_gap_s: 0.016532997997273924
+      ready: true
+      sample_count: 522
+    timestamp_pairing:
+      after_state_monotonic_s: 28704.888023928
+      before_state_monotonic_s: 28704.886115008
+      bracket_span_s: 0.0019089199995505624
+      image_header_stamp_ns: 445582006662173
+      image_receipt_monotonic_s: 28704.887966637
+      image_receipt_utc: '2026-08-03T23:06:19.976143Z'
+      nearest_delta_s: 5.729099939344451e-05
+      nearest_state_monotonic_s: 28704.888023928
+    warnings:
+    - only 1 cube face visible; prefer 2
+    yellow_override_reason: manual tabletop capture; warning reviewed in live preview
+- id: pose_008
+  group: calibration
+  measured_calibration_q:
+  - -0.11941082030534744
+  - -0.048417069017887115
+  - -0.5274976491928101
+  - -0.2924390733242035
+  - 0.8416281938552856
+  - -0.19933362305164337
+  - -0.20411533117294312
+  measured_full_q:
+  - -0.19595752656459808
+  - -0.031804535537958145
+  - -0.007124488707631826
+  - 0.4550383388996124
+  - -0.35519564151763916
+  - 0.03137414529919624
+  - -0.24682602286338806
+  - 0.016933443024754524
+  - 0.033158332109451294
+  - 0.47102585434913635
+  - -0.3411877751350403
+  - -0.007845299318432808
+  - -0.023435818031430244
+  - -0.02256673015654087
+  - -0.15608195215463638
+  - -0.11941082030534744
+  - -0.048417069017887115
+  - -0.5274976491928101
+  - -0.2924390733242035
+  - 0.8416281938552856
+  - -0.19933362305164337
+  - -0.20411533117294312
+  - 0.20815400779247284
+  - -0.025681398808956146
+  - 0.0041824947111308575
+  - 1.2238410711288452
+  - -0.11002717167139053
+  - 0.028438566252589226
+  - -0.061658840626478195
+  calibration_q_spread:
+  - 0.000551275908946991
+  - 0.00013182684779167175
+  - 0.0004793405532836914
+  - 0.00028762221336364746
+  - 7.194280624389648e-05
+  - 0.00016777217388153076
+  - 7.189810276031494e-05
+  recorded_at_utc: '2026-08-03T23:06:26.759946Z'
+  recorded_monotonic_s: 28711.67227834
+  source: manual_teaching
+  anchor: false
+  preview_path: sessions/manual_run_001/preview/poses/pose_008_capture_008.png
+  visual_quality:
+    grade: green
+    hard_failures: []
+    metrics:
+      duplicate_tag_ids: []
+      ignored_tag_ids: []
+      minimum_corner_image_margin_px: 237.1094512939453
+      minimum_quad_quality: 0.7757359430324785
+      minimum_tag_short_side_px: 52.898111884219624
+      novel_view: true
+      opencv_rejected_candidates: 714
+      pnp_depth_m: 0.30469555524809505
+      pnp_reprojection_error_px: 0.7421914200393924
+      quality_rejected_detections: 0
+      tag_count: 2
+      tag_ids:
+      - 1
+      - 5
+      visible_faces:
+      - -X
+      - -Z
+    save_allowed: true
+    signature:
+      image_cell:
+      - 1
+      - 1
+      normalized_centroid:
+      - 0.5947232458906494
+      - 0.4344925250396941
+      rvec:
+      - -1.0974909543147562
+      - -0.4716837470552331
+      - -2.165774083406491
+      tag_ids:
+      - 1
+      - 5
+      tvec_m:
+      - 0.036041071671625104
+      - -0.016337784471270468
+      - 0.30469555524809505
+      visible_faces:
+      - -X
+      - -Z
+    state_readiness:
+      calibration_arm: left
+      duration_s: 0.5013452969978971
+      hard_failures: []
+      maximum_calibration_position_spread_rad: 0.000551275908946991
+      maximum_calibration_velocity_rad_s: 0.04448544606566429
+      maximum_hold_position_spread_rad: 0.0003475397825241089
+      maximum_hold_velocity_rad_s: 0.03681553900241852
+      maximum_state_gap_s: 0.024045884998486144
+      ready: true
+      sample_count: 520
+    timestamp_pairing:
+      after_state_monotonic_s: 28711.673082964
+      before_state_monotonic_s: 28711.670716596
+      bracket_span_s: 0.002366368000366492
+      image_header_stamp_ns: 445588744664008
+      image_receipt_monotonic_s: 28711.67227834
+      image_receipt_utc: '2026-08-03T23:06:26.759946Z'
+      nearest_delta_s: 0.0008046240000112448
+      nearest_state_monotonic_s: 28711.673082964
+    warnings: []
+    yellow_override_reason: null
+- id: pose_009
+  group: calibration
+  measured_calibration_q:
+  - -0.07771769911050797
+  - -0.03964461386203766
+  - -0.5666860938072205
+  - -0.5510586500167847
+  - 1.0829424858093262
+  - -0.2871659994125366
+  - -0.19602596759796143
+  measured_full_q:
+  - -0.19602569937705994
+  - -0.03160000219941139
+  - -0.007204839959740639
+  - 0.45533663034439087
+  - -0.3552933633327484
+  - 0.031278688460588455
+  - -0.24700500071048737
+  - 0.016924921423196793
+  - 0.033158332109451294
+  - 0.47103437781333923
+  - -0.34006601572036743
+  - -0.005849385168403387
+  - -0.023221546784043312
+  - -0.02156250737607479
+  - -0.15534146130084991
+  - -0.07771769911050797
+  - -0.03964461386203766
+  - -0.5666860938072205
+  - -0.5510586500167847
+  - 1.0829424858093262
+  - -0.2871659994125366
+  - -0.19602596759796143
+  - 0.20744693279266357
+  - -0.025849178433418274
+  - 0.004098604898899794
+  - 1.2239489555358887
+  - -0.11005114018917084
+  - 0.028498487547039986
+  - -0.06163487210869789
+  calibration_q_spread:
+  - 0.0014381036162376404
+  - 4.793703556060791e-05
+  - 0.00014382600784301758
+  - 0.00010782480239868164
+  - 3.5881996154785156e-05
+  - 9.587407112121582e-05
+  - 7.191300392150879e-05
+  recorded_at_utc: '2026-08-03T23:06:37.732654Z'
+  recorded_monotonic_s: 28722.644871565
+  source: manual_teaching
+  anchor: false
+  preview_path: sessions/manual_run_001/preview/poses/pose_009_capture_009.png
+  visual_quality:
+    grade: green
+    hard_failures: []
+    metrics:
+      duplicate_tag_ids: []
+      ignored_tag_ids: []
+      minimum_corner_image_margin_px: 224.69564819335938
+      minimum_quad_quality: 0.7164831343893764
+      minimum_tag_short_side_px: 56.703129751289865
+      novel_view: true
+      opencv_rejected_candidates: 588
+      pnp_depth_m: 0.23137970656000192
+      pnp_reprojection_error_px: 0.6047592503352393
+      quality_rejected_detections: 0
+      tag_count: 2
+      tag_ids:
+      - 1
+      - 5
+      visible_faces:
+      - -X
+      - -Z
+    save_allowed: true
+    signature:
+      image_cell:
+      - 1
+      - 1
+      normalized_centroid:
+      - 0.6293599752824319
+      - 0.55429652801641
+      rvec:
+      - -0.8394616282010177
+      - -0.1091971060411266
+      - -2.1569349960900173
+      tag_ids:
+      - 1
+      - 5
+      tvec_m:
+      - 0.03728140645489208
+      - 0.004117454730942011
+      - 0.23137970656000192
+      visible_faces:
+      - -X
+      - -Z
+    state_readiness:
+      calibration_arm: left
+      duration_s: 0.5080941300002451
+      hard_failures: []
+      maximum_calibration_position_spread_rad: 0.0014381036162376404
+      maximum_calibration_velocity_rad_s: 0.04295146465301514
+      maximum_hold_position_spread_rad: 7.190555334091187e-05
+      maximum_hold_velocity_rad_s: 0.04295146465301514
+      maximum_state_gap_s: 0.011881115002324805
+      ready: true
+      sample_count: 519
+    timestamp_pairing:
+      after_state_monotonic_s: 28722.645072695
+      before_state_monotonic_s: 28722.642609415
+      bracket_span_s: 0.0024632799977553077
+      image_header_stamp_ns: 445599819281833
+      image_receipt_monotonic_s: 28722.644871565
+      image_receipt_utc: '2026-08-03T23:06:37.732654Z'
+      nearest_delta_s: 0.0002011299984587822
+      nearest_state_monotonic_s: 28722.645072695
+    warnings: []
+    yellow_override_reason: null
+- id: pose_010
+  group: calibration
+  measured_calibration_q:
+  - -0.12833906710147858
+  - -0.048297226428985596
+  - -0.7447357177734375
+  - 0.24634774029254913
+  - 1.4507144689559937
+  - -0.2869143486022949
+  - -0.19504326581954956
+  measured_full_q:
+  - -0.19437241554260254
+  - -0.031369905918836594
+  - -0.007204839959740639
+  - 0.4556093215942383
+  - -0.3564329445362091
+  - 0.029414102435112
+  - -0.24711577594280243
+  - 0.01702718622982502
+  - 0.03313155099749565
+  - 0.4710428714752197
+  - -0.3400985896587372
+  - -0.005900006741285324
+  - -0.04766175523400307
+  - -0.021932516247034073
+  - -0.15559400618076324
+  - -0.12833906710147858
+  - -0.048297226428985596
+  - -0.7447357177734375
+  - 0.24634774029254913
+  - 1.4507144689559937
+  - -0.2869143486022949
+  - -0.19504326581954956
+  - 0.206667959690094
+  - -0.025190040469169617
+  - 0.004206463228911161
+  - 1.223697304725647
+  - -0.11002717167139053
+  - 0.028294755145907402
+  - -0.061107564717531204
+  calibration_q_spread:
+  - 0.00023968517780303955
+  - 0.00011984258890151978
+  - 0.0008628964424133301
+  - 0.00021570920944213867
+  - 0.00010788440704345703
+  - 7.191300392150879e-05
+  - 9.587407112121582e-05
+  recorded_at_utc: '2026-08-03T23:06:45.184143Z'
+  recorded_monotonic_s: 28730.096467251
+  source: manual_teaching
+  anchor: false
+  preview_path: sessions/manual_run_001/preview/poses/pose_010_capture_010.png
+  visual_quality:
+    grade: yellow
+    hard_failures: []
+    metrics:
+      duplicate_tag_ids: []
+      ignored_tag_ids: []
+      minimum_corner_image_margin_px: 83.0
+      minimum_quad_quality: 0.7881109154315523
+      minimum_tag_short_side_px: 37.868563134424846
+      novel_view: true
+      opencv_rejected_candidates: 730
+      pnp_depth_m: 0.4162044094316501
+      pnp_reprojection_error_px: 1.4407383538238114
+      quality_rejected_detections: 0
+      tag_count: 3
+      tag_ids:
+      - 1
+      - 3
+      - 5
+      visible_faces:
+      - -X
+      - -Y
+      - -Z
+    save_allowed: true
+    signature:
+      image_cell:
+      - 2
+      - 2
+      normalized_centroid:
+      - 0.7063342649426534
+      - 0.8106809005065267
+      rvec:
+      - -0.23295194785084944
+      - -0.9046834108463053
+      - -1.9186662929309592
+      tag_ids:
+      - 1
+      - 3
+      - 5
+      tvec_m:
+      - 0.11295186977509712
+      - 0.09366807155689419
+      - 0.4162044094316501
+      visible_faces:
+      - -X
+      - -Y
+      - -Z
+    state_readiness:
+      calibration_arm: left
+      duration_s: 0.5014303880016087
+      hard_failures: []
+      maximum_calibration_position_spread_rad: 0.0008628964424133301
+      maximum_calibration_velocity_rad_s: 0.04295146465301514
+      maximum_hold_position_spread_rad: 9.587407112121582e-05
+      maximum_hold_velocity_rad_s: 0.03681553900241852
+      maximum_state_gap_s: 0.007421515001624357
+      ready: true
+      sample_count: 523
+    timestamp_pairing:
+      after_state_monotonic_s: 28730.097267022
+      before_state_monotonic_s: 28730.093163285
+      bracket_span_s: 0.004103736999240937
+      image_header_stamp_ns: 445607157634099
+      image_receipt_monotonic_s: 28730.096467251
+      image_receipt_utc: '2026-08-03T23:06:45.184143Z'
+      nearest_delta_s: 0.0007997709981282242
+      nearest_state_monotonic_s: 28730.097267022
+    warnings:
+    - 'tag size is marginal: 37.9px; prefer 40.0px'
+    yellow_override_reason: manual tabletop capture; warning reviewed in live preview
+- id: pose_011
+  group: calibration
+  measured_calibration_q:
+  - -0.23689217865467072
+  - -0.04972334951162338
+  - -0.9292088747024536
+  - 0.18510834872722626
+  - 1.4098362922668457
+  - -0.3078387975692749
+  - -0.05197558552026749
+  measured_full_q:
+  - -0.19180725514888763
+  - -0.0303813423961401
+  - -0.007218231912702322
+  - 0.45566046237945557
+  - -0.3563351631164551
+  - 0.02943672053515911
+  - -0.24711577594280243
+  - 0.018441857770085335
+  - 0.033158332109451294
+  - 0.47185248136520386
+  - -0.3443504571914673
+  - -0.013454227708280087
+  - -0.1777908056974411
+  - -0.01973741687834263
+  - -0.15558044612407684
+  - -0.23689217865467072
+  - -0.04972334951162338
+  - -0.9292088747024536
+  - 0.18510834872722626
+  - 1.4098362922668457
+  - -0.3078387975692749
+  - -0.05197558552026749
+  - 0.18555176258087158
+  - -0.02243366837501526
+  - 0.00441019469872117
+  - 1.2236613035202026
+  - -0.11001519113779068
+  - 0.027827370911836624
+  - -0.06041247770190239
+  calibration_q_spread:
+  - 0.00013183057308197021
+  - 0.00016777962446212769
+  - 0.00014382600784301758
+  - 0.00017976760864257812
+  - 5.996227264404297e-05
+  - 0.00010785460472106934
+  - 7.190555334091187e-05
+  recorded_at_utc: '2026-08-03T23:06:52.138114Z'
+  recorded_monotonic_s: 28737.050426811
+  source: manual_teaching
+  anchor: false
+  preview_path: sessions/manual_run_001/preview/poses/pose_011_capture_011.png
+  visual_quality:
+    grade: yellow
+    hard_failures: []
+    metrics:
+      duplicate_tag_ids: []
+      ignored_tag_ids: []
+      minimum_corner_image_margin_px: 46.91552734375
+      minimum_quad_quality: 0.7145238524104193
+      minimum_tag_short_side_px: 35.763813234555776
+      novel_view: true
+      opencv_rejected_candidates: 751
+      pnp_depth_m: 0.36635757805105895
+      pnp_reprojection_error_px: 0.7976543520142969
+      quality_rejected_detections: 0
+      tag_count: 2
+      tag_ids:
+      - 3
+      - 5
+      visible_faces:
+      - -Y
+      - -Z
+    save_allowed: true
+    signature:
+      image_cell:
+      - 2
+      - 2
+      normalized_centroid:
+      - 0.7891997575200658
+      - 0.8498354661116514
+      rvec:
+      - -0.3104727097014894
+      - -0.5874618669773725
+      - -1.7986879744438116
+      tag_ids:
+      - 3
+      - 5
+      tvec_m:
+      - 0.1484175001273628
+      - 0.09822650983690066
+      - 0.36635757805105895
+      visible_faces:
+      - -Y
+      - -Z
+    state_readiness:
+      calibration_arm: left
+      duration_s: 0.5111787170026219
+      hard_failures: []
+      maximum_calibration_position_spread_rad: 0.00017976760864257812
+      maximum_calibration_velocity_rad_s: 0.04295146465301514
+      maximum_hold_position_spread_rad: 0.00010786205530166626
+      maximum_hold_velocity_rad_s: 0.04601942375302315
+      maximum_state_gap_s: 0.015114654001081362
+      ready: true
+      sample_count: 574
+    timestamp_pairing:
+      after_state_monotonic_s: 28737.050664785
+      before_state_monotonic_s: 28737.049268007
+      bracket_span_s: 0.0013967780032544397
+      image_header_stamp_ns: 445614162133789
+      image_receipt_monotonic_s: 28737.050426811
+      image_receipt_utc: '2026-08-03T23:06:52.138114Z'
+      nearest_delta_s: 0.00023797399990144186
+      nearest_state_monotonic_s: 28737.050664785
+    warnings:
+    - 'tag size is marginal: 35.8px; prefer 40.0px'
+    yellow_override_reason: manual tabletop capture; warning reviewed in live preview
+- id: pose_012
+  group: calibration
+  measured_calibration_q:
+  - -0.17629994451999664
+  - -0.040711212903261185
+  - -0.020085562020540237
+  - 0.16898955404758453
+  - 1.4960027933120728
+  - -0.3067722022533417
+  - -0.050645336508750916
+  measured_full_q:
+  - -0.19623875617980957
+  - -0.0316426157951355
+  - -0.007164664100855589
+  - 0.45533663034439087
+  - -0.3563636243343353
+  - 0.02936377562582493
+  - -0.24642549455165863
+  - 0.0169675312936306
+  - 0.024935709312558174
+  - 0.47180986404418945
+  - -0.3439631164073944
+  - -0.012774805538356304
+  - -0.17630431056022644
+  - -0.008853503502905369
+  - -0.14714783430099487
+  - -0.17629994451999664
+  - -0.040711212903261185
+  - -0.020085562020540237
+  - 0.16898955404758453
+  - 1.4960027933120728
+  - -0.3067722022533417
+  - -0.050645336508750916
+  - 0.18254372477531433
+  - -0.024339161813259125
+  - 0.004326305352151394
+  - 1.2236852645874023
+  - -0.11002717167139053
+  - 0.027815386652946472
+  - -0.0604843832552433
+  calibration_q_spread:
+  - 0.0007070600986480713
+  - 0.0006711184978485107
+  - 0.0003715120255947113
+  - 0.006351649761199951
+  - 5.996227264404297e-05
+  - 0.000299602746963501
+  - 7.190555334091187e-05
+  recorded_at_utc: '2026-08-03T23:06:57.337109Z'
+  recorded_monotonic_s: 28742.249441497
+  source: manual_teaching
+  anchor: false
+  preview_path: sessions/manual_run_001/preview/poses/pose_012_capture_012.png
+  visual_quality:
+    grade: yellow
+    hard_failures: []
+    metrics:
+      duplicate_tag_ids: []
+      ignored_tag_ids: []
+      minimum_corner_image_margin_px: 256.4326477050781
+      minimum_quad_quality: 0.804503348849833
+      minimum_tag_short_side_px: 37.63922521063849
+      novel_view: true
+      opencv_rejected_candidates: 813
+      pnp_depth_m: 0.43033245436836703
+      pnp_reprojection_error_px: 0.7198051458059948
+      quality_rejected_detections: 0
+      tag_count: 3
+      tag_ids:
+      - 1
+      - 3
+      - 5
+      visible_faces:
+      - -X
+      - -Y
+      - -Z
+    save_allowed: true
+    signature:
+      image_cell:
+      - 1
+      - 1
+      normalized_centroid:
+      - 0.4110322245900321
+      - 0.44506469146488
+      rvec:
+      - -0.20442533231670496
+      - -0.7831060465755677
+      - -2.7000236259154784
+      tag_ids:
+      - 1
+      - 3
+      - 5
+      tvec_m:
+      - -0.06229728258736003
+      - -0.02599451482569506
+      - 0.43033245436836703
+      visible_faces:
+      - -X
+      - -Y
+      - -Z
+    state_readiness:
+      calibration_arm: left
+      duration_s: 0.5028568969974003
+      hard_failures: []
+      maximum_calibration_position_spread_rad: 0.006351649761199951
+      maximum_calibration_velocity_rad_s: 0.0951068103313446
+      maximum_hold_position_spread_rad: 0.00019174814224243164
+      maximum_hold_velocity_rad_s: 0.04295146465301514
+      maximum_state_gap_s: 0.027327652998792473
+      ready: true
+      sample_count: 479
+    timestamp_pairing:
+      after_state_monotonic_s: 28742.249555968
+      before_state_monotonic_s: 28742.248111659
+      bracket_span_s: 0.0014443090003624093
+      image_header_stamp_ns: 445619365845677
+      image_receipt_monotonic_s: 28742.249441497
+      image_receipt_utc: '2026-08-03T23:06:57.337109Z'
+      nearest_delta_s: 0.00011447100041550584
+      nearest_state_monotonic_s: 28742.249555968
+    warnings:
+    - 'tag size is marginal: 37.6px; prefer 40.0px'
+    yellow_override_reason: manual tabletop capture; warning reviewed in live preview
+- id: pose_013
+  group: calibration
+  measured_calibration_q:
+  - -0.11528825014829636
+  - -0.04226916283369064
+  - 0.5819779634475708
+  - -0.10363958030939102
+  - 1.7110238075256348
+  - -0.3060891032218933
+  - -0.05066930502653122
+  measured_full_q:
+  - -0.19624727964401245
+  - -0.03160000219941139
+  - -0.007151272147893906
+  - 0.45533663034439087
+  - -0.3563554883003235
+  - 0.029356539249420166
+  - -0.2463914006948471
+  - 0.0169675312936306
+  - 0.024574128910899162
+  - 0.4717331826686859
+  - -0.3438815474510193
+  - -0.012630320154130459
+  - -0.1762775182723999
+  - -0.008982362225651741
+  - -0.14712753891944885
+  - -0.11528825014829636
+  - -0.04226916283369064
+  - 0.5819779634475708
+  - -0.10363958030939102
+  - 1.7110238075256348
+  - -0.3060891032218933
+  - -0.05066930502653122
+  - 0.18051838874816895
+  - -0.02424328774213791
+  - 0.00436225812882185
+  - 1.223924994468689
+  - -0.11002717167139053
+  - 0.027971182018518448
+  - -0.060460414737463
+  calibration_q_spread:
+  - 0.0020972415804862976
+  - 0.0002636536955833435
+  - 0.00013184547424316406
+  - 0.0003475397825241089
+  - 7.18832015991211e-05
+  - 7.191300392150879e-05
+  - 5.992129445075989e-05
+  recorded_at_utc: '2026-08-03T23:07:03.514839Z'
+  recorded_monotonic_s: 28748.426580271
+  source: manual_teaching
+  anchor: false
+  preview_path: sessions/manual_run_001/preview/poses/pose_013_capture_013.png
+  visual_quality:
+    grade: green
+    hard_failures: []
+    metrics:
+      duplicate_tag_ids: []
+      ignored_tag_ids:
+      - 17
+      minimum_corner_image_margin_px: 23.533910751342773
+      minimum_quad_quality: 0.738297269583646
+      minimum_tag_short_side_px: 41.33955489275067
+      novel_view: true
+      opencv_rejected_candidates: 797
+      pnp_depth_m: 0.3720658554544928
+      pnp_reprojection_error_px: 0.766981300309918
+      quality_rejected_detections: 0
+      tag_count: 2
+      tag_ids:
+      - 3
+      - 5
+      visible_faces:
+      - -Y
+      - -Z
+    save_allowed: true
+    signature:
+      image_cell:
+      - 0
+      - 1
+      normalized_centroid:
+      - 0.05988581037036696
+      - 0.4736181267113613
+      rvec:
+      - -0.33040218004032323
+      - 0.6376768677069146
+      - 2.8256927096553723
+      tag_ids:
+      - 3
+      - 5
+      tvec_m:
+      - -0.23253057743575048
+      - -0.015412573011223538
+      - 0.3720658554544928
+      visible_faces:
+      - -Y
+      - -Z
+    state_readiness:
+      calibration_arm: left
+      duration_s: 0.5067011890023423
+      hard_failures: []
+      maximum_calibration_position_spread_rad: 0.0020972415804862976
+      maximum_calibration_velocity_rad_s: 0.03681553900241852
+      maximum_hold_position_spread_rad: 0.0002636462450027466
+      maximum_hold_velocity_rad_s: 0.04295146465301514
+      maximum_state_gap_s: 0.042590526998537825
+      ready: true
+      sample_count: 509
+    timestamp_pairing:
+      after_state_monotonic_s: 28748.426839103
+      before_state_monotonic_s: 28748.425246291
+      bracket_span_s: 0.0015928119973978028
+      image_header_stamp_ns: 445625570378977
+      image_receipt_monotonic_s: 28748.426580271
+      image_receipt_utc: '2026-08-03T23:07:03.514839Z'
+      nearest_delta_s: 0.0002588319985079579
+      nearest_state_monotonic_s: 28748.426839103
+    warnings: []
+    yellow_override_reason: null
+- id: pose_014
+  group: calibration
+  measured_calibration_q:
+  - -0.16320118308067322
+  - -0.086838498711586
+  - -0.1375429481267929
+  - -0.45311155915260315
+  - 1.9711054563522339
+  - -0.15718509256839752
+  - -0.0406145378947258
+  measured_full_q:
+  - -0.19455137848854065
+  - -0.03142956271767616
+  - -0.007151272147893906
+  - 0.4555923044681549
+  - -0.35641252994537354
+  - 0.029341526329517365
+  - -0.24684306979179382
+  - 0.016993097960948944
+  - 0.030359428375959396
+  - 0.4716053307056427
+  - -0.3436899781227112
+  - -0.012290545739233494
+  - -0.18101824820041656
+  - -0.007123551797121763
+  - -0.14909614622592926
+  - -0.16320118308067322
+  - -0.086838498711586
+  - -0.1375429481267929
+  - -0.45311155915260315
+  - 1.9711054563522339
+  - -0.15718509256839752
+  - -0.0406145378947258
+  - 0.17387911677360535
+  - -0.024303212761878967
+  - 0.00430233683437109
+  - 1.2239729166030884
+  - -0.11002717167139053
+  - 0.02804308757185936
+  - -0.0604843832552433
+  calibration_q_spread:
+  - 0.0010186582803726196
+  - 0.00010785460472106934
+  - 0.0031758099794387817
+  - 0.0010665953159332275
+  - 0.0020253658294677734
+  - 0.00013183057308197021
+  - 0.00025166943669319153
+  recorded_at_utc: '2026-08-03T23:07:17.416878Z'
+  recorded_monotonic_s: 28762.329197219
+  source: manual_teaching
+  anchor: false
+  preview_path: sessions/manual_run_001/preview/poses/pose_014_capture_014.png
+  visual_quality:
+    grade: yellow
+    hard_failures: []
+    metrics:
+      duplicate_tag_ids: []
+      ignored_tag_ids: []
+      minimum_corner_image_margin_px: 107.8786392211914
+      minimum_quad_quality: 0.978122568496594
+      minimum_tag_short_side_px: 105.68290686282909
+      novel_view: true
+      opencv_rejected_candidates: 708
+      pnp_depth_m: 0.2682944599486519
+      pnp_reprojection_error_px: 0.3528580151874966
+      quality_rejected_detections: 0
+      tag_count: 1
+      tag_ids:
+      - 5
+      visible_faces:
+      - -Z
+    save_allowed: true
+    signature:
+      image_cell:
+      - 1
+      - 0
+      normalized_centroid:
+      - 0.41406328739646453
+      - 0.24854453913193916
+      rvec:
+      - 0.49284691263938396
+      - 0.013692899962010119
+      - -2.8422651237656096
+      tag_ids:
+      - 5
+      tvec_m:
+      - -0.04015835569312962
+      - -0.05334565704088384
+      - 0.2682944599486519
+      visible_faces:
+      - -Z
+    state_readiness:
+      calibration_arm: left
+      duration_s: 0.5011487379997561
+      hard_failures: []
+      maximum_calibration_position_spread_rad: 0.0031758099794387817
+      maximum_calibration_velocity_rad_s: 0.04295146465301514
+      maximum_hold_position_spread_rad: 0.00013183057308197021
+      maximum_hold_velocity_rad_s: 0.04295146465301514
+      maximum_state_gap_s: 0.023239677997480612
+      ready: true
+      sample_count: 469
+    timestamp_pairing:
+      after_state_monotonic_s: 28762.329564543
+      before_state_monotonic_s: 28762.32820334
+      bracket_span_s: 0.0013612030015792698
+      image_header_stamp_ns: 445639446239857
+      image_receipt_monotonic_s: 28762.329197219
+      image_receipt_utc: '2026-08-03T23:07:17.416878Z'
+      nearest_delta_s: 0.00036732399894390255
+      nearest_state_monotonic_s: 28762.329564543
+    warnings:
+    - only 1 cube face visible; prefer 2
+    yellow_override_reason: manual tabletop capture; warning reviewed in live preview
+- id: pose_015
+  group: calibration
+  measured_calibration_q:
+  - -0.02985270507633686
+  - -0.08300354331731796
+  - 0.31534090638160706
+  - -0.6172595024108887
+  - 1.9713691473007202
+  - -0.2869143486022949
+  - -0.04012318700551987
+  measured_full_q:
+  - -0.1962302327156067
+  - -0.031386952847242355
+  - -0.007137880194932222
+  - 0.4554218351840973
+  - -0.3577813506126404
+  - 0.0291043259203434
+  - -0.24647662043571472
+  - 0.016771523281931877
+  - 0.023087628185749054
+  - 0.47172465920448303
+  - -0.3430171608924866
+  - -0.011170719750225544
+  - -0.17772385478019714
+  - -0.005108319688588381
+  - -0.1483667939901352
+  - -0.02985270507633686
+  - -0.08300354331731796
+  - 0.31534090638160706
+  - -0.6172595024108887
+  - 1.9713691473007202
+  - -0.2869143486022949
+  - -0.04012318700551987
+  - 0.17345967888832092
+  - -0.024710670113563538
+  - 0.004326305352151394
+  - 1.2240687608718872
+  - -0.11001519113779068
+  - 0.028067056089639664
+  - -0.06052033603191376
+  calibration_q_spread:
+  - 0.0037151072174310684
+  - 0.00023968517780303955
+  - 0.00020372867584228516
+  - 0.0005153417587280273
+  - 4.792213439941406e-05
+  - 7.191300392150879e-05
+  - 0.0003235749900341034
+  recorded_at_utc: '2026-08-03T23:07:26.563641Z'
+  recorded_monotonic_s: 28771.475980249
+  source: manual_teaching
+  anchor: false
+  preview_path: sessions/manual_run_001/preview/poses/pose_015_capture_015.png
+  visual_quality:
+    grade: yellow
+    hard_failures: []
+    metrics:
+      duplicate_tag_ids: []
+      ignored_tag_ids: []
+      minimum_corner_image_margin_px: 101.43427276611328
+      minimum_quad_quality: 0.9277589903981386
+      minimum_tag_short_side_px: 104.62904611440074
+      novel_view: true
+      opencv_rejected_candidates: 689
+      pnp_depth_m: 0.2671445233280018
+      pnp_reprojection_error_px: 0.22817142380449956
+      quality_rejected_detections: 0
+      tag_count: 1
+      tag_ids:
+      - 5
+      visible_faces:
+      - -Z
+    save_allowed: true
+    signature:
+      image_cell:
+      - 0
+      - 1
+      normalized_centroid:
+      - 0.1278108890584151
+      - 0.341436043899812
+      rvec:
+      - -0.9602254626020642
+      - 0.0415811518993245
+      - 2.962430107356391
+      tag_ids:
+      - 5
+      tvec_m:
+      - -0.14665708924296111
+      - -0.0334744204162931
+      - 0.2671445233280018
+      visible_faces:
+      - -Z
+    state_readiness:
+      calibration_arm: left
+      duration_s: 0.5081862270017155
+      hard_failures: []
+      maximum_calibration_position_spread_rad: 0.0037151072174310684
+      maximum_calibration_velocity_rad_s: 0.052155349403619766
+      maximum_hold_position_spread_rad: 0.00014381110668182373
+      maximum_hold_velocity_rad_s: 0.04295146465301514
+      maximum_state_gap_s: 0.01481117000002996
+      ready: true
+      sample_count: 531
+    timestamp_pairing:
+      after_state_monotonic_s: 28771.4760548
+      before_state_monotonic_s: 28771.474461997
+      bracket_span_s: 0.0015928030006762128
+      image_header_stamp_ns: 445648586085849
+      image_receipt_monotonic_s: 28771.475980249
+      image_receipt_utc: '2026-08-03T23:07:26.563641Z'
+      nearest_delta_s: 7.455100057995878e-05
+      nearest_state_monotonic_s: 28771.4760548
+    warnings:
+    - only 1 cube face visible; prefer 2
+    yellow_override_reason: manual tabletop capture; warning reviewed in live preview
+- id: pose_016
+  group: calibration
+  measured_calibration_q:
+  - -0.019246665760874748
+  - -0.07765857875347137
+  - -0.3920159935951233
+  - -0.842131495475769
+  - 1.9714170694351196
+  - -0.4448304772377014
+  - 0.19142402708530426
+  measured_full_q:
+  - -0.19611944258213043
+  - -0.03123355284333229
+  - -0.0071914480067789555
+  - 0.45544740557670593
+  - -0.3577894866466522
+  - 0.029089713469147682
+  - -0.24647662043571472
+  - 0.01678004488348961
+  - 0.02386435866355896
+  - 0.4716905653476715
+  - -0.3429763913154602
+  - -0.011083896271884441
+  - -0.17804525792598724
+  - -0.005312827415764332
+  - -0.14850696921348572
+  - -0.019246665760874748
+  - -0.07765857875347137
+  - -0.3920159935951233
+  - -0.842131495475769
+  - 1.9714170694351196
+  - -0.4448304772377014
+  - 0.19142402708530426
+  - 0.17338776588439941
+  - -0.024710670113563538
+  - 0.004314321093261242
+  - 1.2240687608718872
+  - -0.11002717167139053
+  - 0.028079040348529816
+  - -0.06052033603191376
+  calibration_q_spread:
+  - 0.00033555924892425537
+  - 9.587407112121582e-05
+  - 0.0001677870750427246
+  - 0.000731050968170166
+  - 4.792213439941406e-05
+  - 0.00013181567192077637
+  - 7.191300392150879e-05
+  recorded_at_utc: '2026-08-03T23:07:33.986438Z'
+  recorded_monotonic_s: 28778.898511078
+  source: manual_teaching
+  anchor: false
+  preview_path: sessions/manual_run_001/preview/poses/pose_016_capture_016.png
+  visual_quality:
+    grade: yellow
+    hard_failures: []
+    metrics:
+      duplicate_tag_ids: []
+      ignored_tag_ids: []
+      minimum_corner_image_margin_px: 22.5491943359375
+      minimum_quad_quality: 0.8119215122323016
+      minimum_tag_short_side_px: 96.7494809177932
+      novel_view: true
+      opencv_rejected_candidates: 582
+      pnp_depth_m: 0.17504545690493625
+      pnp_reprojection_error_px: 1.566183567890559
+      quality_rejected_detections: 0
+      tag_count: 3
+      tag_ids:
+      - 0
+      - 2
+      - 5
+      visible_faces:
+      - +X
+      - +Y
+      - -Z
+    save_allowed: true
+    signature:
+      image_cell:
+      - 1
+      - 2
+      normalized_centroid:
+      - 0.5647523873542665
+      - 0.7291160339440358
+      rvec:
+      - 0.1750717152259563
+      - 0.7010045995467554
+      - -2.3777549107491107
+      tag_ids:
+      - 0
+      - 2
+      - 5
+      tvec_m:
+      - 0.013958110329789403
+      - 0.03232929361770247
+      - 0.17504545690493625
+      visible_faces:
+      - +X
+      - +Y
+      - -Z
+    state_readiness:
+      calibration_arm: left
+      duration_s: 0.5008469159984088
+      hard_failures: []
+      maximum_calibration_position_spread_rad: 0.000731050968170166
+      maximum_calibration_velocity_rad_s: 0.03681553900241852
+      maximum_hold_position_spread_rad: 0.00015579164028167725
+      maximum_hold_velocity_rad_s: 0.04295146465301514
+      maximum_state_gap_s: 0.006834507003077306
+      ready: true
+      sample_count: 522
+    timestamp_pairing:
+      after_state_monotonic_s: 28778.898767808
+      before_state_monotonic_s: 28778.897533429
+      bracket_span_s: 0.001234379000379704
+      image_header_stamp_ns: 445655991052477
+      image_receipt_monotonic_s: 28778.898511078
+      image_receipt_utc: '2026-08-03T23:07:33.986438Z'
+      nearest_delta_s: 0.00025672999981907196
+      nearest_state_monotonic_s: 28778.898767808
+    warnings:
+    - multi-face PnP error is 1.57px; prefer at most 1.50px
+    yellow_override_reason: manual tabletop capture; warning reviewed in live preview
+- id: pose_017
+  group: calibration
+  measured_calibration_q:
+  - -0.18124942481517792
+  - -0.05192844569683075
+  - -0.70233553647995
+  - -0.0068669612519443035
+  - 1.9717166423797607
+  - -0.35238415002822876
+  - 0.09984058141708374
+  measured_full_q:
+  - -0.19492635130882263
+  - -0.03061996027827263
+  - -0.007218231912702322
+  - 0.4555411636829376
+  - -0.3578261435031891
+  - 0.029096651822328568
+  - -0.24658741056919098
+  - 0.017231717705726624
+  - 0.02770783193409443
+  - 0.4716905653476715
+  - -0.3439100682735443
+  - -0.012717224657535553
+  - -0.1843528300523758
+  - -0.00650193402543664
+  - -0.14932705461978912
+  - -0.18124942481517792
+  - -0.05192844569683075
+  - -0.70233553647995
+  - -0.0068669612519443035
+  - 1.9717166423797607
+  - -0.35238415002822876
+  - 0.09984058141708374
+  - 0.1730642020702362
+  - -0.024578846991062164
+  - 0.004314321093261242
+  - 1.2241166830062866
+  - -0.11002717167139053
+  - 0.02811499312520027
+  - -0.06053232029080391
+  calibration_q_spread:
+  - 0.0006471425294876099
+  - 0.00019174814224243164
+  - 0.0003954768180847168
+  - 0.0007669907063245773
+  - 3.600120544433594e-05
+  - 0.0001557767391204834
+  - 0.00020373612642288208
+  recorded_at_utc: '2026-08-03T23:07:42.828402Z'
+  recorded_monotonic_s: 28787.740709514
+  source: manual_teaching
+  anchor: false
+  preview_path: sessions/manual_run_001/preview/poses/pose_017_capture_017.png
+  visual_quality:
+    grade: yellow
+    hard_failures: []
+    metrics:
+      duplicate_tag_ids: []
+      ignored_tag_ids: []
+      minimum_corner_image_margin_px: 123.6588134765625
+      minimum_quad_quality: 0.7171616879214724
+      minimum_tag_short_side_px: 33.83901698083269
+      novel_view: true
+      opencv_rejected_candidates: 647
+      pnp_depth_m: 0.345804135921943
+      pnp_reprojection_error_px: 1.8971004978105588
+      quality_rejected_detections: 0
+      tag_count: 3
+      tag_ids:
+      - 0
+      - 3
+      - 5
+      visible_faces:
+      - +X
+      - -Y
+      - -Z
+    save_allowed: true
+    signature:
+      image_cell:
+      - 2
+      - 2
+      normalized_centroid:
+      - 0.7426583750160343
+      - 0.7259051058101168
+      rvec:
+      - 0.14964152065225778
+      - -0.1340033042624134
+      - -2.0038632418679128
+      tag_ids:
+      - 0
+      - 3
+      - 5
+      tvec_m:
+      - 0.11847440583613843
+      - 0.06063288386509252
+      - 0.345804135921943
+      visible_faces:
+      - +X
+      - -Y
+      - -Z
+    state_readiness:
+      calibration_arm: left
+      duration_s: 0.5018006780010182
+      hard_failures: []
+      maximum_calibration_position_spread_rad: 0.0007669907063245773
+      maximum_calibration_velocity_rad_s: 0.03681553900241852
+      maximum_hold_position_spread_rad: 0.00013183057308197021
+      maximum_hold_velocity_rad_s: 0.055223312228918076
+      maximum_state_gap_s: 0.024666807999892626
+      ready: true
+      sample_count: 461
+    timestamp_pairing:
+      after_state_monotonic_s: 28787.741061598
+      before_state_monotonic_s: 28787.739402834
+      bracket_span_s: 0.0016587640020588879
+      image_header_stamp_ns: 445664797269351
+      image_receipt_monotonic_s: 28787.740709514
+      image_receipt_utc: '2026-08-03T23:07:42.828402Z'
+      nearest_delta_s: 0.0003520840000419412
+      nearest_state_monotonic_s: 28787.741061598
+    warnings:
+    - 'tag size is marginal: 33.8px; prefer 40.0px'
+    - multi-face PnP error is 1.90px; prefer at most 1.50px
+    yellow_override_reason: manual tabletop capture; warning reviewed in live preview
+- id: pose_018
+  group: calibration
+  measured_calibration_q:
+  - -0.336445152759552
+  - -0.0624745637178421
+  - -0.42789676785469055
+  - -0.010006828233599663
+  - 1.971692681312561
+  - -0.3641227185726166
+  - 0.09863017499446869
+  measured_full_q:
+  - -0.1610807627439499
+  - -0.03099493309855461
+  - -0.007178056053817272
+  - 0.45571160316467285
+  - -0.35788729786872864
+  - 0.029103418812155724
+  - -0.2466215044260025
+  - 0.018501512706279755
+  - 0.051679324358701706
+  - 0.47299444675445557
+  - -0.3479304313659668
+  - -0.015347911976277828
+  - -0.2921910732984543
+  - 0.005848386324942112
+  - -0.16072066873311996
+  - -0.336445152759552
+  - -0.0624745637178421
+  - -0.42789676785469055
+  - -0.010006828233599663
+  - 1.971692681312561
+  - -0.3641227185726166
+  - 0.09863017499446869
+  - 0.16566993296146393
+  - -0.02334447205066681
+  - 0.004278368316590786
+  - 1.223421573638916
+  - -0.10996725410223007
+  - 0.02750379778444767
+  - -0.060448430478572845
+  calibration_q_spread:
+  - 0.00043141841888427734
+  - 0.0006471499800682068
+  - 0.000683128833770752
+  - 0.004278368316590786
+  - 4.792213439941406e-05
+  - 0.001330256462097168
+  - 0.00017976760864257812
+  recorded_at_utc: '2026-08-03T23:07:46.546157Z'
+  recorded_monotonic_s: 28791.458480065
+  source: manual_teaching
+  anchor: false
+  preview_path: sessions/manual_run_001/preview/poses/pose_018_capture_018.png
+  visual_quality:
+    grade: yellow
+    hard_failures: []
+    metrics:
+      duplicate_tag_ids: []
+      ignored_tag_ids: []
+      minimum_corner_image_margin_px: 255.9665069580078
+      minimum_quad_quality: 0.7035889390387691
+      minimum_tag_short_side_px: 33.574734083365506
+      novel_view: true
+      opencv_rejected_candidates: 634
+      pnp_depth_m: 0.3387625736890432
+      pnp_reprojection_error_px: 1.6052008900027832
+      quality_rejected_detections: 0
+      tag_count: 2
+      tag_ids:
+      - 3
+      - 5
+      visible_faces:
+      - -Y
+      - -Z
+    save_allowed: true
+    signature:
+      image_cell:
+      - 1
+      - 1
+      normalized_centroid:
+      - 0.6665780706457834
+      - 0.4599740873291695
+      rvec:
+      - 0.2844937010239973
+      - -0.03770316766133729
+      - -2.2227729624380843
+      tag_ids:
+      - 3
+      - 5
+      tvec_m:
+      - 0.07785005888833312
+      - -0.020220984432863305
+      - 0.3387625736890432
+      visible_faces:
+      - -Y
+      - -Z
+    state_readiness:
+      calibration_arm: left
+      duration_s: 0.5007299479984795
+      hard_failures: []
+      maximum_calibration_position_spread_rad: 0.004278368316590786
+      maximum_calibration_velocity_rad_s: 0.03988350182771683
+      maximum_hold_position_spread_rad: 0.00019174814224243164
+      maximum_hold_velocity_rad_s: 0.04295146465301514
+      maximum_state_gap_s: 0.02014835600130027
+      ready: true
+      sample_count: 510
+    timestamp_pairing:
+      after_state_monotonic_s: 28791.459352095
+      before_state_monotonic_s: 28791.457657557
+      bracket_span_s: 0.0016945380011748057
+      image_header_stamp_ns: 445668533121853
+      image_receipt_monotonic_s: 28791.458480065
+      image_receipt_utc: '2026-08-03T23:07:46.546157Z'
+      nearest_delta_s: 0.0008225080018746667
+      nearest_state_monotonic_s: 28791.457657557
+    warnings:
+    - 'tag size is marginal: 33.6px; prefer 40.0px'
+    - multi-face PnP error is 1.61px; prefer at most 1.50px
+    yellow_override_reason: manual tabletop capture; warning reviewed in live preview
+- id: pose_019
+  group: calibration
+  measured_calibration_q:
+  - -0.18849988281726837
+  - -0.05180860310792923
+  - -0.696439266204834
+  - 0.1344510167837143
+  - 1.8376730680465698
+  - -0.4619798958301544
+  - 0.09779127687215805
+  measured_full_q:
+  - -0.16136625409126282
+  - -0.030833013355731964
+  - -0.007231623865664005
+  - 0.4553110599517822
+  - -0.3633955717086792
+  - 0.029351430013775826
+  - -0.24660445749759674
+  - 0.018450379371643066
+  - 0.0481036901473999
+  - 0.47372734546661377
+  - -0.344184547662735
+  - -0.009720128029584885
+  - -0.2889435291290283
+  - 0.011896183714270592
+  - -0.1546546220779419
+  - -0.18849988281726837
+  - -0.05180860310792923
+  - -0.696439266204834
+  - 0.1344510167837143
+  - 1.8376730680465698
+  - -0.4619798958301544
+  - 0.09779127687215805
+  - 0.16496285796165466
+  - -0.024147413671016693
+  - 0.004266384057700634
+  - 1.2235294580459595
+  - -0.10996725410223007
+  - 0.027599669992923737
+  - -0.060460414737463
+  calibration_q_spread:
+  - 0.0007669925689697266
+  - 0.00019174814224243164
+  - 0.0002995729446411133
+  - 0.00033555924892425537
+  - 0.0002516508102416992
+  - 0.0003954768180847168
+  - 9.587407112121582e-05
+  recorded_at_utc: '2026-08-03T23:07:57.651081Z'
+  recorded_monotonic_s: 28802.563450049
+  source: manual_teaching
+  anchor: false
+  preview_path: sessions/manual_run_001/preview/poses/pose_019_capture_019.png
+  visual_quality:
+    grade: yellow
+    hard_failures: []
+    metrics:
+      duplicate_tag_ids: []
+      ignored_tag_ids:
+      - 17
+      minimum_corner_image_margin_px: 97.494140625
+      minimum_quad_quality: 0.6854522747591032
+      minimum_tag_short_side_px: 30.04207797472702
+      novel_view: true
+      opencv_rejected_candidates: 709
+      pnp_depth_m: 0.37040741291178864
+      pnp_reprojection_error_px: 0.7046854343045497
+      quality_rejected_detections: 0
+      tag_count: 2
+      tag_ids:
+      - 3
+      - 5
+      visible_faces:
+      - -Y
+      - -Z
+    save_allowed: true
+    signature:
+      image_cell:
+      - 2
+      - 2
+      normalized_centroid:
+      - 0.7348681607220302
+      - 0.7997463263457276
+      rvec:
+      - -0.005000345861067787
+      - -0.32820744767244797
+      - -1.889270379903874
+      tag_ids:
+      - 3
+      - 5
+      tvec_m:
+      - 0.12114375605852248
+      - 0.08088423913399767
+      - 0.37040741291178864
+      visible_faces:
+      - -Y
+      - -Z
+    state_readiness:
+      calibration_arm: left
+      duration_s: 0.5002938430006907
+      hard_failures: []
+      maximum_calibration_position_spread_rad: 0.0007669925689697266
+      maximum_calibration_velocity_rad_s: 0.03681553900241852
+      maximum_hold_position_spread_rad: 0.00014381110668182373
+      maximum_hold_velocity_rad_s: 0.04448544606566429
+      maximum_state_gap_s: 0.008695607000845484
+      ready: true
+      sample_count: 522
+    timestamp_pairing:
+      after_state_monotonic_s: 28802.56402487
+      before_state_monotonic_s: 28802.562528435
+      bracket_span_s: 0.0014964350011723582
+      image_header_stamp_ns: 445679607408487
+      image_receipt_monotonic_s: 28802.563450049
+      image_receipt_utc: '2026-08-03T23:07:57.651081Z'
+      nearest_delta_s: 0.0005748209987359587
+      nearest_state_monotonic_s: 28802.56402487
+    warnings:
+    - 'tag size is marginal: 30.0px; prefer 40.0px'
+    yellow_override_reason: manual tabletop capture; warning reviewed in live preview
+- id: pose_020
+  group: calibration
+  measured_calibration_q:
+  - -0.1678750216960907
+  - -0.05173669755458832
+  - -0.7935115098953247
+  - 0.13670405745506287
+  - 1.8355878591537476
+  - -0.3841783106327057
+  - 0.09889382869005203
+  measured_full_q:
+  - -0.16136625409126282
+  - -0.030602917075157166
+  - -0.007271799258887768
+  - 0.4553110599517822
+  - -0.36338338255882263
+  - 0.02935873717069626
+  - -0.2465788871049881
+  - 0.01877422071993351
+  - 0.04818404093384743
+  - 0.47400006651878357
+  - -0.3441234230995178
+  - -0.009589869529008865
+  - -0.2896265387535095
+  - 0.011835506185889244
+  - -0.1547270119190216
+  - -0.1678750216960907
+  - -0.05173669755458832
+  - -0.7935115098953247
+  - 0.13670405745506287
+  - 1.8355878591537476
+  - -0.3841783106327057
+  - 0.09889382869005203
+  - 0.16493889689445496
+  - -0.02413543313741684
+  - 0.004278368316590786
+  - 1.2235175371170044
+  - -0.10997923463582993
+  - 0.02756371721625328
+  - -0.060448430478572845
+  calibration_q_spread:
+  - 0.00015579164028167725
+  - 0.00015579164028167725
+  - 0.0003954768180847168
+  - 0.0004434138536453247
+  - 9.584426879882812e-05
+  - 0.0005033314228057861
+  - 5.992501974105835e-05
+  recorded_at_utc: '2026-08-03T23:08:06.985610Z'
+  recorded_monotonic_s: 28811.897780484
+  source: manual_teaching
+  anchor: false
+  preview_path: sessions/manual_run_001/preview/poses/pose_020_capture_020.png
+  visual_quality:
+    grade: yellow
+    hard_failures: []
+    metrics:
+      duplicate_tag_ids: []
+      ignored_tag_ids: []
+      minimum_corner_image_margin_px: 47.83782958984375
+      minimum_quad_quality: 0.6866889279015145
+      minimum_tag_short_side_px: 31.019386513341967
+      novel_view: false
+      opencv_rejected_candidates: 726
+      pnp_depth_m: 0.36765833689817673
+      pnp_reprojection_error_px: 0.89911907236271
+      quality_rejected_detections: 0
+      tag_count: 2
+      tag_ids:
+      - 3
+      - 5
+      visible_faces:
+      - -Y
+      - -Z
+    save_allowed: true
+    signature:
+      image_cell:
+      - 2
+      - 2
+      normalized_centroid:
+      - 0.7596595889427775
+      - 0.8666105522399817
+      rvec:
+      - -0.018290566160163467
+      - -0.32375181096476274
+      - -1.8650426359872763
+      tag_ids:
+      - 3
+      - 5
+      tvec_m:
+      - 0.13291576112440492
+      - 0.09939424916304133
+      - 0.36765833689817673
+      visible_faces:
+      - -Y
+      - -Z
+    state_readiness:
+      calibration_arm: left
+      duration_s: 0.5054093250000733
+      hard_failures: []
+      maximum_calibration_position_spread_rad: 0.0005033314228057861
+      maximum_calibration_velocity_rad_s: 0.03681553900241852
+      maximum_hold_position_spread_rad: 0.0001318231225013733
+      maximum_hold_velocity_rad_s: 0.03681553900241852
+      maximum_state_gap_s: 0.020994474998587975
+      ready: true
+      sample_count: 483
+    timestamp_pairing:
+      after_state_monotonic_s: 28811.900008703
+      before_state_monotonic_s: 28811.896881382
+      bracket_span_s: 0.0031273210006474983
+      image_header_stamp_ns: 445689013875263
+      image_receipt_monotonic_s: 28811.897780484
+      image_receipt_utc: '2026-08-03T23:08:06.985610Z'
+      nearest_delta_s: 0.000899102000403218
+      nearest_state_monotonic_s: 28811.896881382
+    warnings:
+    - 'tag size is marginal: 31.0px; prefer 40.0px'
+    - view is redundant with an already saved pose
+    yellow_override_reason: manual tabletop capture; warning reviewed in live preview
+- id: pose_021
+  group: calibration
+  measured_calibration_q:
+  - -0.36669331789016724
+  - -0.11708667874336243
+  - -0.7629756927490234
+  - -0.39931437373161316
+  - 1.4253557920455933
+  - -0.11151321232318878
+  - -1.1189790964126587
+  measured_full_q:
+  - -0.13758103549480438
+  - -0.013524597510695457
+  - -0.007459285669028759
+  - 0.4556860327720642
+  - -0.37355443835258484
+  - 0.020217174664139748
+  - -0.24761006236076355
+  - 0.03269083425402641
+  - 0.049134865403175354
+  - 0.47241494059562683
+  - -0.32788634300231934
+  - -0.012902061454951763
+  - -0.2896265387535095
+  - 0.011344488710165024
+  - -0.13779227435588837
+  - -0.36669331789016724
+  - -0.11708667874336243
+  - -0.7629756927490234
+  - -0.39931437373161316
+  - 1.4253557920455933
+  - -0.11151321232318878
+  - -1.1189790964126587
+  - 0.16394419968128204
+  - -0.02412344515323639
+  - 0.00424241553992033
+  - 1.2233617305755615
+  - -0.10995526611804962
+  - 0.02744387648999691
+  - -0.060460414737463
+  calibration_q_spread:
+  - 0.0007190406322479248
+  - 0.0004553943872451782
+  - 0.00017976760864257812
+  - 0.0001557767391204834
+  - 7.18832015991211e-05
+  - 0.00016777962446212769
+  - 5.996227264404297e-05
+  recorded_at_utc: '2026-08-03T23:08:18.450870Z'
+  recorded_monotonic_s: 28823.363201842
+  source: manual_teaching
+  anchor: false
+  preview_path: sessions/manual_run_001/preview/poses/pose_021_capture_021.png
+  visual_quality:
+    grade: green
+    hard_failures: []
+    metrics:
+      duplicate_tag_ids: []
+      ignored_tag_ids: []
+      minimum_corner_image_margin_px: 142.629638671875
+      minimum_quad_quality: 0.7268044974247909
+      minimum_tag_short_side_px: 47.932540072786374
+      novel_view: true
+      opencv_rejected_candidates: 745
+      pnp_depth_m: 0.2878634540337003
+      pnp_reprojection_error_px: 1.2136261875107948
+      quality_rejected_detections: 0
+      tag_count: 2
+      tag_ids:
+      - 3
+      - 5
+      visible_faces:
+      - -Y
+      - -Z
+    save_allowed: true
+    signature:
+      image_cell:
+      - 2
+      - 1
+      normalized_centroid:
+      - 0.8164985662703406
+      - 0.559528616108052
+      rvec:
+      - 0.10257536538630543
+      - -0.9153878756482753
+      - -1.9102257722324063
+      tag_ids:
+      - 3
+      - 5
+      tvec_m:
+      - 0.12147451434105404
+      - 0.013176677605973462
+      - 0.2878634540337003
+      visible_faces:
+      - -Y
+      - -Z
+    state_readiness:
+      calibration_arm: left
+      duration_s: 0.5008053180026764
+      hard_failures: []
+      maximum_calibration_position_spread_rad: 0.0007190406322479248
+      maximum_calibration_velocity_rad_s: 0.055223312228918076
+      maximum_hold_position_spread_rad: 0.00013183057308197021
+      maximum_hold_velocity_rad_s: 0.03834952041506767
+      maximum_state_gap_s: 0.02822312300122576
+      ready: true
+      sample_count: 495
+    timestamp_pairing:
+      after_state_monotonic_s: 28823.363611849
+      before_state_monotonic_s: 28823.362212182
+      bracket_span_s: 0.0013996669986227062
+      image_header_stamp_ns: 445700488469720
+      image_receipt_monotonic_s: 28823.363201842
+      image_receipt_utc: '2026-08-03T23:08:18.450870Z'
+      nearest_delta_s: 0.0004100070000276901
+      nearest_state_monotonic_s: 28823.363611849
+    warnings: []
+    yellow_override_reason: null
+- id: pose_022
+  group: calibration
+  measured_calibration_q:
+  - -0.3549487888813019
+  - -0.13151568174362183
+  - -0.4874943196773529
+  - -0.8924652338027954
+  - 0.9645024538040161
+  - -0.28625521063804626
+  - -1.1186555624008179
+  measured_full_q:
+  - -0.12791694700717926
+  - -0.014027401804924011
+  - -0.007338759023696184
+  - 0.4551065266132355
+  - -0.37993770837783813
+  - 0.023656170815229416
+  - -0.24664705991744995
+  - 0.03189827874302864
+  - 0.050808850675821304
+  - 0.4721507728099823
+  - -0.3231426775455475
+  - -0.008525161072611809
+  - -0.2878454029560089
+  - 0.01756092719733715
+  - -0.132212832570076
+  - -0.3549487888813019
+  - -0.13151568174362183
+  - -0.4874943196773529
+  - -0.8924652338027954
+  - 0.9645024538040161
+  - -0.28625521063804626
+  - -1.1186555624008179
+  - 0.16441158950328827
+  - -0.025321871042251587
+  - 0.004086620640009642
+  - 1.223421573638916
+  - -0.10995526611804962
+  - 0.02750379778444767
+  - -0.06049636751413345
+  calibration_q_spread:
+  - 0.006099998950958252
+  - 0.0023489147424697876
+  - 0.0005033612251281738
+  - 0.000539243221282959
+  - 0.00044339895248413086
+  - 0.0001677870750427246
+  - 7.18832015991211e-05
+  recorded_at_utc: '2026-08-03T23:08:30.142672Z'
+  recorded_monotonic_s: 28835.055030322
+  source: manual_teaching
+  anchor: false
+  preview_path: sessions/manual_run_001/preview/poses/pose_022_capture_022.png
+  visual_quality:
+    grade: yellow
+    hard_failures: []
+    metrics:
+      duplicate_tag_ids: []
+      ignored_tag_ids:
+      - 17
+      - 38
+      minimum_corner_image_margin_px: 139.0323486328125
+      minimum_quad_quality: 0.5921476484586511
+      minimum_tag_short_side_px: 35.91075360767019
+      novel_view: true
+      opencv_rejected_candidates: 445
+      pnp_depth_m: 0.15401018880870862
+      pnp_reprojection_error_px: 0.3840373763250995
+      quality_rejected_detections: 0
+      tag_count: 1
+      tag_ids:
+      - 3
+      visible_faces:
+      - -Y
+    save_allowed: true
+    signature:
+      image_cell:
+      - 1
+      - 2
+      normalized_centroid:
+      - 0.6471874007403244
+      - 0.6746398862114537
+      rvec:
+      - -0.3153284697777884
+      - -0.27905286673468566
+      - -1.907739857424731
+      tag_ids:
+      - 3
+      tvec_m:
+      - 0.048055040134715045
+      - 0.012582577629120932
+      - 0.15401018880870862
+      visible_faces:
+      - -Y
+    state_readiness:
+      calibration_arm: left
+      duration_s: 0.5010886230011238
+      hard_failures: []
+      maximum_calibration_position_spread_rad: 0.006099998950958252
+      maximum_calibration_velocity_rad_s: 0.06596117466688156
+      maximum_hold_position_spread_rad: 0.00010785646736621857
+      maximum_hold_velocity_rad_s: 0.055223312228918076
+      maximum_state_gap_s: 0.007939392999105621
+      ready: true
+      sample_count: 523
+    timestamp_pairing:
+      after_state_monotonic_s: 28835.055723715
+      before_state_monotonic_s: 28835.054134684
+      bracket_span_s: 0.0015890309987298679
+      image_header_stamp_ns: 445712163327415
+      image_receipt_monotonic_s: 28835.055030322
+      image_receipt_utc: '2026-08-03T23:08:30.142672Z'
+      nearest_delta_s: 0.0006933929980732501
+      nearest_state_monotonic_s: 28835.055723715
+    warnings:
+    - 'tag size is marginal: 35.9px; prefer 40.0px'
+    - only 1 cube face visible; prefer 2
+    yellow_override_reason: manual tabletop capture; warning reviewed in live preview
+- id: pose_023
+  group: calibration
+  measured_calibration_q:
+  - -0.3564468026161194
+  - -0.12222791463136673
+  - -0.6004576086997986
+  - -0.5734211802482605
+  - 0.9690923690795898
+  - -0.2863031327724457
+  - -1.1190390586853027
+  measured_full_q:
+  - -0.12737153470516205
+  - -0.013354155234992504
+  - -0.007338759023696184
+  - 0.45525991916656494
+  - -0.3799457252025604
+  - 0.02389640361070633
+  - -0.24686011672019958
+  - 0.03292945399880409
+  - 0.05076867714524269
+  - 0.4721422493457794
+  - -0.32243865728378296
+  - -0.007507098373025656
+  - -0.2887292802333832
+  - 0.017439311370253563
+  - -0.13233035802841187
+  - -0.3564468026161194
+  - -0.12222791463136673
+  - -0.6004576086997986
+  - -0.5734211802482605
+  - 0.9690923690795898
+  - -0.2863031327724457
+  - -1.1190390586853027
+  - 0.1645314246416092
+  - -0.025070197880268097
+  - 0.0041585261933505535
+  - 1.2235054969787598
+  - -0.10995526611804962
+  - 0.02755173295736313
+  - -0.06049636751413345
+  calibration_q_spread:
+  - 0.0004793703556060791
+  - 0.00015579909086227417
+  - 8.386373519897461e-05
+  - 0.00029963254928588867
+  - 8.392333984375e-05
+  - 8.38935375213623e-05
+  - 4.792213439941406e-05
+  recorded_at_utc: '2026-08-03T23:08:37.985726Z'
+  recorded_monotonic_s: 28842.89805843
+  source: manual_teaching
+  anchor: false
+  preview_path: sessions/manual_run_001/preview/poses/pose_023_capture_023.png
+  visual_quality:
+    grade: green
+    hard_failures: []
+    metrics:
+      duplicate_tag_ids: []
+      ignored_tag_ids: []
+      minimum_corner_image_margin_px: 98.3958740234375
+      minimum_quad_quality: 0.8287781629554569
+      minimum_tag_short_side_px: 82.1034459297245
+      novel_view: true
+      opencv_rejected_candidates: 634
+      pnp_depth_m: 0.22324020951249354
+      pnp_reprojection_error_px: 1.2372278178011176
+      quality_rejected_detections: 0
+      tag_count: 3
+      tag_ids:
+      - 1
+      - 3
+      - 5
+      visible_faces:
+      - -X
+      - -Y
+      - -Z
+    save_allowed: true
+    signature:
+      image_cell:
+      - 2
+      - 1
+      normalized_centroid:
+      - 0.824886561620661
+      - 0.5974288961651926
+      rvec:
+      - -0.28624921083038646
+      - -0.6503242177799741
+      - -1.7288213528044998
+      tag_ids:
+      - 1
+      - 3
+      - 5
+      tvec_m:
+      - 0.0975980462611219
+      - 0.011726888120210666
+      - 0.22324020951249354
+      visible_faces:
+      - -X
+      - -Y
+      - -Z
+    state_readiness:
+      calibration_arm: left
+      duration_s: 0.5035643369992613
+      hard_failures: []
+      maximum_calibration_position_spread_rad: 0.0004793703556060791
+      maximum_calibration_velocity_rad_s: 0.04295146465301514
+      maximum_hold_position_spread_rad: 9.587407112121582e-05
+      maximum_hold_velocity_rad_s: 0.03681553900241852
+      maximum_state_gap_s: 0.02286240100147552
+      ready: true
+      sample_count: 494
+    timestamp_pairing:
+      after_state_monotonic_s: 28842.898332912
+      before_state_monotonic_s: 28842.897162527
+      bracket_span_s: 0.0011703849995683413
+      image_header_stamp_ns: 445720035165745
+      image_receipt_monotonic_s: 28842.89805843
+      image_receipt_utc: '2026-08-03T23:08:37.985726Z'
+      nearest_delta_s: 0.0002744819976214785
+      nearest_state_monotonic_s: 28842.898332912
+    warnings: []
+    yellow_override_reason: null
+- id: pose_024
+  group: calibration
+  measured_calibration_q:
+  - -0.3556917905807495
+  - -0.08804890513420105
+  - -0.8793425559997559
+  - -0.25822409987449646
+  - 0.969224214553833
+  - -0.2866986095905304
+  - -1.1183558702468872
+  measured_full_q:
+  - -0.1273459643125534
+  - -0.011683819815516472
+  - -0.007512853480875492
+  - 0.4552684426307678
+  - -0.3799254596233368
+  - 0.0240568146109581
+  - -0.2469879537820816
+  - 0.032946497201919556
+  - 0.050487447530031204
+  - 0.4721933603286743
+  - -0.32212190330028534
+  - -0.006936195772141218
+  - -0.2891444265842438
+  - 0.014315336011350155
+  - -0.129698246717453
+  - -0.3556917905807495
+  - -0.08804890513420105
+  - -0.8793425559997559
+  - -0.25822409987449646
+  - 0.969224214553833
+  - -0.2866986095905304
+  - -1.1183558702468872
+  - 0.16450746357440948
+  - -0.02466273307800293
+  - 0.004254399798810482
+  - 1.2235294580459595
+  - -0.10995526611804962
+  - 0.02756371721625328
+  - -0.060448430478572845
+  calibration_q_spread:
+  - 0.00021570920944213867
+  - 0.00015579909086227417
+  - 0.00013184547424316406
+  - 0.0005872249603271484
+  - 5.990266799926758e-05
+  - 8.38935375213623e-05
+  - 8.380413055419922e-05
+  recorded_at_utc: '2026-08-03T23:08:45.958193Z'
+  recorded_monotonic_s: 28850.870339564
+  source: manual_teaching
+  anchor: false
+  preview_path: sessions/manual_run_001/preview/poses/pose_024_capture_024.png
+  visual_quality:
+    grade: green
+    hard_failures: []
+    metrics:
+      duplicate_tag_ids: []
+      ignored_tag_ids: []
+      minimum_corner_image_margin_px: 20.0
+      minimum_quad_quality: 0.7943198891073191
+      minimum_tag_short_side_px: 59.207468295266494
+      novel_view: true
+      opencv_rejected_candidates: 753
+      pnp_depth_m: 0.29142298341021067
+      pnp_reprojection_error_px: 1.1828395812668064
+      quality_rejected_detections: 0
+      tag_count: 3
+      tag_ids:
+      - 1
+      - 3
+      - 5
+      visible_faces:
+      - -X
+      - -Y
+      - -Z
+    save_allowed: true
+    signature:
+      image_cell:
+      - 2
+      - 2
+      normalized_centroid:
+      - 0.8938095573960165
+      - 0.8707656400536408
+      rvec:
+      - -0.1336222264778616
+      - -0.9261303950236071
+      - -1.379949911533859
+      tag_ids:
+      - 1
+      - 3
+      - 5
+      tvec_m:
+      - 0.15334863573997484
+      - 0.07977258266539455
+      - 0.29142298341021067
+      visible_faces:
+      - -X
+      - -Y
+      - -Z
+    state_readiness:
+      calibration_arm: left
+      duration_s: 0.5028676900001301
+      hard_failures: []
+      maximum_calibration_position_spread_rad: 0.0005872249603271484
+      maximum_calibration_velocity_rad_s: 0.04141748324036598
+      maximum_hold_position_spread_rad: 0.00010785460472106934
+      maximum_hold_velocity_rad_s: 0.03681553900241852
+      maximum_state_gap_s: 0.023307168998144334
+      ready: true
+      sample_count: 484
+    timestamp_pairing:
+      after_state_monotonic_s: 28850.870705265
+      before_state_monotonic_s: 28850.869060694
+      bracket_span_s: 0.0016445709989056922
+      image_header_stamp_ns: 445728040809566
+      image_receipt_monotonic_s: 28850.870339564
+      image_receipt_utc: '2026-08-03T23:08:45.958193Z'
+      nearest_delta_s: 0.00036570099837263115
+      nearest_state_monotonic_s: 28850.870705265
+    warnings: []
+    yellow_override_reason: null
+- id: pose_025
+  group: calibration
+  measured_calibration_q:
+  - -0.24567662179470062
+  - -0.09858303517103195
+  - -0.2528431713581085
+  - 0.4080389142036438
+  - 1.51375150680542
+  - -0.2866267263889313
+  - -0.15869511663913727
+  measured_full_q:
+  - -0.12715847790241241
+  - -0.012425243854522705
+  - -0.00739232636988163
+  - 0.45534515380859375
+  - -0.3817523419857025
+  - 0.026453861966729164
+  - -0.2468942105770111
+  - 0.033790186047554016
+  - 0.05962071940302849
+  - 0.47222745418548584
+  - -0.32251235842704773
+  - -0.007608136627823114
+  - -0.29061752557754517
+  - 0.012933250516653061
+  - -0.12966443598270416
+  - -0.24567662179470062
+  - -0.09858303517103195
+  - -0.2528431713581085
+  - 0.4080389142036438
+  - 1.51375150680542
+  - -0.2866267263889313
+  - -0.15869511663913727
+  - 0.1645793616771698
+  - -0.02467472106218338
+  - 0.00424241553992033
+  - 1.2235175371170044
+  - -0.10995526611804962
+  - 0.02756371721625328
+  - -0.060436446219682693
+  calibration_q_spread:
+  - 0.0004913508892059326
+  - 0.0001797601580619812
+  - 0.0001557767391204834
+  - 0.0003355443477630615
+  - 5.996227264404297e-05
+  - 0.0001557767391204834
+  - 0.00010785460472106934
+  recorded_at_utc: '2026-08-03T23:09:08.876065Z'
+  recorded_monotonic_s: 28873.788380416
+  source: manual_teaching
+  anchor: false
+  preview_path: sessions/manual_run_001/preview/poses/pose_025_capture_025.png
+  visual_quality:
+    grade: green
+    hard_failures: []
+    metrics:
+      duplicate_tag_ids: []
+      ignored_tag_ids:
+      - 37
+      minimum_corner_image_margin_px: 277.6464538574219
+      minimum_quad_quality: 0.8624235072596228
+      minimum_tag_short_side_px: 41.005129502324415
+      novel_view: true
+      opencv_rejected_candidates: 618
+      pnp_depth_m: 0.47524829169922617
+      pnp_reprojection_error_px: 0.7238695703779324
+      quality_rejected_detections: 0
+      tag_count: 3
+      tag_ids:
+      - 1
+      - 3
+      - 5
+      visible_faces:
+      - -X
+      - -Y
+      - -Z
+    save_allowed: true
+    signature:
+      image_cell:
+      - 1
+      - 1
+      normalized_centroid:
+      - 0.5460995218546899
+      - 0.541954231527485
+      rvec:
+      - -0.19550195657959413
+      - -1.0819708847170781
+      - -2.3267111021426565
+      tag_ids:
+      - 1
+      - 3
+      - 5
+      tvec_m:
+      - 0.021034827966340472
+      - 0.009366460496332066
+      - 0.47524829169922617
+      visible_faces:
+      - -X
+      - -Y
+      - -Z
+    state_readiness:
+      calibration_arm: left
+      duration_s: 0.5010622369991324
+      hard_failures: []
+      maximum_calibration_position_spread_rad: 0.0004913508892059326
+      maximum_calibration_velocity_rad_s: 0.04295146465301514
+      maximum_hold_position_spread_rad: 0.00010785460472106934
+      maximum_hold_velocity_rad_s: 0.04448544606566429
+      maximum_state_gap_s: 0.003853099002299132
+      ready: true
+      sample_count: 523
+    timestamp_pairing:
+      after_state_monotonic_s: 28873.788783277
+      before_state_monotonic_s: 28873.786178093
+      bracket_span_s: 0.002605183999548899
+      image_header_stamp_ns: 445750789859777
+      image_receipt_monotonic_s: 28873.788380416
+      image_receipt_utc: '2026-08-03T23:09:08.876065Z'
+      nearest_delta_s: 0.0004028609982924536
+      nearest_state_monotonic_s: 28873.788783277
+    warnings: []
+    yellow_override_reason: null
+- id: pose_026
+  group: calibration
+  measured_calibration_q:
+  - -0.17577263712882996
+  - -0.04833317920565605
+  - 0.29669347405433655
+  - 0.4143785536289215
+  - 1.6940420866012573
+  - -0.2856919467449188
+  - -0.15838351845741272
+  measured_full_q:
+  - -0.12733745574951172
+  - -0.01401888020336628
+  - -0.007311975117772818
+  - 0.4551832377910614
+  - -0.38261595368385315
+  - 0.025315623730421066
+  - -0.24655331671237946
+  - 0.0327419675886631
+  - 0.05121060833334923
+  - 0.4721422493457794
+  - -0.3222057521343231
+  - -0.007066132500767708
+  - -0.28811323642730713
+  - 0.015441404189914465
+  - -0.1281091868877411
+  - -0.17577263712882996
+  - -0.04833317920565605
+  - 0.29669347405433655
+  - 0.4143785536289215
+  - 1.6940420866012573
+  - -0.2856919467449188
+  - -0.15838351845741272
+  - 0.16454340517520905
+  - -0.02490241825580597
+  - 0.004206463228911161
+  - 1.2235175371170044
+  - -0.10993129760026932
+  - 0.027587685734033585
+  - -0.0604843832552433
+  calibration_q_spread:
+  - 0.00025166571140289307
+  - 0.00017976388335227966
+  - 0.0002516508102416992
+  - 0.0006111860275268555
+  - 0.00010788440704345703
+  - 0.00013184547424316406
+  - 0.00013181567192077637
+  recorded_at_utc: '2026-08-03T23:09:16.527379Z'
+  recorded_monotonic_s: 28881.439737087
+  source: manual_teaching
+  anchor: false
+  preview_path: sessions/manual_run_001/preview/poses/pose_026_capture_026.png
+  visual_quality:
+    grade: yellow
+    hard_failures: []
+    metrics:
+      duplicate_tag_ids: []
+      ignored_tag_ids: []
+      minimum_corner_image_margin_px: 269.4722595214844
+      minimum_quad_quality: 0.7982394236889138
+      minimum_tag_short_side_px: 34.58117870594209
+      novel_view: true
+      opencv_rejected_candidates: 655
+      pnp_depth_m: 0.49931119339147484
+      pnp_reprojection_error_px: 0.550386782322456
+      quality_rejected_detections: 0
+      tag_count: 2
+      tag_ids:
+      - 3
+      - 5
+      visible_faces:
+      - -Y
+      - -Z
+    save_allowed: true
+    signature:
+      image_cell:
+      - 0
+      - 1
+      normalized_centroid:
+      - 0.30031596728840126
+      - 0.5577301163335171
+      rvec:
+      - 0.008492239029752293
+      - -1.4179517647336666
+      - -2.7523983818666657
+      tag_ids:
+      - 3
+      - 5
+      tvec_m:
+      - -0.14366382759018673
+      - 0.019537417983497767
+      - 0.49931119339147484
+      visible_faces:
+      - -Y
+      - -Z
+    state_readiness:
+      calibration_arm: left
+      duration_s: 0.5003314189998491
+      hard_failures: []
+      maximum_calibration_position_spread_rad: 0.0006111860275268555
+      maximum_calibration_velocity_rad_s: 0.04295146465301514
+      maximum_hold_position_spread_rad: 8.392333984375e-05
+      maximum_hold_velocity_rad_s: 0.03681553900241852
+      maximum_state_gap_s: 0.007611698001710465
+      ready: true
+      sample_count: 522
+    timestamp_pairing:
+      after_state_monotonic_s: 28881.440074505
+      before_state_monotonic_s: 28881.438528486
+      bracket_span_s: 0.0015460190006706398
+      image_header_stamp_ns: 445758528659526
+      image_receipt_monotonic_s: 28881.439737087
+      image_receipt_utc: '2026-08-03T23:09:16.527379Z'
+      nearest_delta_s: 0.00033741800143616274
+      nearest_state_monotonic_s: 28881.440074505
+    warnings:
+    - 'tag size is marginal: 34.6px; prefer 40.0px'
+    yellow_override_reason: manual tabletop capture; warning reviewed in live preview
+- id: pose_027
+  group: calibration
+  measured_calibration_q:
+  - -0.31437018513679504
+  - 0.0726715475320816
+  - 0.1670481115579605
+  - 0.14287593960762024
+  - 1.643936038017273
+  - -0.13224592804908752
+  - -0.1595340073108673
+  measured_full_q:
+  - -0.05651867017149925
+  - -0.0131496237590909
+  - -0.007834259420633316
+  - 0.4389912188053131
+  - -0.3838823437690735
+  - 0.023779606446623802
+  - -0.16030098497867584
+  - 0.017112407833337784
+  - -0.019699478521943092
+  - 0.45447587966918945
+  - -0.30739933252334595
+  - -0.003637203946709633
+  - -0.7278763055801392
+  - 0.02960796467959881
+  - -0.04470000043511391
+  - -0.31437018513679504
+  - 0.0726715475320816
+  - 0.1670481115579605
+  - 0.14287593960762024
+  - 1.643936038017273
+  - -0.13224592804908752
+  - -0.1595340073108673
+  - 0.16864201426506042
+  - 0.024808146059513092
+  - 0.00441019469872117
+  - 1.2248477935791016
+  - -0.10984741151332855
+  - 0.027815386652946472
+  - -0.05974136292934418
+  calibration_q_spread:
+  - 0.00013181567192077637
+  - 4.793703556060791e-05
+  - 0.00017976760864257812
+  - 0.008185222744941711
+  - 0.00013184547424316406
+  - 8.38935375213623e-05
+  - 0.00011983513832092285
+  recorded_at_utc: '2026-08-03T23:11:43.860034Z'
+  recorded_monotonic_s: 29028.77201378
+  source: manual_teaching
+  anchor: false
+  preview_path: sessions/manual_run_001/preview/poses/pose_027_capture_027.png
+  visual_quality:
+    grade: green
+    hard_failures: []
+    metrics:
+      duplicate_tag_ids: []
+      ignored_tag_ids: []
+      minimum_corner_image_margin_px: 136.4720001220703
+      minimum_quad_quality: 0.7906006635668059
+      minimum_tag_short_side_px: 43.10274065379073
+      novel_view: true
+      opencv_rejected_candidates: 888
+      pnp_depth_m: 0.40861700641926985
+      pnp_reprojection_error_px: 0.959207354267098
+      quality_rejected_detections: 0
+      tag_count: 2
+      tag_ids:
+      - 3
+      - 5
+      visible_faces:
+      - -Y
+      - -Z
+    save_allowed: true
+    signature:
+      image_cell:
+      - 0
+      - 0
+      normalized_centroid:
+      - 0.24525664913365391
+      - 0.27571147605673163
+      rvec:
+      - 0.27159130445228036
+      - -0.8359566098335629
+      - -2.9802129103032775
+      tag_ids:
+      - 3
+      - 5
+      tvec_m:
+      - -0.14956188353241953
+      - -0.07765014926360678
+      - 0.40861700641926985
+      visible_faces:
+      - -Y
+      - -Z
+    state_readiness:
+      calibration_arm: left
+      duration_s: 0.508377965001273
+      hard_failures: []
+      maximum_calibration_position_spread_rad: 0.008185222744941711
+      maximum_calibration_velocity_rad_s: 0.09817477315664291
+      maximum_hold_position_spread_rad: 0.00014381110668182373
+      maximum_hold_velocity_rad_s: 0.04295146465301514
+      maximum_state_gap_s: 0.015067313001054572
+      ready: true
+      sample_count: 562
+    timestamp_pairing:
+      after_state_monotonic_s: 29028.772880898
+      before_state_monotonic_s: 29028.769969873
+      bracket_span_s: 0.002911024999775691
+      image_header_stamp_ns: 445905897182077
+      image_receipt_monotonic_s: 29028.77201378
+      image_receipt_utc: '2026-08-03T23:11:43.860034Z'
+      nearest_delta_s: 0.0008671180003148038
+      nearest_state_monotonic_s: 29028.772880898
+    warnings: []
+    yellow_override_reason: null
+- id: pose_028
+  group: calibration
+  measured_calibration_q:
+  - -0.5291754603385925
+  - 0.23081538081169128
+  - -0.2896707057952881
+  - 0.36194756627082825
+  - 1.9714289903640747
+  - -0.11083011329174042
+  - -0.31508925557136536
+  measured_full_q:
+  - -0.05660388991236687
+  - -0.014214888215065002
+  - -0.007378934416919947
+  - 0.43966445326805115
+  - -0.38382574915885925
+  - 0.023882074281573296
+  - -0.15978966653347015
+  - 0.052317265421152115
+  - -0.06638363003730774
+  - 0.43703964352607727
+  - -0.2842508554458618
+  - -0.04584379866719246
+  - -0.7773995399475098
+  - 0.02980748936533928
+  - -0.02592511661350727
+  - -0.5291754603385925
+  - 0.23081538081169128
+  - -0.2896707057952881
+  - 0.36194756627082825
+  - 1.9714289903640747
+  - -0.11083011329174042
+  - -0.31508925557136536
+  - 0.16839034855365753
+  - 0.025778867304325104
+  - 0.00441019469872117
+  - 1.224679946899414
+  - -0.1098354235291481
+  - 0.027815386652946472
+  - -0.05969342589378357
+  calibration_q_spread:
+  - 0.0007909536361694336
+  - 0.0005033314228057861
+  - 0.009982883930206299
+  - 0.00014379620552062988
+  - 4.792213439941406e-05
+  - 0.0005033388733863831
+  - 7.191300392150879e-05
+  recorded_at_utc: '2026-08-03T23:11:57.433754Z'
+  recorded_monotonic_s: 29042.346082683
+  source: manual_teaching
+  anchor: false
+  preview_path: sessions/manual_run_001/preview/poses/pose_028_capture_028.png
+  visual_quality:
+    grade: yellow
+    hard_failures: []
+    metrics:
+      duplicate_tag_ids: []
+      ignored_tag_ids:
+      - 17
+      minimum_corner_image_margin_px: 126.60441589355469
+      minimum_quad_quality: 0.790540497516458
+      minimum_tag_short_side_px: 35.93114808979556
+      novel_view: true
+      opencv_rejected_candidates: 942
+      pnp_depth_m: 0.44929616194407224
+      pnp_reprojection_error_px: 0.7624963726418781
+      quality_rejected_detections: 0
+      tag_count: 2
+      tag_ids:
+      - 3
+      - 5
+      visible_faces:
+      - -Y
+      - -Z
+    save_allowed: true
+    signature:
+      image_cell:
+      - 1
+      - 0
+      normalized_centroid:
+      - 0.41697031338761054
+      - 0.2594485010988026
+      rvec:
+      - 1.0125295098284928
+      - -0.8541110581525135
+      - -2.3448785264372938
+      tag_ids:
+      - 3
+      - 5
+      tvec_m:
+      - -0.063454418162836
+      - -0.09132020798088368
+      - 0.44929616194407224
+      visible_faces:
+      - -Y
+      - -Z
+    state_readiness:
+      calibration_arm: left
+      duration_s: 0.5004551859965432
+      hard_failures: []
+      maximum_calibration_position_spread_rad: 0.009982883930206299
+      maximum_calibration_velocity_rad_s: 0.22396120429039001
+      maximum_hold_position_spread_rad: 0.00041943788528442383
+      maximum_hold_velocity_rad_s: 0.03681553900241852
+      maximum_state_gap_s: 0.004869288997724652
+      ready: true
+      sample_count: 523
+    timestamp_pairing:
+      after_state_monotonic_s: 29042.346614069
+      before_state_monotonic_s: 29042.344317872
+      bracket_span_s: 0.0022961969989410136
+      image_header_stamp_ns: 445919439758755
+      image_receipt_monotonic_s: 29042.346082683
+      image_receipt_utc: '2026-08-03T23:11:57.433754Z'
+      nearest_delta_s: 0.0005313859983289149
+      nearest_state_monotonic_s: 29042.346614069
+    warnings:
+    - 'tag size is marginal: 35.9px; prefer 40.0px'
+    yellow_override_reason: manual tabletop capture; warning reviewed in live preview
+- id: pose_029
+  group: calibration
+  measured_calibration_q:
+  - -0.3722420334815979
+  - 0.1420961618423462
+  - 0.3142983019351959
+  - 0.05075319483876228
+  - 1.9714289903640747
+  - -0.1341753900051117
+  - -0.4116341769695282
+  measured_full_q:
+  - -0.05637379363179207
+  - -0.014214888215065002
+  - -0.007218231912702322
+  - 0.439604789018631
+  - -0.38382571935653687
+  - 0.023882169276475906
+  - -0.16052256524562836
+  - 0.053169477730989456
+  - -0.06619614362716675
+  - 0.4370822608470917
+  - -0.2841516137123108
+  - -0.04593769088387489
+  - -0.7788860201835632
+  - 0.02976961061358452
+  - -0.025919603183865547
+  - -0.3722420334815979
+  - 0.1420961618423462
+  - 0.3142983019351959
+  - 0.05075319483876228
+  - 1.9714289903640747
+  - -0.1341753900051117
+  - -0.4116341769695282
+  - 0.16830645501613617
+  - 0.025778867304325104
+  - 0.00441019469872117
+  - 1.2246559858322144
+  - -0.1098354235291481
+  - 0.027815386652946472
+  - -0.05968144163489342
+  calibration_q_spread:
+  - 0.00034752488136291504
+  - 0.0012942999601364136
+  - 0.00010785460472106934
+  - 0.0002157166600227356
+  - 4.792213439941406e-05
+  - 8.38935375213623e-05
+  - 8.38935375213623e-05
+  recorded_at_utc: '2026-08-03T23:12:06.890891Z'
+  recorded_monotonic_s: 29051.803236474
+  source: manual_teaching
+  anchor: false
+  preview_path: sessions/manual_run_001/preview/poses/pose_029_capture_029.png
+  visual_quality:
+    grade: yellow
+    hard_failures: []
+    metrics:
+      duplicate_tag_ids: []
+      ignored_tag_ids:
+      - 37
+      minimum_corner_image_margin_px: 78.4465103149414
+      minimum_quad_quality: 0.7547769859971152
+      minimum_tag_short_side_px: 42.006713197546105
+      novel_view: true
+      opencv_rejected_candidates: 966
+      pnp_depth_m: 0.3882246069071617
+      pnp_reprojection_error_px: 1.538012478935908
+      quality_rejected_detections: 0
+      tag_count: 2
+      tag_ids:
+      - 3
+      - 5
+      visible_faces:
+      - -Y
+      - -Z
+    save_allowed: true
+    signature:
+      image_cell:
+      - 0
+      - 0
+      normalized_centroid:
+      - 0.134217662677064
+      - 0.1979571370322449
+      rvec:
+      - -0.8258093219517473
+      - 0.979179601715702
+      - 2.7134423227618476
+      tag_ids:
+      - 3
+      - 5
+      tvec_m:
+      - -0.20699789963171603
+      - -0.09534099785517931
+      - 0.3882246069071617
+      visible_faces:
+      - -Y
+      - -Z
+    state_readiness:
+      calibration_arm: left
+      duration_s: 0.5271054080003523
+      hard_failures: []
+      maximum_calibration_position_spread_rad: 0.0012942999601364136
+      maximum_calibration_velocity_rad_s: 0.04908738657832146
+      maximum_hold_position_spread_rad: 0.00013183057308197021
+      maximum_hold_velocity_rad_s: 0.04908738657832146
+      maximum_state_gap_s: 0.028930385000421666
+      ready: true
+      sample_count: 460
+    timestamp_pairing:
+      after_state_monotonic_s: 29051.803546517
+      before_state_monotonic_s: 29051.802101847
+      bracket_span_s: 0.0014446700006374158
+      image_header_stamp_ns: 445928912908536
+      image_receipt_monotonic_s: 29051.803236474
+      image_receipt_utc: '2026-08-03T23:12:06.890891Z'
+      nearest_delta_s: 0.00031004300035419874
+      nearest_state_monotonic_s: 29051.803546517
+    warnings:
+    - multi-face PnP error is 1.54px; prefer at most 1.50px
+    yellow_override_reason: manual tabletop capture; warning reviewed in live preview
+- id: pose_030
+  group: calibration
+  measured_calibration_q:
+  - -0.3345755934715271
+  - 0.06472600251436234
+  - -0.25181254744529724
+  - -0.10452641546726227
+  - 1.97139310836792
+  - -0.13226988911628723
+  - -0.4116820991039276
+  measured_full_q:
+  - -0.05651014670729637
+  - -0.01420636661350727
+  - -0.007338759023696184
+  - 0.4397667348384857
+  - -0.38382571935653687
+  - 0.02388930693268776
+  - -0.16012202203273773
+  - 0.053459230810403824
+  - -0.06627649068832397
+  - 0.4370822608470917
+  - -0.28407323360443115
+  - -0.04603882506489754
+  - -0.7782164216041565
+  - 0.029769476503133774
+  - -0.025905784219503403
+  - -0.3345755934715271
+  - 0.06472600251436234
+  - -0.25181254744529724
+  - -0.10452641546726227
+  - 1.97139310836792
+  - -0.13226988911628723
+  - -0.4116820991039276
+  - 0.16830645501613617
+  - 0.025778867304325104
+  - 0.00441019469872117
+  - 1.2246919870376587
+  - -0.1098354235291481
+  - 0.027815386652946472
+  - -0.05969342589378357
+  calibration_q_spread:
+  - 0.00020372867584228516
+  - 5.9917569160461426e-05
+  - 7.191300392150879e-05
+  - 0.00016777962446212769
+  - 3.5881996154785156e-05
+  - 7.189810276031494e-05
+  - 5.990266799926758e-05
+  recorded_at_utc: '2026-08-03T23:12:13.702887Z'
+  recorded_monotonic_s: 29058.615205611
+  source: manual_teaching
+  anchor: false
+  preview_path: sessions/manual_run_001/preview/poses/pose_030_capture_030.png
+  visual_quality:
+    grade: green
+    hard_failures: []
+    metrics:
+      duplicate_tag_ids: []
+      ignored_tag_ids:
+      - 17
+      minimum_corner_image_margin_px: 112.65599060058594
+      minimum_quad_quality: 0.8285346874061807
+      minimum_tag_short_side_px: 49.38694277555292
+      novel_view: true
+      opencv_rejected_candidates: 929
+      pnp_depth_m: 0.373286514766306
+      pnp_reprojection_error_px: 1.1108101387499096
+      quality_rejected_detections: 0
+      tag_count: 2
+      tag_ids:
+      - 3
+      - 5
+      visible_faces:
+      - -Y
+      - -Z
+    save_allowed: true
+    signature:
+      image_cell:
+      - 1
+      - 0
+      normalized_centroid:
+      - 0.46718741171615397
+      - 0.263990776263623
+      rvec:
+      - 0.7319716893026602
+      - -0.6418971587621256
+      - -2.578045087757329
+      tag_ids:
+      - 3
+      - 5
+      tvec_m:
+      - -0.02513607228108687
+      - -0.07606703002632036
+      - 0.373286514766306
+      visible_faces:
+      - -Y
+      - -Z
+    state_readiness:
+      calibration_arm: left
+      duration_s: 0.5012528359984572
+      hard_failures: []
+      maximum_calibration_position_spread_rad: 0.00020372867584228516
+      maximum_calibration_velocity_rad_s: 0.03681553900241852
+      maximum_hold_position_spread_rad: 0.00013183057308197021
+      maximum_hold_velocity_rad_s: 0.03681553900241852
+      maximum_state_gap_s: 0.00575233600102365
+      ready: true
+      sample_count: 523
+    timestamp_pairing:
+      after_state_monotonic_s: 29058.615534576
+      before_state_monotonic_s: 29058.614146564
+      bracket_span_s: 0.0013880120022804476
+      image_header_stamp_ns: 445935650754961
+      image_receipt_monotonic_s: 29058.615205611
+      image_receipt_utc: '2026-08-03T23:12:13.702887Z'
+      nearest_delta_s: 0.00032896500124479644
+      nearest_state_monotonic_s: 29058.615534576
+    warnings: []
+    yellow_override_reason: null
+- id: pose_031
+  group: calibration
+  measured_calibration_q:
+  - -0.3326821029186249
+  - 0.06735054403543472
+  - 0.39470046758651733
+  - -0.21467342972755432
+  - 1.9713691473007202
+  - -0.20742297172546387
+  - -0.4117899537086487
+  measured_full_q:
+  - -0.05660388991236687
+  - -0.014214888215065002
+  - -0.0072584073059260845
+  - 0.43957072496414185
+  - -0.3838297426700592
+  - 0.023874901235103607
+  - -0.16003680229187012
+  - 0.052871204912662506
+  - -0.06614257395267487
+  - 0.43703964352607727
+  - -0.2841922640800476
+  - -0.04582209140062332
+  - -0.7782365381717682
+  - 0.030081287026405334
+  - -0.026120617985725403
+  - -0.3326821029186249
+  - 0.06735054403543472
+  - 0.39470046758651733
+  - -0.21467342972755432
+  - 1.9713691473007202
+  - -0.20742297172546387
+  - -0.4117899537086487
+  - 0.16839034855365753
+  - 0.025778867304325104
+  - 0.00441019469872117
+  - 1.2247039079666138
+  - -0.1098354235291481
+  - 0.027815386652946472
+  - -0.05969342589378357
+  calibration_q_spread:
+  - 0.00011983513832092285
+  - 0.0005872249603271484
+  - 0.0001558065414428711
+  - 0.0001677870750427246
+  - 4.792213439941406e-05
+  - 8.38935375213623e-05
+  - 5.9932470321655273e-05
+  recorded_at_utc: '2026-08-03T23:12:22.839664Z'
+  recorded_monotonic_s: 29067.751833103
+  source: manual_teaching
+  anchor: false
+  preview_path: sessions/manual_run_001/preview/poses/pose_031_capture_031.png
+  visual_quality:
+    grade: yellow
+    hard_failures: []
+    metrics:
+      duplicate_tag_ids: []
+      ignored_tag_ids: []
+      minimum_corner_image_margin_px: 38.86246109008789
+      minimum_quad_quality: 0.7399521418362194
+      minimum_tag_short_side_px: 54.68912356550059
+      novel_view: true
+      opencv_rejected_candidates: 912
+      pnp_depth_m: 0.3346225023969784
+      pnp_reprojection_error_px: 2.6346362149470033
+      quality_rejected_detections: 0
+      tag_count: 2
+      tag_ids:
+      - 3
+      - 5
+      visible_faces:
+      - -Y
+      - -Z
+    save_allowed: true
+    signature:
+      image_cell:
+      - 0
+      - 0
+      normalized_centroid:
+      - 0.08117793965283737
+      - 0.16078425846444716
+      rvec:
+      - -0.7749731369984276
+      - 0.7701564841717812
+      - 2.7434211045555856
+      tag_ids:
+      - 3
+      - 5
+      tvec_m:
+      - -0.20216028110895823
+      - -0.09312738786196213
+      - 0.3346225023969784
+      visible_faces:
+      - -Y
+      - -Z
+    state_readiness:
+      calibration_arm: left
+      duration_s: 0.5059529040008783
+      hard_failures: []
+      maximum_calibration_position_spread_rad: 0.0005872249603271484
+      maximum_calibration_velocity_rad_s: 0.030679617077112198
+      maximum_hold_position_spread_rad: 0.00010785460472106934
+      maximum_hold_velocity_rad_s: 0.04295146465301514
+      maximum_state_gap_s: 0.026891217999946093
+      ready: true
+      sample_count: 444
+    timestamp_pairing:
+      after_state_monotonic_s: 29067.754017924
+      before_state_monotonic_s: 29067.750601367
+      bracket_span_s: 0.003416556999582099
+      image_header_stamp_ns: 445944790456576
+      image_receipt_monotonic_s: 29067.751833103
+      image_receipt_utc: '2026-08-03T23:12:22.839664Z'
+      nearest_delta_s: 0.0012317360015003942
+      nearest_state_monotonic_s: 29067.750601367
+    warnings:
+    - multi-face PnP error is 2.63px; prefer at most 1.50px
+    yellow_override_reason: manual tabletop capture; warning reviewed in live preview
+- id: pose_032
+  group: calibration
+  measured_calibration_q:
+  - -0.31102660298347473
+  - 0.034393928945064545
+  - -0.15388943254947662
+  - -0.21464945375919342
+  - 1.9713571071624756
+  - -0.20527780055999756
+  - -0.41139447689056396
+  measured_full_q:
+  - -0.05657832324504852
+  - -0.01420636661350727
+  - -0.007311975117772818
+  - 0.43971559405326843
+  - -0.3838216960430145
+  - 0.023874901235103607
+  - -0.1601305454969406
+  - 0.05317800119519234
+  - -0.06620953232049942
+  - 0.43704816699028015
+  - -0.28413891792297363
+  - -0.0458943247795105
+  - -0.7781093120574951
+  - 0.03005850687623024
+  - -0.026125142350792885
+  - -0.31102660298347473
+  - 0.034393928945064545
+  - -0.15388943254947662
+  - -0.21464945375919342
+  - 1.9713571071624756
+  - -0.20527780055999756
+  - -0.41139447689056396
+  - 0.16841432452201843
+  - 0.025778867304325104
+  - 0.00441019469872117
+  - 1.2247039079666138
+  - -0.10982344299554825
+  - 0.027815386652946472
+  - -0.05968144163489342
+  calibration_q_spread:
+  - 0.0030440092086791992
+  - 0.00011984258890151978
+  - 0.00017975270748138428
+  - 0.00015579164028167725
+  - 4.8041343688964844e-05
+  - 0.00014381110668182373
+  - 8.38935375213623e-05
+  recorded_at_utc: '2026-08-03T23:12:29.283788Z'
+  recorded_monotonic_s: 29074.196036799
+  source: manual_teaching
+  anchor: false
+  preview_path: sessions/manual_run_001/preview/poses/pose_032_capture_032.png
+  visual_quality:
+    grade: yellow
+    hard_failures: []
+    metrics:
+      duplicate_tag_ids: []
+      ignored_tag_ids: []
+      minimum_corner_image_margin_px: 81.66862487792969
+      minimum_quad_quality: 0.7868447019021578
+      minimum_tag_short_side_px: 47.69808722991592
+      novel_view: false
+      opencv_rejected_candidates: 914
+      pnp_depth_m: 0.3489440861432039
+      pnp_reprojection_error_px: 0.9997563879580518
+      quality_rejected_detections: 0
+      tag_count: 2
+      tag_ids:
+      - 3
+      - 5
+      visible_faces:
+      - -Y
+      - -Z
+    save_allowed: true
+    signature:
+      image_cell:
+      - 1
+      - 0
+      normalized_centroid:
+      - 0.43499763315780915
+      - 0.2302770720735213
+      rvec:
+      - 0.7058554366605498
+      - -0.5736904692891216
+      - -2.6474434578527166
+      tag_ids:
+      - 3
+      - 5
+      tvec_m:
+      - -0.038768374706211334
+      - -0.08091995362810865
+      - 0.3489440861432039
+      visible_faces:
+      - -Y
+      - -Z
+    state_readiness:
+      calibration_arm: left
+      duration_s: 0.5036617539990402
+      hard_failures: []
+      maximum_calibration_position_spread_rad: 0.0030440092086791992
+      maximum_calibration_velocity_rad_s: 0.04295146465301514
+      maximum_hold_position_spread_rad: 0.00014381110668182373
+      maximum_hold_velocity_rad_s: 0.04295146465301514
+      maximum_state_gap_s: 0.01895771599811269
+      ready: true
+      sample_count: 493
+    timestamp_pairing:
+      after_state_monotonic_s: 29074.196238953
+      before_state_monotonic_s: 29074.194266808
+      bracket_span_s: 0.001972145000763703
+      image_header_stamp_ns: 445951328335349
+      image_receipt_monotonic_s: 29074.196036799
+      image_receipt_utc: '2026-08-03T23:12:29.283788Z'
+      nearest_delta_s: 0.00020215400218148716
+      nearest_state_monotonic_s: 29074.196238953
+    warnings:
+    - view is redundant with an already saved pose
+    yellow_override_reason: manual tabletop capture; warning reviewed in live preview
+- id: pose_033
+  group: calibration
+  measured_calibration_q:
+  - -0.1392926573753357
+  - 0.025537587702274323
+  - 0.004745753016322851
+  - 0.4466760456562042
+  - 1.7942662239074707
+  - -0.19752399623394012
+  - 0.12150806188583374
+  measured_full_q:
+  - -0.05645901337265968
+  - -0.014214888215065002
+  - -0.007338759023696184
+  - 0.4396388828754425
+  - -0.3838297426700592
+  - 0.023874901235103607
+  - -0.160232812166214
+  - 0.053518883883953094
+  - -0.06682556122541428
+  - 0.43713340163230896
+  - -0.28422585129737854
+  - -0.045876313000917435
+  - -0.7781628966331482
+  - 0.029360229149460793
+  - -0.026079606264829636
+  - -0.1392926573753357
+  - 0.025537587702274323
+  - 0.004745753016322851
+  - 0.4466760456562042
+  - 1.7942662239074707
+  - -0.19752399623394012
+  - 0.12150806188583374
+  - 0.16830645501613617
+  - 0.025778867304325104
+  - 0.00441019469872117
+  - 1.224679946899414
+  - -0.1098354235291481
+  - 0.02780340239405632
+  - -0.05968144163489342
+  calibration_q_spread:
+  - 0.00016777217388153076
+  - 4.793703556060791e-05
+  - 4.79365698993206e-05
+  - 0.00017976760864257812
+  - 7.18832015991211e-05
+  - 9.587407112121582e-05
+  - 0.0003475397825241089
+  recorded_at_utc: '2026-08-03T23:12:38.194461Z'
+  recorded_monotonic_s: 29083.106669762
+  source: manual_teaching
+  anchor: false
+  preview_path: sessions/manual_run_001/preview/poses/pose_033_capture_033.png
+  visual_quality:
+    grade: yellow
+    hard_failures: []
+    metrics:
+      duplicate_tag_ids: []
+      ignored_tag_ids: []
+      minimum_corner_image_margin_px: 247.62771606445312
+      minimum_quad_quality: 0.7757403631119604
+      minimum_tag_short_side_px: 31.45925423190866
+      novel_view: true
+      opencv_rejected_candidates: 906
+      pnp_depth_m: 0.5009291927602348
+      pnp_reprojection_error_px: 0.8488833619806173
+      quality_rejected_detections: 0
+      tag_count: 2
+      tag_ids:
+      - 3
+      - 5
+      visible_faces:
+      - -Y
+      - -Z
+    save_allowed: true
+    signature:
+      image_cell:
+      - 1
+      - 1
+      normalized_centroid:
+      - 0.36964991243674106
+      - 0.5866355418495741
+      rvec:
+      - 0.25290524569495054
+      - -1.0414078213873812
+      - -2.6354244217088447
+      tag_ids:
+      - 3
+      - 5
+      tvec_m:
+      - -0.09716284524426382
+      - 0.027924963382017255
+      - 0.5009291927602348
+      visible_faces:
+      - -Y
+      - -Z
+    state_readiness:
+      calibration_arm: left
+      duration_s: 0.5100429260019155
+      hard_failures: []
+      maximum_calibration_position_spread_rad: 0.0003475397825241089
+      maximum_calibration_velocity_rad_s: 0.03681553900241852
+      maximum_hold_position_spread_rad: 0.00013183057308197021
+      maximum_hold_velocity_rad_s: 0.04908738657832146
+      maximum_state_gap_s: 0.019206526998459594
+      ready: true
+      sample_count: 438
+    timestamp_pairing:
+      after_state_monotonic_s: 29083.106889778
+      before_state_monotonic_s: 29083.105766917
+      bracket_span_s: 0.0011228609982936177
+      image_header_stamp_ns: 445960134738822
+      image_receipt_monotonic_s: 29083.106669762
+      image_receipt_utc: '2026-08-03T23:12:38.194461Z'
+      nearest_delta_s: 0.00022001599791110493
+      nearest_state_monotonic_s: 29083.106889778
+    warnings:
+    - 'tag size is marginal: 31.5px; prefer 40.0px'
+    yellow_override_reason: manual tabletop capture; warning reviewed in live preview
+- id: pose_034
+  group: calibration
+  measured_calibration_q:
+  - -0.13857360184192657
+  - -0.04182574525475502
+  - -0.6629433631896973
+  - 0.4459090530872345
+  - 1.7943620681762695
+  - -0.20543359220027924
+  - 0.12060924619436264
+  measured_full_q:
+  - -0.05642492696642876
+  - -0.014214888215065002
+  - -0.007325367070734501
+  - 0.43998828530311584
+  - -0.38382571935653687
+  - 0.023882169276475906
+  - -0.1601305454969406
+  - 0.053399574011564255
+  - -0.06671842187643051
+  - 0.4372015595436096
+  - -0.2840774655342102
+  - -0.046031609177589417
+  - -0.778082549571991
+  - 0.029398027807474136
+  - -0.026050729677081108
+  - -0.13857360184192657
+  - -0.04182574525475502
+  - -0.6629433631896973
+  - 0.4459090530872345
+  - 1.7943620681762695
+  - -0.20543359220027924
+  - 0.12060924619436264
+  - 0.16834241151809692
+  - 0.025778867304325104
+  - 0.00441019469872117
+  - 1.224679946899414
+  - -0.10982344299554825
+  - 0.027815386652946472
+  - -0.05968144163489342
+  calibration_q_spread:
+  - 0.00010785460472106934
+  - 0.00013182684779167175
+  - 0.0004553794860839844
+  - 0.00010785460472106934
+  - 5.996227264404297e-05
+  - 0.00015579164028167725
+  - 8.388608694076538e-05
+  recorded_at_utc: '2026-08-03T23:12:44.861621Z'
+  recorded_monotonic_s: 29089.773949535
+  source: manual_teaching
+  anchor: false
+  preview_path: sessions/manual_run_001/preview/poses/pose_034_capture_034.png
+  visual_quality:
+    grade: yellow
+    hard_failures: []
+    metrics:
+      duplicate_tag_ids: []
+      ignored_tag_ids: []
+      minimum_corner_image_margin_px: 98.1136474609375
+      minimum_quad_quality: 0.7286501089031108
+      minimum_tag_short_side_px: 30.0769650340275
+      novel_view: true
+      opencv_rejected_candidates: 939
+      pnp_depth_m: 0.4565003467561255
+      pnp_reprojection_error_px: 0.8753969366818097
+      quality_rejected_detections: 0
+      tag_count: 2
+      tag_ids:
+      - 3
+      - 5
+      visible_faces:
+      - -Y
+      - -Z
+    save_allowed: true
+    signature:
+      image_cell:
+      - 1
+      - 2
+      normalized_centroid:
+      - 0.638920232968185
+      - 0.7947596628244795
+      rvec:
+      - 0.0693132839076119
+      - -0.7332959574140039
+      - -2.048989915331195
+      tag_ids:
+      - 3
+      - 5
+      tvec_m:
+      - 0.08476683631054503
+      - 0.09988389682294742
+      - 0.4565003467561255
+      visible_faces:
+      - -Y
+      - -Z
+    state_readiness:
+      calibration_arm: left
+      duration_s: 0.5027558069996303
+      hard_failures: []
+      maximum_calibration_position_spread_rad: 0.0004553794860839844
+      maximum_calibration_velocity_rad_s: 0.03681553900241852
+      maximum_hold_position_spread_rad: 0.00013183057308197021
+      maximum_hold_velocity_rad_s: 0.04295146465301514
+      maximum_state_gap_s: 0.019930153001041617
+      ready: true
+      sample_count: 523
+    timestamp_pairing:
+      after_state_monotonic_s: 29089.773983449
+      before_state_monotonic_s: 29089.772454713
+      bracket_span_s: 0.001528736000182107
+      image_header_stamp_ns: 445966872569004
+      image_receipt_monotonic_s: 29089.773949535
+      image_receipt_utc: '2026-08-03T23:12:44.861621Z'
+      nearest_delta_s: 3.391399877727963e-05
+      nearest_state_monotonic_s: 29089.773983449
+    warnings:
+    - 'tag size is marginal: 30.1px; prefer 40.0px'
+    yellow_override_reason: manual tabletop capture; warning reviewed in live preview
+- id: pose_035
+  group: calibration
+  measured_calibration_q:
+  - -0.11942879483103752
+  - -0.04908818379044533
+  - -0.1923348307609558
+  - -0.40630120038986206
+  - 1.9714170694351196
+  - -0.15718509256839752
+  - 0.09939716756343842
+  measured_full_q:
+  - -0.05661241337656975
+  - -0.014104100875556469
+  - -0.007365542463958263
+  - 0.4400649964809418
+  - -0.38378533720970154
+  - 0.02391175366938114
+  - -0.1594913899898529
+  - 0.0666770339012146
+  - -0.062406234443187714
+  - 0.4369714558124542
+  - -0.28393712639808655
+  - -0.046660345047712326
+  - -0.7775468826293945
+  - 0.021858805790543556
+  - -0.032772377133369446
+  - -0.11942879483103752
+  - -0.04908818379044533
+  - -0.1923348307609558
+  - -0.40630120038986206
+  - 1.9714170694351196
+  - -0.15718509256839752
+  - 0.09939716756343842
+  - 0.1688697189092636
+  - 0.025790851563215256
+  - 0.00441019469872117
+  - 1.2247518301010132
+  - -0.1098354235291481
+  - 0.027827370911836624
+  - -0.05968144163489342
+  calibration_q_spread:
+  - 0.006950855255126953
+  - 0.00014380738139152527
+  - 0.0002396702766418457
+  - 0.0002516806125640869
+  - 3.600120544433594e-05
+  - 0.00010785460472106934
+  - 0.0003115907311439514
+  recorded_at_utc: '2026-08-03T23:12:52.929424Z'
+  recorded_monotonic_s: 29097.841727454
+  source: manual_teaching
+  anchor: false
+  preview_path: sessions/manual_run_001/preview/poses/pose_035_capture_035.png
+  visual_quality:
+    grade: yellow
+    hard_failures: []
+    metrics:
+      duplicate_tag_ids: []
+      ignored_tag_ids:
+      - 17
+      minimum_corner_image_margin_px: 180.17745971679688
+      minimum_quad_quality: 0.9816429639591924
+      minimum_tag_short_side_px: 99.28819714576385
+      novel_view: true
+      opencv_rejected_candidates: 864
+      pnp_depth_m: 0.288191137277493
+      pnp_reprojection_error_px: 0.07624345473045867
+      quality_rejected_detections: 0
+      tag_count: 1
+      tag_ids:
+      - 5
+      visible_faces:
+      - -Z
+    save_allowed: true
+    signature:
+      image_cell:
+      - 1
+      - 1
+      normalized_centroid:
+      - 0.4461827102911668
+      - 0.34379814795227476
+      rvec:
+      - 0.42636466750515917
+      - 0.12930285799542163
+      - -2.749595496299021
+      tag_ids:
+      - 5
+      tvec_m:
+      - -0.029623266490833043
+      - -0.038863513252862865
+      - 0.288191137277493
+      visible_faces:
+      - -Z
+    state_readiness:
+      calibration_arm: left
+      duration_s: 0.5087670280008751
+      hard_failures: []
+      maximum_calibration_position_spread_rad: 0.006950855255126953
+      maximum_calibration_velocity_rad_s: 0.04908738657832146
+      maximum_hold_position_spread_rad: 0.00019174814224243164
+      maximum_hold_velocity_rad_s: 0.03681553900241852
+      maximum_state_gap_s: 0.02294906300085131
+      ready: true
+      sample_count: 492
+    timestamp_pairing:
+      after_state_monotonic_s: 29097.841859139
+      before_state_monotonic_s: 29097.840059107
+      bracket_span_s: 0.001800032001483487
+      image_header_stamp_ns: 445974944534312
+      image_receipt_monotonic_s: 29097.841727454
+      image_receipt_utc: '2026-08-03T23:12:52.929424Z'
+      nearest_delta_s: 0.00013168499936000444
+      nearest_state_monotonic_s: 29097.841859139
+    warnings:
+    - only 1 cube face visible; prefer 2
+    yellow_override_reason: manual tabletop capture; warning reviewed in live preview
+- id: pose_036
+  group: calibration
+  measured_calibration_q:
+  - -0.11643873155117035
+  - -0.05255162715911865
+  - 0.4147021174430847
+  - -0.20769861340522766
+  - 1.0565892457962036
+  - -0.5496565103530884
+  - 0.016574183478951454
+  measured_full_q:
+  - -0.05662093311548233
+  - -0.014095579273998737
+  - -0.007378934416919947
+  - 0.4400649964809418
+  - -0.38371703028678894
+  - 0.02384703978896141
+  - -0.1596362590789795
+  - 0.06709461659193039
+  - -0.062433019280433655
+  - 0.43705669045448303
+  - -0.2839122414588928
+  - -0.046674780547618866
+  - -0.778055727481842
+  - 0.021182673051953316
+  - -0.032700538635253906
+  - -0.11643873155117035
+  - -0.05255162715911865
+  - 0.4147021174430847
+  - -0.20769861340522766
+  - 1.0565892457962036
+  - -0.5496565103530884
+  - 0.016574183478951454
+  - 0.16880980134010315
+  - 0.02581482008099556
+  - 0.00441019469872117
+  - 1.224739909172058
+  - -0.10984741151332855
+  - 0.027827370911836624
+  - -0.05968144163489342
+  calibration_q_spread:
+  - 0.00011984258890151978
+  - 9.587407112121582e-05
+  - 0.00011983513832092285
+  - 0.00026366114616394043
+  - 9.584426879882812e-05
+  - 0.00011986494064331055
+  - 9.587407112121582e-05
+  recorded_at_utc: '2026-08-03T23:13:04.139032Z'
+  recorded_monotonic_s: 29109.051360926
+  source: manual_teaching
+  anchor: false
+  preview_path: sessions/manual_run_001/preview/poses/pose_036_capture_036.png
+  visual_quality:
+    grade: green
+    hard_failures: []
+    metrics:
+      duplicate_tag_ids: []
+      ignored_tag_ids: []
+      minimum_corner_image_margin_px: 51.930294036865234
+      minimum_quad_quality: 0.8191059387850996
+      minimum_tag_short_side_px: 59.897863029163844
+      novel_view: true
+      opencv_rejected_candidates: 902
+      pnp_depth_m: 0.309986569689009
+      pnp_reprojection_error_px: 1.4231729886948354
+      quality_rejected_detections: 0
+      tag_count: 2
+      tag_ids:
+      - 1
+      - 5
+      visible_faces:
+      - -X
+      - -Z
+    save_allowed: true
+    signature:
+      image_cell:
+      - 0
+      - 1
+      normalized_centroid:
+      - 0.10431381237516187
+      - 0.37138218674109275
+      rvec:
+      - -0.6124399736227172
+      - 0.03151056379900701
+      - -2.9841565637100964
+      tag_ids:
+      - 1
+      - 5
+      tvec_m:
+      - -0.17491942092226936
+      - -0.034263599653589584
+      - 0.309986569689009
+      visible_faces:
+      - -X
+      - -Z
+    state_readiness:
+      calibration_arm: left
+      duration_s: 0.5003412180012674
+      hard_failures: []
+      maximum_calibration_position_spread_rad: 0.00026366114616394043
+      maximum_calibration_velocity_rad_s: 0.04295146465301514
+      maximum_hold_position_spread_rad: 0.00014381110668182373
+      maximum_hold_velocity_rad_s: 0.03681553900241852
+      maximum_state_gap_s: 0.027156601998285623
+      ready: true
+      sample_count: 445
+    timestamp_pairing:
+      after_state_monotonic_s: 29109.051823147
+      before_state_monotonic_s: 29109.049633
+      bracket_span_s: 0.0021901470026932657
+      image_header_stamp_ns: 445986085631105
+      image_receipt_monotonic_s: 29109.051360926
+      image_receipt_utc: '2026-08-03T23:13:04.139032Z'
+      nearest_delta_s: 0.0004622209999070037
+      nearest_state_monotonic_s: 29109.051823147
+    warnings: []
+    yellow_override_reason: null
+- id: pose_037
+  group: calibration
+  measured_calibration_q:
+  - -0.12590627372264862
+  - -0.04863278567790985
+  - 0.29586654901504517
+  - -0.614023745059967
+  - 1.256138563156128
+  - -0.5598191022872925
+  - -0.09762349724769592
+  measured_full_q:
+  - -0.05662093311548233
+  - -0.014035924337804317
+  - -0.007365542463958263
+  - 0.43985193967819214
+  - -0.38369694352149963
+  - 0.023810844868421555
+  - -0.15967035293579102
+  - 0.06735879927873611
+  - -0.0624598003923893
+  - 0.43705669045448303
+  - -0.283863365650177
+  - -0.046804845333099365
+  - -0.7782432436943054
+  - 0.021403774619102478
+  - -0.033165011554956436
+  - -0.12590627372264862
+  - -0.04863278567790985
+  - 0.29586654901504517
+  - -0.614023745059967
+  - 1.256138563156128
+  - -0.5598191022872925
+  - -0.09762349724769592
+  - 0.16888169944286346
+  - 0.02581482008099556
+  - 0.00441019469872117
+  - 1.224739909172058
+  - -0.1098354235291481
+  - 0.027827370911836624
+  - -0.05968144163489342
+  calibration_q_spread:
+  - 0.0014620721340179443
+  - 0.00023968517780303955
+  - 0.0004074573516845703
+  - 0.0003235340118408203
+  - 5.996227264404297e-05
+  - 9.584426879882812e-05
+  - 9.587407112121582e-05
+  recorded_at_utc: '2026-08-03T23:13:12.319936Z'
+  recorded_monotonic_s: 29117.232278917
+  source: manual_teaching
+  anchor: false
+  preview_path: sessions/manual_run_001/preview/poses/pose_037_capture_037.png
+  visual_quality:
+    grade: green
+    hard_failures: []
+    metrics:
+      duplicate_tag_ids: []
+      ignored_tag_ids: []
+      minimum_corner_image_margin_px: 65.51681518554688
+      minimum_quad_quality: 0.7449298281575603
+      minimum_tag_short_side_px: 62.654699233546175
+      novel_view: true
+      opencv_rejected_candidates: 875
+      pnp_depth_m: 0.22452201462255816
+      pnp_reprojection_error_px: 1.0946457303881694
+      quality_rejected_detections: 0
+      tag_count: 2
+      tag_ids:
+      - 1
+      - 5
+      visible_faces:
+      - -X
+      - -Z
+    save_allowed: true
+    signature:
+      image_cell:
+      - 0
+      - 1
+      normalized_centroid:
+      - 0.15735349513479654
+      - 0.33930059069552576
+      rvec:
+      - -0.13822415851183067
+      - 0.26253831168730446
+      - -2.7845065523094723
+      tag_ids:
+      - 1
+      - 5
+      tvec_m:
+      - -0.1139749701082605
+      - -0.03428068826796241
+      - 0.22452201462255816
+      visible_faces:
+      - -X
+      - -Z
+    state_readiness:
+      calibration_arm: left
+      duration_s: 0.5019102650003333
+      hard_failures: []
+      maximum_calibration_position_spread_rad: 0.0014620721340179443
+      maximum_calibration_velocity_rad_s: 0.03681553900241852
+      maximum_hold_position_spread_rad: 0.00015579164028167725
+      maximum_hold_velocity_rad_s: 0.04295146465301514
+      maximum_state_gap_s: 0.027862466999067692
+      ready: true
+      sample_count: 399
+    timestamp_pairing:
+      after_state_monotonic_s: 29117.2326689
+      before_state_monotonic_s: 29117.231180612
+      bracket_span_s: 0.001488287998654414
+      image_header_stamp_ns: 445994291452400
+      image_receipt_monotonic_s: 29117.232278917
+      image_receipt_utc: '2026-08-03T23:13:12.319936Z'
+      nearest_delta_s: 0.0003899830007867422
+      nearest_state_monotonic_s: 29117.2326689
+    warnings: []
+    yellow_override_reason: null
+- id: pose_038
+  group: calibration
+  measured_calibration_q:
+  - -0.16916333138942719
+  - -0.04796166718006134
+  - -0.3700249493122101
+  - -0.43836498260498047
+  - 1.9715008735656738
+  - -0.4956795275211334
+  - -0.204366996884346
+  measured_full_q:
+  - -0.056109607219696045
+  - -0.013916614465415478
+  - -0.0074860695749521255
+  - 0.43967297673225403
+  - -0.3837089538574219
+  - 0.02383263409137726
+  - -0.1604543924331665
+  - 0.06916549056768417
+  - -0.06371863931417465
+  - 0.43690329790115356
+  - -0.2824905812740326
+  - -0.04899399355053902
+  - -0.7784173488616943
+  - 0.018199864774942398
+  - -0.03441844880580902
+  - -0.16916333138942719
+  - -0.04796166718006134
+  - -0.3700249493122101
+  - -0.43836498260498047
+  - 1.9715008735656738
+  - -0.4956795275211334
+  - -0.204366996884346
+  - 0.168821781873703
+  - 0.025850772857666016
+  - 0.00441019469872117
+  - 1.224739909172058
+  - -0.1098354235291481
+  - 0.027827370911836624
+  - -0.059669457376003265
+  calibration_q_spread:
+  - 0.002205103635787964
+  - 9.587407112121582e-05
+  - 0.00019174814224243164
+  - 0.007813721895217896
+  - 2.396106719970703e-05
+  - 0.00022771954536437988
+  - 9.587407112121582e-05
+  recorded_at_utc: '2026-08-03T23:13:20.566647Z'
+  recorded_monotonic_s: 29125.478945802
+  source: manual_teaching
+  anchor: false
+  preview_path: sessions/manual_run_001/preview/poses/pose_038_capture_038.png
+  visual_quality:
+    grade: green
+    hard_failures: []
+    metrics:
+      duplicate_tag_ids: []
+      ignored_tag_ids:
+      - 37
+      minimum_corner_image_margin_px: 273.0339050292969
+      minimum_quad_quality: 0.7438686669261836
+      minimum_tag_short_side_px: 44.14616768788616
+      novel_view: true
+      opencv_rejected_candidates: 846
+      pnp_depth_m: 0.29685173169861223
+      pnp_reprojection_error_px: 1.4261664781522498
+      quality_rejected_detections: 0
+      tag_count: 2
+      tag_ids:
+      - 3
+      - 5
+      visible_faces:
+      - -Y
+      - -Z
+    save_allowed: true
+    signature:
+      image_cell:
+      - 1
+      - 1
+      normalized_centroid:
+      - 0.6248080184256499
+      - 0.5024545056763544
+      rvec:
+      - 0.4357818142765362
+      - -0.11585736605315737
+      - -2.2925749504074897
+      tag_ids:
+      - 3
+      - 5
+      tvec_m:
+      - 0.049583538345211335
+      - -0.009426584963981103
+      - 0.29685173169861223
+      visible_faces:
+      - -Y
+      - -Z
+    state_readiness:
+      calibration_arm: left
+      duration_s: 0.5143931149978016
+      hard_failures: []
+      maximum_calibration_position_spread_rad: 0.007813721895217896
+      maximum_calibration_velocity_rad_s: 0.10277671366930008
+      maximum_hold_position_spread_rad: 0.00017976760864257812
+      maximum_hold_velocity_rad_s: 0.03834952041506767
+      maximum_state_gap_s: 0.01558558399847243
+      ready: true
+      sample_count: 504
+    timestamp_pairing:
+      after_state_monotonic_s: 29125.480326777
+      before_state_monotonic_s: 29125.477436125
+      bracket_span_s: 0.002890652001951821
+      image_header_stamp_ns: 446002630423032
+      image_receipt_monotonic_s: 29125.478945802
+      image_receipt_utc: '2026-08-03T23:13:20.566647Z'
+      nearest_delta_s: 0.0013809750016662292
+      nearest_state_monotonic_s: 29125.480326777
+    warnings: []
+    yellow_override_reason: null
+- id: pose_039
+  group: calibration
+  measured_calibration_q:
+  - -0.0992773249745369
+  - -0.0034882090985774994
+  - -0.2602614164352417
+  - 0.45410627126693726
+  - 1.9714769124984741
+  - -0.5485779047012329
+  - -0.20297682285308838
+  measured_full_q:
+  - -0.05648458003997803
+  - -0.014112623408436775
+  - -0.007499461527913809
+  - 0.43971559405326843
+  - -0.3837089538574219
+  - 0.023854518309235573
+  - -0.16009646654129028
+  - 0.06772524863481522
+  - -0.0637454241514206
+  - 0.4369203448295593
+  - -0.28283634781837463
+  - -0.04848826676607132
+  - -0.7779887914657593
+  - 0.01908779703080654
+  - -0.03380857780575752
+  - -0.0992773249745369
+  - -0.0034882090985774994
+  - -0.2602614164352417
+  - 0.45410627126693726
+  - 1.9714769124984741
+  - -0.5485779047012329
+  - -0.20297682285308838
+  - 0.1687978059053421
+  - 0.025862757116556168
+  - 0.00441019469872117
+  - 1.224739909172058
+  - -0.1098354235291481
+  - 0.027839355170726776
+  - -0.059669457376003265
+  calibration_q_spread:
+  - 0.00014381110668182373
+  - 0.0003115907311439514
+  - 5.990266799926758e-05
+  - 0.000982731580734253
+  - 2.396106719970703e-05
+  - 7.18832015991211e-05
+  - 8.38935375213623e-05
+  recorded_at_utc: '2026-08-03T23:13:27.923528Z'
+  recorded_monotonic_s: 29132.835798722
+  source: manual_teaching
+  anchor: false
+  preview_path: sessions/manual_run_001/preview/poses/pose_039_capture_039.png
+  visual_quality:
+    grade: yellow
+    hard_failures: []
+    metrics:
+      duplicate_tag_ids: []
+      ignored_tag_ids:
+      - 17
+      minimum_corner_image_margin_px: 97.7628173828125
+      minimum_quad_quality: 0.7562160599380503
+      minimum_tag_short_side_px: 28.202113663155856
+      novel_view: true
+      opencv_rejected_candidates: 925
+      pnp_depth_m: 0.5192571788047539
+      pnp_reprojection_error_px: 0.8376578281065616
+      quality_rejected_detections: 0
+      tag_count: 2
+      tag_ids:
+      - 3
+      - 5
+      visible_faces:
+      - -Y
+      - -Z
+    save_allowed: true
+    signature:
+      image_cell:
+      - 1
+      - 2
+      normalized_centroid:
+      - 0.5202344904848148
+      - 0.7925673632031521
+      rvec:
+      - 0.30510548429971135
+      - -1.2587579219043192
+      - -1.8235370275948224
+      tag_ids:
+      - 3
+      - 5
+      tvec_m:
+      - 0.006204259925891376
+      - 0.11752804459178556
+      - 0.5192571788047539
+      visible_faces:
+      - -Y
+      - -Z
+    state_readiness:
+      calibration_arm: left
+      duration_s: 0.5132397070010484
+      hard_failures: []
+      maximum_calibration_position_spread_rad: 0.000982731580734253
+      maximum_calibration_velocity_rad_s: 0.03681553900241852
+      maximum_hold_position_spread_rad: 0.00020372867584228516
+      maximum_hold_velocity_rad_s: 0.04295146465301514
+      maximum_state_gap_s: 0.020993794001697097
+      ready: true
+      sample_count: 557
+    timestamp_pairing:
+      after_state_monotonic_s: 29132.836303705
+      before_state_monotonic_s: 29132.834793735
+      bracket_span_s: 0.0015099699994607363
+      image_header_stamp_ns: 446009968955604
+      image_receipt_monotonic_s: 29132.835798722
+      image_receipt_utc: '2026-08-03T23:13:27.923528Z'
+      nearest_delta_s: 0.0005049829997005872
+      nearest_state_monotonic_s: 29132.836303705
+    warnings:
+    - 'tag size is marginal: 28.2px; prefer 40.0px'
+    yellow_override_reason: manual tabletop capture; warning reviewed in live preview
+audit_log:
+- action: add
+  pose_id: pose_001
+  occurred_at_utc: '2026-08-03T23:05:13.474681Z'
+  details:
+    visual_grade: yellow
+    yellow_override_reason: manual tabletop capture; warning reviewed in live preview
+- action: add
+  pose_id: pose_002
+  occurred_at_utc: '2026-08-03T23:05:24.346672Z'
+  details:
+    visual_grade: yellow
+    yellow_override_reason: manual tabletop capture; warning reviewed in live preview
+- action: add
+  pose_id: pose_003
+  occurred_at_utc: '2026-08-03T23:05:40.273377Z'
+  details:
+    visual_grade: yellow
+    yellow_override_reason: manual tabletop capture; warning reviewed in live preview
+- action: add
+  pose_id: pose_004
+  occurred_at_utc: '2026-08-03T23:05:58.195282Z'
+  details:
+    visual_grade: green
+    yellow_override_reason: null
+- action: add
+  pose_id: pose_005
+  occurred_at_utc: '2026-08-03T23:06:06.202395Z'
+  details:
+    visual_grade: green
+    yellow_override_reason: null
+- action: add
+  pose_id: pose_006
+  occurred_at_utc: '2026-08-03T23:06:14.943638Z'
+  details:
+    visual_grade: yellow
+    yellow_override_reason: manual tabletop capture; warning reviewed in live preview
+- action: add
+  pose_id: pose_007
+  occurred_at_utc: '2026-08-03T23:06:20.809636Z'
+  details:
+    visual_grade: yellow
+    yellow_override_reason: manual tabletop capture; warning reviewed in live preview
+- action: add
+  pose_id: pose_008
+  occurred_at_utc: '2026-08-03T23:06:27.742646Z'
+  details:
+    visual_grade: green
+    yellow_override_reason: null
+- action: add
+  pose_id: pose_009
+  occurred_at_utc: '2026-08-03T23:06:38.488443Z'
+  details:
+    visual_grade: green
+    yellow_override_reason: null
+- action: add
+  pose_id: pose_010
+  occurred_at_utc: '2026-08-03T23:06:45.827418Z'
+  details:
+    visual_grade: yellow
+    yellow_override_reason: manual tabletop capture; warning reviewed in live preview
+- action: add
+  pose_id: pose_011
+  occurred_at_utc: '2026-08-03T23:06:52.901311Z'
+  details:
+    visual_grade: yellow
+    yellow_override_reason: manual tabletop capture; warning reviewed in live preview
+- action: add
+  pose_id: pose_012
+  occurred_at_utc: '2026-08-03T23:06:58.321101Z'
+  details:
+    visual_grade: yellow
+    yellow_override_reason: manual tabletop capture; warning reviewed in live preview
+- action: add
+  pose_id: pose_013
+  occurred_at_utc: '2026-08-03T23:07:04.988907Z'
+  details:
+    visual_grade: green
+    yellow_override_reason: null
+- action: add
+  pose_id: pose_014
+  occurred_at_utc: '2026-08-03T23:07:18.899194Z'
+  details:
+    visual_grade: yellow
+    yellow_override_reason: manual tabletop capture; warning reviewed in live preview
+- action: add
+  pose_id: pose_015
+  occurred_at_utc: '2026-08-03T23:07:27.484254Z'
+  details:
+    visual_grade: yellow
+    yellow_override_reason: manual tabletop capture; warning reviewed in live preview
+- action: add
+  pose_id: pose_016
+  occurred_at_utc: '2026-08-03T23:07:34.747381Z'
+  details:
+    visual_grade: yellow
+    yellow_override_reason: manual tabletop capture; warning reviewed in live preview
+- action: add
+  pose_id: pose_017
+  occurred_at_utc: '2026-08-03T23:07:43.882376Z'
+  details:
+    visual_grade: yellow
+    yellow_override_reason: manual tabletop capture; warning reviewed in live preview
+- action: add
+  pose_id: pose_018
+  occurred_at_utc: '2026-08-03T23:07:47.324232Z'
+  details:
+    visual_grade: yellow
+    yellow_override_reason: manual tabletop capture; warning reviewed in live preview
+- action: add
+  pose_id: pose_019
+  occurred_at_utc: '2026-08-03T23:07:58.557888Z'
+  details:
+    visual_grade: yellow
+    yellow_override_reason: manual tabletop capture; warning reviewed in live preview
+- action: add
+  pose_id: pose_020
+  occurred_at_utc: '2026-08-03T23:08:08.091616Z'
+  details:
+    visual_grade: yellow
+    yellow_override_reason: manual tabletop capture; warning reviewed in live preview
+- action: add
+  pose_id: pose_021
+  occurred_at_utc: '2026-08-03T23:08:19.552748Z'
+  details:
+    visual_grade: green
+    yellow_override_reason: null
+- action: add
+  pose_id: pose_022
+  occurred_at_utc: '2026-08-03T23:08:31.286347Z'
+  details:
+    visual_grade: yellow
+    yellow_override_reason: manual tabletop capture; warning reviewed in live preview
+- action: add
+  pose_id: pose_023
+  occurred_at_utc: '2026-08-03T23:08:39.039392Z'
+  details:
+    visual_grade: green
+    yellow_override_reason: null
+- action: add
+  pose_id: pose_024
+  occurred_at_utc: '2026-08-03T23:08:47.050878Z'
+  details:
+    visual_grade: green
+    yellow_override_reason: null
+- action: add
+  pose_id: pose_025
+  occurred_at_utc: '2026-08-03T23:09:09.756443Z'
+  details:
+    visual_grade: green
+    yellow_override_reason: null
+- action: add
+  pose_id: pose_026
+  occurred_at_utc: '2026-08-03T23:09:17.334271Z'
+  details:
+    visual_grade: yellow
+    yellow_override_reason: manual tabletop capture; warning reviewed in live preview
+- action: add
+  pose_id: pose_027
+  occurred_at_utc: '2026-08-03T23:11:45.048502Z'
+  details:
+    visual_grade: green
+    yellow_override_reason: null
+- action: add
+  pose_id: pose_028
+  occurred_at_utc: '2026-08-03T23:12:01.274364Z'
+  details:
+    visual_grade: yellow
+    yellow_override_reason: manual tabletop capture; warning reviewed in live preview
+- action: add
+  pose_id: pose_029
+  occurred_at_utc: '2026-08-03T23:12:08.289727Z'
+  details:
+    visual_grade: yellow
+    yellow_override_reason: manual tabletop capture; warning reviewed in live preview
+- action: add
+  pose_id: pose_030
+  occurred_at_utc: '2026-08-03T23:12:14.702191Z'
+  details:
+    visual_grade: green
+    yellow_override_reason: null
+- action: add
+  pose_id: pose_031
+  occurred_at_utc: '2026-08-03T23:12:24.237749Z'
+  details:
+    visual_grade: yellow
+    yellow_override_reason: manual tabletop capture; warning reviewed in live preview
+- action: add
+  pose_id: pose_032
+  occurred_at_utc: '2026-08-03T23:12:31.156817Z'
+  details:
+    visual_grade: yellow
+    yellow_override_reason: manual tabletop capture; warning reviewed in live preview
+- action: add
+  pose_id: pose_033
+  occurred_at_utc: '2026-08-03T23:12:39.657395Z'
+  details:
+    visual_grade: yellow
+    yellow_override_reason: manual tabletop capture; warning reviewed in live preview
+- action: add
+  pose_id: pose_034
+  occurred_at_utc: '2026-08-03T23:12:46.177978Z'
+  details:
+    visual_grade: yellow
+    yellow_override_reason: manual tabletop capture; warning reviewed in live preview
+- action: add
+  pose_id: pose_035
+  occurred_at_utc: '2026-08-03T23:12:54.284498Z'
+  details:
+    visual_grade: yellow
+    yellow_override_reason: manual tabletop capture; warning reviewed in live preview
+- action: add
+  pose_id: pose_036
+  occurred_at_utc: '2026-08-03T23:13:05.604438Z'
+  details:
+    visual_grade: green
+    yellow_override_reason: null
+- action: add
+  pose_id: pose_037
+  occurred_at_utc: '2026-08-03T23:13:13.735614Z'
+  details:
+    visual_grade: green
+    yellow_override_reason: null
+- action: add
+  pose_id: pose_038
+  occurred_at_utc: '2026-08-03T23:13:22.527336Z'
+  details:
+    visual_grade: green
+    yellow_override_reason: null
+- action: add
+  pose_id: pose_039
+  occurred_at_utc: '2026-08-03T23:13:29.317538Z'
+  details:
+    visual_grade: yellow
+    yellow_override_reason: manual tabletop capture; warning reviewed in live preview
+content_sha256: e8ab3f1c9ed96f16536122f2220e03f52032a9f62c0c6644ab3e3a02b8ac0d05

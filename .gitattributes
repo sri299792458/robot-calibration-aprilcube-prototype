@@ -1,0 +1,4 @@
+sessions/**/raw/images/*.png filter=lfs diff=lfs merge=lfs -text
+sessions/**/preview/**/*.png filter=lfs diff=lfs merge=lfs -text
+sessions/**/raw/states/*.json filter=lfs diff=lfs merge=lfs -text
+runs/**/*.db3 filter=lfs diff=lfs merge=lfs -text

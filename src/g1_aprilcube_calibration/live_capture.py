@@ -34,12 +34,23 @@ class LiveBurstConfig:
     frame_count: int = 7
     timeout_s: float = 15.0
     poll_interval_s: float = 0.01
+    maximum_inter_frame_gap_s: float = 0.5
+    maximum_duration_s: float = 2.0
 
     def __post_init__(self) -> None:
         if self.frame_count <= 0:
             raise ValueError("frame_count must be positive")
-        if self.timeout_s <= 0 or self.poll_interval_s <= 0:
+        if (
+            self.timeout_s <= 0
+            or self.poll_interval_s <= 0
+            or self.maximum_inter_frame_gap_s <= 0
+            or self.maximum_duration_s <= 0
+        ):
             raise ValueError("live burst time values must be positive")
+        if self.maximum_duration_s < self.maximum_inter_frame_gap_s:
+            raise ValueError(
+                "maximum burst duration must be at least the inter-frame gap"
+            )
 
 
 class LiveBurstFrameSource:
@@ -119,6 +130,9 @@ class LiveBurstFrameSource:
                 except (RuntimeError, TypeError, ValueError) as error:
                     last_rejection = str(error)
                     continue
+                rejection_reason = self._burst_rejection_reason(accepted, candidate)
+                if rejection_reason is not None:
+                    raise RuntimeError("burst rejected: " + rejection_reason)
                 accepted.append(candidate)
                 if len(accepted) >= self.config.frame_count:
                     break
@@ -129,6 +143,48 @@ class LiveBurstFrameSource:
         if signature is not None:
             self._history.append(signature)
         return tuple(accepted)
+
+    def _burst_rejection_reason(
+        self,
+        accepted: list[CaptureFrameInput],
+        candidate: CaptureFrameInput,
+    ) -> str | None:
+        if not accepted:
+            return None
+        candidate_time = candidate.image_timing.receipt_monotonic_s
+        previous_time = accepted[-1].image_timing.receipt_monotonic_s
+        frame_gap = candidate_time - previous_time
+        if frame_gap > self.config.maximum_inter_frame_gap_s + 1e-12:
+            return (
+                f"image gap is {frame_gap:.3f}s; limit is "
+                f"{self.config.maximum_inter_frame_gap_s:.3f}s"
+            )
+        burst_duration = (
+            candidate_time - accepted[0].image_timing.receipt_monotonic_s
+        )
+        if burst_duration > self.config.maximum_duration_s + 1e-12:
+            return (
+                f"burst duration is {burst_duration:.3f}s; limit is "
+                f"{self.config.maximum_duration_s:.3f}s"
+            )
+
+        samples_by_time = {
+            sample.receipt_monotonic_s: sample
+            for frame in (*accepted, candidate)
+            for sample in frame.state_window
+        }
+        combined_window = tuple(
+            samples_by_time[timestamp]
+            for timestamp in sorted(samples_by_time)
+        )
+        readiness = evaluate_recording_window(
+            combined_window,
+            now_monotonic_s=combined_window[-1].receipt_monotonic_s,
+            config=self.recording_config,
+        )
+        if not readiness.ready:
+            return "; ".join(readiness.hard_failures)
+        return None
 
     def undo_last_signature(self) -> None:
         if not self._history:

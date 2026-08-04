@@ -1,0 +1,16 @@
+left_shoulder_roll_joint: 0.07585
+d435_joint_x: 0.0123931
+d435_joint_y: 0.00974138
+d435_joint_z: 0.00610764
+d435_joint_a: 0.0306515
+d435_joint_b: 0.176317
+d435_joint_c: 0.0264698
+aprilcube_target_x: 0.0450374
+aprilcube_target_y: 0.0311717
+aprilcube_target_z: -0.00139514
+aprilcube_target_a: 1.1985
+aprilcube_target_b: 1.23712
+aprilcube_target_c: -1.18041
+depth_info: depth_2026_08_03_21_11_31.yaml
+rgb_info: rgb_2026_08_03_21_11_31.yaml
+urdf: calibrated_2026_08_03_21_11_31.urdf

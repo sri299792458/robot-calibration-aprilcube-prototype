@@ -27,6 +27,8 @@ class QualityThresholds:
     novelty_translation_m: float
     novelty_rotation_deg: float
     stationary_burst_frames: int
+    stationary_burst_maximum_inter_frame_gap_s: float
+    stationary_burst_maximum_duration_s: float
 
     def __post_init__(self) -> None:
         positive_values = {
@@ -40,6 +42,12 @@ class QualityThresholds:
             "novelty_translation_m": self.novelty_translation_m,
             "novelty_rotation_deg": self.novelty_rotation_deg,
             "stationary_burst_frames": self.stationary_burst_frames,
+            "stationary_burst_maximum_inter_frame_gap_s": (
+                self.stationary_burst_maximum_inter_frame_gap_s
+            ),
+            "stationary_burst_maximum_duration_s": (
+                self.stationary_burst_maximum_duration_s
+            ),
         }
         for name, value in positive_values.items():
             if value <= 0:
@@ -87,6 +95,12 @@ class QualityThresholds:
             novelty_translation_m=float(coverage["novelty_translation_m"]),
             novelty_rotation_deg=float(coverage["novelty_rotation_deg"]),
             stationary_burst_frames=int(burst["frame_count"]),
+            stationary_burst_maximum_inter_frame_gap_s=float(
+                burst["maximum_inter_frame_gap_s"]
+            ),
+            stationary_burst_maximum_duration_s=float(
+                burst["maximum_duration_s"]
+            ),
         )
 
     @classmethod

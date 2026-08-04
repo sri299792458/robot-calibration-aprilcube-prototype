@@ -1,0 +1,7 @@
+{
+  "calibration_arm": "left",
+  "command": "g1-calib solve",
+  "dataset_path": "/home/kanth042/robot-calibration-aprilcube-prototype/sessions/manual_run_001/dataset.json",
+  "initial_camera": "official_urdf_nominal_d435_optical",
+  "initial_target": "rectified_pnp_sample_0"
+}

@@ -1,0 +1,60 @@
+robot_calibration:
+  ros__parameters:
+    verbose: false
+    base_link: torso_link
+    calibration_steps:
+    - aprilcube_calibration
+    aprilcube_calibration:
+      max_num_iterations: 1000
+      models:
+      - arm
+      - camera
+      arm:
+        type: chain3d
+        frame: left_rubber_hand
+      camera:
+        type: camera2d
+        frame: camera_color_optical_frame
+        param_name: camera
+      free_frames:
+      - d435_joint
+      - aprilcube_target
+      d435_joint:
+        x: true
+        y: true
+        z: true
+        roll: true
+        pitch: true
+        yaw: true
+      aprilcube_target:
+        x: true
+        y: true
+        z: true
+        roll: true
+        pitch: true
+        yaw: true
+      free_frames_initial_values:
+      - aprilcube_target
+      aprilcube_target_initial_values:
+        x: 0.10381026965481396
+        y: 0.06615663322580362
+        z: -0.013771753159073225
+        roll: 2.8310391327962954
+        pitch: 1.4540707383567537
+        yaw: 1.4385535679418124
+      error_blocks:
+      - aprilcube_reprojection
+      - shoulder_roll_prior
+      aprilcube_reprojection:
+        type: chain3d_to_camera2d
+        model_3d: arm
+        model_2d: camera
+        scale: 1.0
+      free_params:
+      - left_shoulder_roll_joint
+      shoulder_roll_prior:
+        type: outrageous
+        param: left_shoulder_roll_joint
+        joint_scale: 1.8349334788506415
+        position_scale: 0.0
+        rotation_scale: 0.0

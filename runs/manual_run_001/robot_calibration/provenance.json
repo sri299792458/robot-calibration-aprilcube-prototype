@@ -1,0 +1,20 @@
+{
+  "augmented_urdf_sha256": "b69f0bb81545b0ea879548f97504c7c5112203993fe474d6c540119e6a62fe84",
+  "dataset_session_id": "manual_run_001",
+  "dataset_sha256": "8369ba65246418f0f0844a6adfde173b19fb9ff542ca95497dc5253cf518cf11",
+  "observation_mapping": {
+    "arm_model": "arm",
+    "arm_tip": "left_rubber_hand",
+    "camera_frame": "camera_color_optical_frame",
+    "camera_model": "camera",
+    "camera_mount_free_frame": "d435_joint",
+    "target_frame": "aprilcube_target"
+  },
+  "pnp_initialization_frame_id": "capture_001_005",
+  "pnp_initialization_sample_index": 0,
+  "robot_calibration_revision": "db991b040d1dc28af09d8865fc72f09720e12b73",
+  "sample_count": 39,
+  "schema_version": 1,
+  "shoulder_roll_prior_sigma_deg": 5.0,
+  "urdf_sha256": "c0ae739c640c3e2c00d1bdd8810b5d6e59601487bd1a3995859f9543269ee5c8"
+}

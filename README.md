@@ -180,6 +180,11 @@ selected medoid frame. The pose YAML stores the median measured joint position
 and spread; commanded positions are never used. `U` removes the active pose but
 keeps its raw capture marked rejected for auditability.
 
+A capture attempt is rejected if consecutive images are more than 0.5 seconds
+apart, the seven images span more than 2 seconds, or their combined state windows
+exceed either arm's stationary-position limit. Nothing is saved; hold the arm
+still and press `S` again.
+
 `Q` verifies the one-to-one pose/capture binding, freezes the session read-only,
 and automatically writes `sessions/manual_run_002/dataset.json`. The camera
 mount and head pitch must remain fixed for that session. The joint poses remain
@@ -259,6 +264,9 @@ observability checks before deployment.
 
 The 39-sample native fit and pose-level cross-validation are summarized in
 [`docs/manual_run_001_analysis.md`](docs/manual_run_001_analysis.md).
+The complete finalized `sessions/manual_run_001` capture and corresponding
+`runs/manual_run_001` outputs are tracked with Git LFS; a fresh checkout needs
+`git lfs pull` and approximately 522 MB for those artifacts.
 
 ## Optional replay and repeated-anchor qualification
 

@@ -372,6 +372,12 @@ def run_teach_poses(args: argparse.Namespace) -> int:
                 frame_count=thresholds.stationary_burst_frames,
                 timeout_s=args.burst_timeout_s,
                 poll_interval_s=0.01,
+                maximum_inter_frame_gap_s=(
+                    thresholds.stationary_burst_maximum_inter_frame_gap_s
+                ),
+                maximum_duration_s=(
+                    thresholds.stationary_burst_maximum_duration_s
+                ),
             ),
             wait_once=lambda duration: _spin_and_wait(rclpy, node, duration),
             accept_yellow=lambda _frame: bool(args.yellow_override_reason),
@@ -954,6 +960,12 @@ def run_collect_session(args: argparse.Namespace) -> int:
                     frame_count=thresholds.stationary_burst_frames,
                     timeout_s=args.burst_timeout_s,
                     poll_interval_s=1.0 / rate_hz,
+                    maximum_inter_frame_gap_s=(
+                        thresholds.stationary_burst_maximum_inter_frame_gap_s
+                    ),
+                    maximum_duration_s=(
+                        thresholds.stationary_burst_maximum_duration_s
+                    ),
                 ),
                 wait_once=wait_once,
                 accept_yellow=lambda _frame: bool(args.yellow_override_reason),
