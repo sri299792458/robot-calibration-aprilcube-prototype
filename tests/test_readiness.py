@@ -20,6 +20,7 @@ def sample(time_s: float, *, mode: int = 5, dq: float = 0.0, q_offset: float = 0
         mode,
         q,
         velocity,
+        np.zeros(29),
     )
 
 

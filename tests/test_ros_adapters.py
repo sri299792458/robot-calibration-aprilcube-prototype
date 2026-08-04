@@ -221,6 +221,7 @@ def test_named_joint_state_requires_complete_measured_velocity():
         name=names,
         position=[by_name[name] / 10 for name in names],
         velocity=[-by_name[name] / 100 for name in names],
+        effort=[by_name[name] / 1000 for name in names],
     )
 
     result = robot_state_from_joint_state(
@@ -231,7 +232,17 @@ def test_named_joint_state_requires_complete_measured_velocity():
     )
     np.testing.assert_allclose(result.position, np.arange(29) / 10)
     np.testing.assert_allclose(result.velocity, -np.arange(29) / 100)
+    np.testing.assert_allclose(result.estimated_torque, np.arange(29) / 1000)
     joint_state.velocity = []
+    with pytest.raises(ValueError, match="equal length"):
+        robot_state_from_joint_state(
+            joint_state,
+            receipt_monotonic_s=1,
+            receipt_utc="2026-08-02T12:00:00Z",
+            mode_machine=5,
+        )
+    joint_state.velocity = [-by_name[name] / 100 for name in names]
+    joint_state.effort = []
     with pytest.raises(ValueError, match="equal length"):
         robot_state_from_joint_state(
             joint_state,

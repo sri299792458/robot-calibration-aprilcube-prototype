@@ -185,6 +185,7 @@ class SessionStore:
         outcome: str,
         reason: str,
         frames: Sequence[CaptureFrameInput] = (),
+        metadata: dict | None = None,
         recorded_at_utc: str | None = None,
     ) -> SessionManifest:
         manifest = self.load()
@@ -255,6 +256,7 @@ class SessionStore:
             outcome=outcome,
             reason=reason,
             recorded_at_utc=capture_utc,
+            metadata={} if metadata is None else metadata,
             frames=tuple(records),
             selected_frame_id=selected_frame_id,
         )
@@ -447,9 +449,7 @@ class SessionStore:
             raise ValueError("session cannot freeze an unready collision config")
         if collection_method == "replay":
             try:
-                validation_document = json.loads(
-                    artifacts["validation_report.json"]
-                )
+                validation_document = json.loads(artifacts["validation_report.json"])
             except Exception as error:
                 raise ValueError(
                     "validation report artifact cannot be parsed"

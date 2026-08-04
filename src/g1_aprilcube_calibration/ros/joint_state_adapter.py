@@ -18,8 +18,8 @@ def robot_state_from_joint_state(
     mode_machine: int,
 ) -> RobotStateSample:
     """Require full positions and measured velocities in authoritative order."""
-    positions, velocities = reorder_named_joint_state(
-        message.name, message.position, message.velocity
+    positions, velocities, estimated_torques = reorder_named_joint_state(
+        message.name, message.position, message.velocity, message.effort
     )
     return RobotStateSample(
         receipt_monotonic_s=receipt_monotonic_s,
@@ -27,6 +27,7 @@ def robot_state_from_joint_state(
         mode_machine=mode_machine,
         position=positions,
         velocity=velocities,
+        estimated_torque=estimated_torques,
     )
 
 

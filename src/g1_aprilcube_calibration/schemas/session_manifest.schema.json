@@ -10,7 +10,7 @@
     "content_sha256"
   ],
   "properties": {
-    "schema_version": {"const": 1},
+    "schema_version": {"const": 2},
     "session_id": {"$ref": "#/$defs/id"},
     "created_at_utc": {"type": "string", "minLength": 1},
     "finalized": {"type": "boolean"},
@@ -56,7 +56,7 @@
       "additionalProperties": false,
       "required": [
         "capture_id", "pose_id", "outcome", "reason", "recorded_at_utc",
-        "frames", "selected_frame_id"
+        "metadata", "frames", "selected_frame_id"
       ],
       "properties": {
         "capture_id": {"$ref": "#/$defs/id"},
@@ -64,6 +64,7 @@
         "outcome": {"enum": ["accepted", "rejected", "retry", "skipped", "aborted"]},
         "reason": {"type": "string", "minLength": 1},
         "recorded_at_utc": {"type": "string", "minLength": 1},
+        "metadata": {"type": "object"},
         "frames": {"type": "array", "items": {"$ref": "#/$defs/frame"}},
         "selected_frame_id": {"type": ["string", "null"]}
       }

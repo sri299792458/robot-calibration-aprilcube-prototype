@@ -44,6 +44,7 @@ class RobotStateSample:
     mode_machine: int
     position: np.ndarray
     velocity: np.ndarray
+    estimated_torque: np.ndarray
     source_sequence: int | None = None
 
     def __post_init__(self) -> None:
@@ -56,8 +57,12 @@ class RobotStateSample:
             raise TypeError("mode_machine must be an integer")
         position = validate_full_joint_vector(self.position, name="joint position")
         velocity = validate_full_joint_vector(self.velocity, name="joint velocity")
+        estimated_torque = validate_full_joint_vector(
+            self.estimated_torque, name="estimated joint torque"
+        )
         object.__setattr__(self, "position", position)
         object.__setattr__(self, "velocity", velocity)
+        object.__setattr__(self, "estimated_torque", estimated_torque)
         if self.source_sequence is not None and self.source_sequence < 0:
             raise ValueError("source_sequence must be non-negative")
 
@@ -81,11 +86,22 @@ class RobotStateSample:
     def right_dq(self) -> np.ndarray:
         return extract_right_arm(self.velocity)
 
+    @property
+    def left_tau_est(self) -> np.ndarray:
+        return extract_left_arm(self.estimated_torque)
+
+    @property
+    def right_tau_est(self) -> np.ndarray:
+        return extract_right_arm(self.estimated_torque)
+
     def arm_q(self, side: str) -> np.ndarray:
         return extract_arm(self.position, side=side)
 
     def arm_dq(self, side: str) -> np.ndarray:
         return extract_arm(self.velocity, side=side)
+
+    def arm_tau_est(self, side: str) -> np.ndarray:
+        return extract_arm(self.estimated_torque, side=side)
 
     def age_s(self, now_monotonic_s: float) -> float:
         if now_monotonic_s < self.receipt_monotonic_s:
@@ -99,6 +115,7 @@ class RobotStateSample:
             "mode_machine": self.mode_machine,
             "position": self.position.tolist(),
             "velocity": self.velocity.tolist(),
+            "estimated_torque": self.estimated_torque.tolist(),
             "source_sequence": self.source_sequence,
         }
 
@@ -110,6 +127,7 @@ class RobotStateSample:
             mode_machine=int(data["mode_machine"]),
             position=np.asarray(data["position"], dtype=np.float64),
             velocity=np.asarray(data["velocity"], dtype=np.float64),
+            estimated_torque=np.asarray(data["estimated_torque"], dtype=np.float64),
             source_sequence=(
                 None
                 if data.get("source_sequence") is None

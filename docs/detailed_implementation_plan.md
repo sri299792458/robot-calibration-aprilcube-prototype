@@ -369,7 +369,7 @@ The first command-line surface is deliberately small:
 
 ```text
 g1-calib inspect-hardware       # read only; topics, mode, motor mapping
-g1-calib teach-poses           # read only; measured poses + synchronized raw data
+g1-calib teach-poses           # manual pose, measured arm_sdk hold, synchronized data
 g1-calib validate-poses        # offline joint/path/collision report
 g1-calib collect-session       # optional rt/arm_sdk replay + capture
 g1-calib build-dataset         # raw session -> CalibrationData
@@ -377,12 +377,12 @@ g1-calib solve                 # train solve, holdout evaluation, export
 g1-calib report                # regenerate diagnostics without re-solving
 ```
 
-Avoid custom ROS actions/services in the MVP. `teach-poses` owns the read-only
-camera/state capture lifecycle. The optional `collect-session` command contains
-the control state machine and ROS camera subscriptions in one process, keeping
-motion/capture transitions atomic and avoiding a second process sending
-arbitrary joint goals. A standard trajectory-action adapter can replace only
-`transports/unitree_arm_sdk.py` later.
+Avoid custom ROS actions/services in the MVP. `teach-poses` owns the camera,
+state, measured-pose hold, and capture lifecycle in one process. It reuses the
+commissioned control state machine and never sends a pose different from the
+stationary measured handoff. The optional `collect-session` command uses the
+same transport for validated replay. A standard trajectory-action adapter can
+replace only `transports/unitree_arm_sdk.py` later.
 
 ### 4.1 Unitree transport boundary
 
@@ -506,13 +506,16 @@ show these as separate statuses rather than implying that detector success
 authorizes replay.
 
 `teach-poses` uses the preview while the operator manually teaches the arm.
-Pressing `S` records a seven-frame stationary lossless burst and the measured
-pose as one operation. Every image retains its centered complete 29-joint state
-window, exact `CameraInfo`, receipt/header timestamps, pairing, detection,
-quality report, and hashes. One medoid frame becomes the derived calibration
-sample. Yellow requires a recorded override reason; red cannot be saved. Undo
-removes the active pose through the pose-store API and marks the corresponding
-raw capture rejected rather than deleting evidence.
+The first `S` seeds a zero-displacement `arm_sdk` handoff from the stationary
+measured state and ramps ownership; the second `S` records a seven-frame
+stationary lossless burst. `R` returns weight to zero before the next manual
+pose. Every image retains its centered complete 29-joint `q`, `dq`, and
+`tau_est` window, exact `CameraInfo`, receipt/header timestamps, pairing,
+detection, quality report, and hashes. The capture also retains the
+operator-supported pre-acquisition state. One medoid frame becomes the derived
+calibration sample. Yellow requires a recorded override reason; red cannot be
+saved. Undo removes the active pose through the pose-store API and marks the
+corresponding raw capture rejected rather than deleting evidence.
 
 `collect-session` shows the same preview during optional replay. After a
 validated target is reached and the measured dwell gate passes, it records a
@@ -834,14 +837,15 @@ report, and deliberately colliding synthetic poses are rejected in tests.
 
 ### Phase 2D — Stationary capture and immutable session recording
 
-Both the read-only teacher and optional replay runner maintain bounded ring
-buffers for rectified images, `CameraInfo`, measured joint states, and both
-header/receipt timestamps. The teacher captures when the operator presses `S`;
-the replay runner captures after the executor reaches `Ready`. Each burst:
+Both the measured-pose-hold teacher and optional replay runner maintain bounded
+ring buffers for rectified images, `CameraInfo`, measured joint states, and both
+header/receipt timestamps. The teacher captures on the second `S`, after
+ownership reaches weight one; the replay runner captures after the executor
+reaches `Ready`. Each burst:
 
 1. requires fresh joint samples bracketing every candidate image;
 2. verifies measured q spread remains within the configured window for the
-   entire burst and records raw `dq` as diagnostic evidence;
+   entire burst and records raw `dq` and `tau_est` as diagnostic evidence;
 3. verifies camera serial/profile/frame and `CameraInfo` are unchanged;
 4. runs the stateless detector for live quality feedback;
 5. requires adequate corner size, image margin, and no duplicate tag IDs;

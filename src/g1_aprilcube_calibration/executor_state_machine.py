@@ -105,9 +105,7 @@ class PoseExecutor:
         self.transport = transport
         self.clock = clock
         self.pose_set = pose_set
-        self.handoff_q = validate_arm_vector(
-            handoff_q, side=pose_set.calibration_arm
-        )
+        self.handoff_q = validate_arm_vector(handoff_q, side=pose_set.calibration_arm)
         self.hold_q = validate_arm_vector(
             hold_q, side=opposite_arm(pose_set.calibration_arm)
         )
@@ -151,21 +149,14 @@ class PoseExecutor:
         sample = self.transport.observe()
         self._validate_fresh_state(sample, now)
         hold_arm = opposite_arm(self.pose_set.calibration_arm)
-        hold_error = float(
-            np.max(np.abs(sample.arm_q(hold_arm) - self.hold_q))
-        )
+        hold_error = float(np.max(np.abs(sample.arm_q(hold_arm) - self.hold_q)))
         if hold_error > self.config.activation_position_tolerance_rad:
             raise ValueError(
                 f"measured {hold_arm} arm differs from pose-set hold by "
                 f"{hold_error:.4f}rad"
             )
         calibration_error = float(
-            np.max(
-                np.abs(
-                    sample.arm_q(self.pose_set.calibration_arm)
-                    - self.handoff_q
-                )
-            )
+            np.max(np.abs(sample.arm_q(self.pose_set.calibration_arm) - self.handoff_q))
         )
         if calibration_error > self.config.activation_position_tolerance_rad:
             raise ValueError(
@@ -356,7 +347,9 @@ class PoseExecutor:
         if self.state in {ExecutorState.MOVING, ExecutorState.SETTLING}:
             self._last_motion_phase = self.state
             if self._last_motion_elapsed_s > self.config.motion_timeout_s:
-                self._enter_fault(self.motion_diagnostic(prefix="motion timed out"), now)
+                self._enter_fault(
+                    self.motion_diagnostic(prefix="motion timed out"), now
+                )
         return self.state
 
     def motion_diagnostic(self, *, prefix: str = "motion status") -> str:
@@ -396,8 +389,8 @@ class PoseExecutor:
         )
 
     def begin_capture(self) -> None:
-        if self.state is not ExecutorState.READY:
-            raise RuntimeError("capture can only begin from ready")
+        if self.state not in {ExecutorState.READY, ExecutorState.HOLDING}:
+            raise RuntimeError("capture can only begin from ready or holding")
         self._transition(
             ExecutorState.CAPTURING,
             "stationary capture started",

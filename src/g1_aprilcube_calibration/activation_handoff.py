@@ -80,8 +80,10 @@ def build_activation_handoff(
         )
     positions = np.vstack([sample.position for sample in window])
     velocities = np.vstack([sample.velocity for sample in window])
+    estimated_torques = np.vstack([sample.estimated_torque for sample in window])
     measured_position = np.median(positions, axis=0)
     measured_velocity = np.median(velocities, axis=0)
+    measured_estimated_torque = np.median(estimated_torques, axis=0)
     latest = window[-1]
     reference_state = RobotStateSample(
         receipt_monotonic_s=latest.receipt_monotonic_s,
@@ -89,6 +91,7 @@ def build_activation_handoff(
         mode_machine=latest.mode_machine,
         position=measured_position,
         velocity=measured_velocity,
+        estimated_torque=measured_estimated_torque,
         source_sequence=latest.source_sequence,
     )
     calibration_indices = np.asarray(arm_indices(pose_set.calibration_arm))

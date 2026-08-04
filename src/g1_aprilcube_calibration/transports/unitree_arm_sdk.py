@@ -151,12 +151,17 @@ class UnitreeLowStateObserver:
             velocity = np.asarray(
                 [motors[index].dq for index in range(G1_DOF)], dtype=np.float64
             )
+            estimated_torque = np.asarray(
+                [motors[index].tau_est for index in range(G1_DOF)],
+                dtype=np.float64,
+            )
             sample = RobotStateSample(
                 receipt_monotonic_s=self.clock.monotonic(),
                 receipt_utc=self._utc_now(),
                 mode_machine=int(message.mode_machine),
                 position=position,
                 velocity=velocity,
+                estimated_torque=estimated_torque,
                 source_sequence=int(message.tick),
             )
         except (AttributeError, TypeError, ValueError) as error:

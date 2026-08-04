@@ -26,7 +26,7 @@ from g1_aprilcube_calibration.timestamp_pairing import (
     pair_state_to_image,
 )
 
-DATASET_SCHEMA_VERSION = 1
+DATASET_SCHEMA_VERSION = 2
 _SHA256_LENGTH = 64
 
 
@@ -199,7 +199,7 @@ class CalibrationDataset:
             "content_sha256",
         }
         if set(data) != expected:
-            raise ValueError("dataset fields do not match schema version 1")
+            raise ValueError("dataset fields do not match schema version 2")
         result = cls(
             schema_version=int(data["schema_version"]),
             session_id=data["session_id"],

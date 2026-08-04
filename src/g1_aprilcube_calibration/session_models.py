@@ -13,7 +13,7 @@ from jsonschema import Draft202012Validator
 
 from g1_aprilcube_calibration.models import validate_utc_iso
 
-SESSION_SCHEMA_VERSION = 1
+SESSION_SCHEMA_VERSION = 2
 _ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$")
 _SHA_PATTERN = re.compile(r"^[0-9a-f]{64}$")
 CAPTURE_OUTCOMES = frozenset({"accepted", "rejected", "retry", "skipped", "aborted"})
@@ -83,6 +83,7 @@ class CaptureRecord:
     outcome: str
     reason: str
     recorded_at_utc: str
+    metadata: dict[str, Any]
     frames: tuple[RawFrameRecord, ...] = ()
     selected_frame_id: str | None = None
 
@@ -96,6 +97,9 @@ class CaptureRecord:
         if not self.reason:
             raise ValueError("capture reason must be non-empty")
         validate_utc_iso(self.recorded_at_utc)
+        object.__setattr__(
+            self, "metadata", _json_mapping(self.metadata, name="capture metadata")
+        )
         frame_ids = [frame.frame_id for frame in self.frames]
         if len(frame_ids) != len(set(frame_ids)):
             raise ValueError("capture contains duplicate frame IDs")
@@ -112,6 +116,7 @@ class CaptureRecord:
             "outcome": self.outcome,
             "reason": self.reason,
             "recorded_at_utc": self.recorded_at_utc,
+            "metadata": self.metadata,
             "frames": [frame.to_dict() for frame in self.frames],
             "selected_frame_id": self.selected_frame_id,
         }
@@ -124,6 +129,7 @@ class CaptureRecord:
             outcome=data["outcome"],
             reason=data["reason"],
             recorded_at_utc=data["recorded_at_utc"],
+            metadata=dict(data["metadata"]),
             frames=tuple(RawFrameRecord.from_dict(item) for item in data["frames"]),
             selected_frame_id=data["selected_frame_id"],
         )
@@ -235,7 +241,7 @@ class SessionManifest:
             "content_sha256",
         }
         if set(data) != allowed:
-            raise ValueError("session manifest fields do not match schema version 1")
+            raise ValueError("session manifest fields do not match schema version 2")
         if not isinstance(data["finalized"], bool):
             raise TypeError("session finalized field must be boolean")
         result = cls(

@@ -71,21 +71,26 @@ def test_named_joint_state_is_reordered_and_allows_extra_names() -> None:
     names = ["gripper"] + list(reversed(G1_29_JOINT_NAMES))
     positions = [999.0] + [float(G1_29_JOINT_NAMES.index(name)) for name in names[1:]]
     velocities = [-999.0] + [-value for value in positions[1:]]
+    estimated_torques = [999.0] + [value / 10 for value in positions[1:]]
 
-    ordered_q, ordered_dq = reorder_named_joint_state(names, positions, velocities)
+    ordered_q, ordered_dq, ordered_tau_est = reorder_named_joint_state(
+        names, positions, velocities, estimated_torques
+    )
 
     assert np.array_equal(ordered_q, np.arange(29))
     assert np.array_equal(ordered_dq, -np.arange(29))
+    assert np.array_equal(ordered_tau_est, np.arange(29) / 10)
 
 
 def test_named_joint_state_rejects_missing_and_duplicate_names() -> None:
     names = list(G1_29_JOINT_NAMES)
     values = list(np.arange(29, dtype=float))
     with pytest.raises(ValueError, match="missing"):
-        reorder_named_joint_state(names[:-1], values[:-1], values[:-1])
+        reorder_named_joint_state(names[:-1], values[:-1], values[:-1], values[:-1])
     with pytest.raises(ValueError, match="duplicate"):
         reorder_named_joint_state(
             [*names, names[-1]],
+            [*values, values[-1]],
             [*values, values[-1]],
             [*values, values[-1]],
         )

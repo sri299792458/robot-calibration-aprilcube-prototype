@@ -43,6 +43,7 @@ def sample(time_s: float, offset: float = 0.0) -> RobotStateSample:
         mode_machine=5,
         position=position,
         velocity=np.full(29, 0.05),
+        estimated_torque=np.arange(29, dtype=np.float64) + offset,
         source_sequence=int(time_s * 10),
     )
 
@@ -71,6 +72,10 @@ def test_build_activation_replaces_only_run_handoff_from_window_median() -> None
     np.testing.assert_allclose(result.handoff_q, expected[15:22])
     np.testing.assert_allclose(result.hold_q, expected[22:29])
     np.testing.assert_allclose(result.reference_state.position, expected)
+    np.testing.assert_allclose(
+        result.reference_state.estimated_torque,
+        np.arange(29, dtype=np.float64) + 0.00025,
+    )
     assert result.pose_set.poses == source.poses
     assert result.source_pose_set_sha256 == source.content_sha256
     assert result.pose_set.content_sha256 == source.content_sha256

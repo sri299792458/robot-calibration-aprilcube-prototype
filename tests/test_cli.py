@@ -3,10 +3,12 @@ from pathlib import Path
 
 import cv2
 import numpy as np
+import pytest
 from aprilcube.generate import DICT_MAP
 
-from g1_aprilcube_calibration.cli import main
+from g1_aprilcube_calibration.cli import build_parser, main
 from g1_aprilcube_calibration.hardware_cli import (
+    MOTION_ACK,
     _load_session_plan,
     _manual_pose_set_for_session,
     _next_pose_id,
@@ -151,6 +153,34 @@ def test_commissioning_acknowledgement_fails_before_sdk_import(capsys):
     )
     assert exit_code == 2
     assert "must exactly equal" in capsys.readouterr().err
+
+
+def test_pose_teacher_requires_motion_ack_and_configures_hold_safety(tmp_path):
+    arguments = [
+        "teach-poses",
+        "--network-interface",
+        "enp3s0",
+        "--session-directory",
+        str(tmp_path / "session"),
+        "--session-id",
+        "test_session",
+        "--image-topic",
+        "/camera/color/image_rect_raw",
+        "--camera-info-topic",
+        "/camera/color/camera_info",
+        "--camera-name",
+        "head_color",
+        "--camera-serial",
+        "D435-TEST",
+    ]
+    with pytest.raises(SystemExit):
+        build_parser().parse_args(arguments)
+
+    parsed = build_parser().parse_args([*arguments, "--confirm", MOTION_ACK])
+
+    assert parsed.confirm == MOTION_ACK
+    assert parsed.pc2_host
+    assert parsed.lock_file.name == "g1-aprilcube-calibration-command.lock"
 
 
 def test_pose_teacher_allocates_first_calibration_pose_then_next_number(tmp_path):

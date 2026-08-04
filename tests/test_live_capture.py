@@ -54,7 +54,9 @@ def test_live_source_waits_for_new_stationary_confirmed_frames():
     frames = ROSFrameBuffer()
     states = StateSampleBuffer()
     for time_s in np.arange(0.5, 2.01, 0.02):
-        states.add(RobotStateSample(time_s, UTC, 5, np.zeros(29), np.zeros(29)))
+        states.add(
+            RobotStateSample(time_s, UTC, 5, np.zeros(29), np.zeros(29), np.zeros(29))
+        )
     scheduled = [
         ROSImageFrame(marker_image(), ImageTiming(time_s, UTC, index), info())
         for index, time_s in enumerate((1.0, 1.5), start=1)
@@ -98,21 +100,23 @@ def test_live_source_keeps_frame_until_future_state_bracket_arrives():
     frames = ROSFrameBuffer()
     states = StateSampleBuffer()
     for time_s in np.arange(0.5, 1.01, 0.02):
-        states.add(RobotStateSample(time_s, UTC, 5, np.zeros(29), np.zeros(29)))
+        states.add(
+            RobotStateSample(time_s, UTC, 5, np.zeros(29), np.zeros(29), np.zeros(29))
+        )
     clock = ManualClock()
     frame_added = [False]
 
     def wait_once(duration):
         clock.advance(duration)
         if not frame_added[0]:
-            frames.add(
-                ROSImageFrame(marker_image(), ImageTiming(1.0, UTC, 1), info())
-            )
+            frames.add(ROSImageFrame(marker_image(), ImageTiming(1.0, UTC, 1), info()))
             frame_added[0] = True
             return
         next_time = states.latest.receipt_monotonic_s + 0.02
         states.add(
-            RobotStateSample(next_time, UTC, 5, np.zeros(29), np.zeros(29))
+            RobotStateSample(
+                next_time, UTC, 5, np.zeros(29), np.zeros(29), np.zeros(29)
+            )
         )
 
     source = LiveBurstFrameSource(
@@ -146,7 +150,9 @@ def test_live_source_rejects_after_camera_gap_and_arm_move():
         position = np.zeros(29)
         if time_s >= 2.0:
             position[15] = 0.5
-        states.add(RobotStateSample(time_s, UTC, 5, position, np.zeros(29)))
+        states.add(
+            RobotStateSample(time_s, UTC, 5, position, np.zeros(29), np.zeros(29))
+        )
     scheduled = [
         ROSImageFrame(marker_image(), ImageTiming(time_s, UTC, index), info())
         for index, time_s in enumerate((1.0, 4.0, 4.1), start=1)
@@ -189,7 +195,9 @@ def test_live_source_rejects_when_individually_stable_frames_span_arm_motion():
         position = np.zeros(29)
         if time_s >= 1.1:
             position[15] = 0.5
-        states.add(RobotStateSample(time_s, UTC, 5, position, np.zeros(29)))
+        states.add(
+            RobotStateSample(time_s, UTC, 5, position, np.zeros(29), np.zeros(29))
+        )
     scheduled = [
         ROSImageFrame(marker_image(), ImageTiming(time_s, UTC, index), info())
         for index, time_s in enumerate((1.0, 1.2, 1.3), start=1)
@@ -229,7 +237,9 @@ def test_live_source_rejects_when_total_burst_duration_is_too_long():
     frames = ROSFrameBuffer()
     states = StateSampleBuffer()
     for time_s in np.arange(0.5, 2.51, 0.01):
-        states.add(RobotStateSample(time_s, UTC, 5, np.zeros(29), np.zeros(29)))
+        states.add(
+            RobotStateSample(time_s, UTC, 5, np.zeros(29), np.zeros(29), np.zeros(29))
+        )
     scheduled = [
         ROSImageFrame(marker_image(), ImageTiming(time_s, UTC, index), info())
         for index, time_s in enumerate((1.0, 1.4, 1.8, 1.9, 2.0), start=1)

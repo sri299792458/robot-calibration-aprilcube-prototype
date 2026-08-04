@@ -16,6 +16,7 @@ def state(time_s: float) -> RobotStateSample:
         5,
         np.zeros(29),
         np.zeros(29),
+        np.full(29, -time_s),
     )
 
 

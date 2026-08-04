@@ -9,11 +9,12 @@ camera mount, hand-to-AprilCube mount, and explicitly selected G1 kinematic
 parameters from raw image corners and measured joint states. The local SciPy
 twelve-parameter solver remains an offline diagnostic and synthetic-test oracle.
 
-The codebase now covers the full workflow: read-only teaching, offline path
-validation, staged G1 commissioning, immutable rectified capture, deterministic
-dataset rebuilding, a twelve-parameter extrinsic solve, held-out residuals, and
-joint-compensated repeated-anchor stability. It uses only tags decoded in the
-current frame—no optical flow, prediction, recovery, or temporal filtering.
+The codebase now covers the full workflow: manual positioning followed by a
+measured-pose `arm_sdk` hold, offline path validation, staged G1 commissioning,
+immutable rectified capture, deterministic dataset rebuilding, a
+twelve-parameter extrinsic solve, held-out residuals, and joint-compensated
+repeated-anchor stability. It uses only tags decoded in the current frame—no
+optical flow, prediction, recovery, or temporal filtering.
 
 ![Preview on the mounted physical cube](renders/aprilcube_quality_preview.png)
 
@@ -62,8 +63,9 @@ Keys in the live window:
 
 The standalone OpenCV preview deliberately says **VISUAL QUALITY ONLY** because
 it has no robot-state input. Use `teach-poses` for real pose recording; that
-command is also read-only, but combines a calibrated camera source with complete
-receipt-stamped `rt/lowstate` samples.
+command combines a calibrated camera source with complete receipt-stamped
+`rt/lowstate` samples and takes `arm_sdk` ownership only after the operator asks
+it to hold the current measured pose.
 
 ## Pre-hardware verification
 
@@ -152,8 +154,10 @@ Closing the viewer leaves the raw stream running for calibration. Pass
 
 Run the live teacher against the RealSense topics with a new session directory.
 This is the normal data-collection path; it creates a version-3, content-hashed
-pose set inside the session from the configured URDF and observes `rt/lowstate`,
-but creates no arm command publisher and needs no initialization state:
+pose set inside the session from the configured URDF. The robot must be secured
+by the load-bearing harness. The teacher observes `rt/lowstate` while the arm is
+manually positioned, then reuses the commissioned measured-state handoff to
+hold that exact pose through `rt/arm_sdk`:
 
 ```bash
 ./tools/g1_calib_hardware.sh teach-poses \
@@ -163,29 +167,37 @@ but creates no arm command publisher and needs no initialization state:
   --image-topic /camera/color/image_raw \
   --camera-info-topic /camera/color/camera_info \
   --camera-name g1_head_color \
-  --camera-serial 348522074178
+  --camera-serial 348522074178 \
+  --confirm 'I CONFIRM THE G1 IS SECURED BY THE LOAD-BEARING HARNESS AND THE WORKSPACE IS CLEAR'
 ```
 
-Keys are `S` to save, `A` to label the next pose as a possible replay anchor,
-`U` to undo, `P`/Escape to pause, and `Q` to finalize. Rerun the exact same
-command after a pause to resume. Yellow needs a supplied
-`--yellow-override-reason`; red can never be saved.
+At each pose, physically support and position the arm and wait for a good
+preview. The first `S` validates a stationary handoff, creates the command
+publisher, seeds both arm targets from measured `q` at weight zero, and ramps
+only the ownership weight to one. Remove your hand. The second `S` saves the
+controller-held burst. Grip/support the arm again and press `R` to ramp the
+weight to zero and return to manual positioning. `Q`, `P`/Escape, `A`, and `U`
+are blocked while the controller is holding, so a clean release cannot be
+bypassed. Rerun the exact command after a pause to resume. Yellow needs a
+supplied `--yellow-override-reason`; red can never be acquired or saved.
 
-One `S` now records the pose and its calibration measurement together. It waits
-for the configured seven-frame stationary burst and stores every rectified
-frame losslessly as PNG, the complete 29-joint LowState window around every
-image, local and camera timestamps, the exact `CameraInfo`, reproducible
-image/state pairing, AprilCube correspondences, visual-quality evidence, and a
-selected medoid frame. The pose YAML stores the median measured joint position
-and spread; commanded positions are never used. `U` removes the active pose but
-keeps its raw capture marked rejected for auditability.
+The save-stage `S` waits for the configured seven-frame stationary burst and
+stores every rectified frame losslessly as PNG, the complete 29-joint `q`, `dq`,
+and `tau_est` window around every image, local and camera timestamps, the exact
+`CameraInfo`, reproducible image/state pairing, AprilCube correspondences,
+visual-quality evidence, and a selected medoid frame. Capture metadata also
+stores the median operator-supported state from immediately before ownership;
+this allows direct held-versus-supported `q` and `tau_est` comparison. The pose
+YAML stores measured joint position and spread; commanded positions are never
+used. `U` removes the active pose but keeps its raw capture marked rejected for
+auditability.
 
 A capture attempt is rejected if consecutive images are more than 0.5 seconds
 apart, the seven images span more than 2 seconds, or their combined state windows
 exceed either arm's stationary-position limit. Nothing is saved; hold the arm
-still and press `S` again.
+still and press `S` again while it remains controller-held.
 
-`Q` verifies the one-to-one pose/capture binding, freezes the session read-only,
+After the final `R`, `Q` verifies the one-to-one pose/capture binding, freezes the session read-only,
 and automatically writes `sessions/manual_run_002/dataset.json`. The camera
 mount and head pitch must remain fixed for that session. The joint poses remain
 useful if optional replay is desired for a later camera configuration, but the

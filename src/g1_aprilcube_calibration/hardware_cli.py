@@ -123,11 +123,12 @@ def add_hardware_subparsers(
     teach = subparsers.add_parser(
         "teach-poses",
         help=(
-            "record measured poses and synchronized lossless calibration bursts "
-            "without commanding the robot"
+            "manually position the arm, hold that measured pose through arm_sdk, "
+            "and record synchronized lossless calibration bursts"
         ),
     )
     _add_network_arguments(teach)
+    _add_motion_safety_arguments(teach)
     teach.add_argument("--session-directory", type=Path, required=True)
     teach.add_argument("--session-id", required=True)
     _add_camera_arguments(teach)
@@ -142,6 +143,8 @@ def add_hardware_subparsers(
     teach.add_argument("--first-pose-id", default="pose_001")
     teach.add_argument("--preview-directory", type=Path)
     teach.add_argument("--yellow-override-reason")
+    teach.add_argument("--confirm", required=True, help=f"must equal: {MOTION_ACK}")
+    teach.add_argument("--lock-file", type=Path, default=default_lock)
     teach.set_defaults(handler=run_teach_poses)
 
     hold = subparsers.add_parser(
@@ -295,15 +298,18 @@ def run_commission_damping(args: argparse.Namespace) -> int:
 
 
 def run_teach_poses(args: argparse.Namespace) -> int:
+    _require_ack(args.confirm, MOTION_ACK)
     hardware_bytes = args.hardware_config.read_bytes()
     target_bytes = args.target_config.read_bytes()
     collision_bytes = args.collision_config.read_bytes()
     quality_bytes = args.quality_config.read_bytes()
     pose_set = _manual_pose_set_for_session(args)
     _validate_calibration_arm(args.hardware_config, pose_set)
-    _validate_collision_preflight(args.collision_config)
+    collision = _validate_collision_preflight(args.collision_config)
     _validate_hardware_preflight(hardware_bytes, pose_set, require_poses=False)
-    recording, pairing, _, _ = _runtime_configs(args.hardware_config)
+    recording, pairing, executor_config, rate_hz = _runtime_configs(
+        args.hardware_config
+    )
     thresholds = QualityThresholds.from_yaml(args.quality_config)
     states = StateSampleBuffer()
 
@@ -317,6 +323,14 @@ def run_teach_poses(args: argparse.Namespace) -> int:
     node = rclpy.create_node("g1_aprilcube_pose_teacher")
     camera = None
     observer = None
+    transport = None
+    synchronized = None
+    driver = None
+    watchdog = None
+    handoff_reference_state = None
+    held_pose_saved = False
+    command_lock = CommandOwnerLock(args.lock_file)
+    command_lock.acquire()
     try:
         camera = ROSCameraSubscriber(
             node,
@@ -379,7 +393,9 @@ def run_teach_poses(args: argparse.Namespace) -> int:
                     thresholds.stationary_burst_maximum_duration_s
                 ),
             ),
-            wait_once=lambda duration: _spin_and_wait(rclpy, node, duration),
+            wait_once=lambda duration: _spin_driver_and_wait(
+                rclpy, node, duration, driver
+            ),
             accept_yellow=lambda _frame: bool(args.yellow_override_reason),
             history=tuple(history),
         )
@@ -388,10 +404,13 @@ def run_teach_poses(args: argparse.Namespace) -> int:
         last_frame_key = None
         finalize_requested = False
         print(
-            "manual calibration capture is read-only: S=save burst, "
-            "A=toggle anchor, U=undo, P/Esc=pause, Q=finalize"
+            "manual calibration capture: while supporting the arm, S=acquire and "
+            "hold measured pose; while HOLDING, S=save burst; grip the arm then "
+            "R=release; A=toggle anchor; U=undo; P/Esc=pause; Q=finalize"
         )
         while True:
+            if driver is not None:
+                driver.check()
             rclpy.spin_once(node, timeout_sec=0.01)
             frame = camera.frames.latest
             if frame is not None:
@@ -416,6 +435,11 @@ def run_teach_poses(args: argparse.Namespace) -> int:
                         intrinsics=intrinsics,
                         saved_view_count=len(history),
                     )
+                    control_status = (
+                        "HOLDING: remove hand, S=save, grip arm then R=release"
+                        if synchronized is not None
+                        else "MANUAL: support arm and press S to acquire hold"
+                    )
                     cv2.putText(
                         rendered,
                         f"next={_next_pose_id(pose_store, args.first_pose_id)} "
@@ -427,26 +451,54 @@ def run_teach_poses(args: argparse.Namespace) -> int:
                         1,
                         cv2.LINE_AA,
                     )
+                    cv2.putText(
+                        rendered,
+                        control_status,
+                        (16, 26),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.55,
+                        (0, 255, 255) if synchronized is not None else (255, 255, 255),
+                        1,
+                        cv2.LINE_AA,
+                    )
                     latest_evaluation = (
                         frame,
                         quality,
                         rendered,
                     )
                     last_frame_key = frame_key
-                cv2.imshow("G1 read-only pose teaching", latest_evaluation[2])
+                cv2.imshow("G1 measured-pose hold teaching", latest_evaluation[2])
             key = cv2.waitKey(1) & 0xFF
             if key in (ord("q"), ord("Q")):
+                if synchronized is not None:
+                    print(
+                        "cannot finalize while arm_sdk is holding; grip/support "
+                        "the arm and press R first"
+                    )
+                    continue
                 if not pose_store.load().poses:
                     print("cannot finalize an empty manual calibration session")
                     continue
                 finalize_requested = True
                 break
             if key in (ord("p"), ord("P"), 27):
+                if synchronized is not None:
+                    print(
+                        "cannot pause while arm_sdk is holding; grip/support the "
+                        "arm and press R first"
+                    )
+                    continue
                 break
             if key in (ord("a"), ord("A")):
+                if synchronized is not None:
+                    print("release the held arm before changing capture metadata")
+                    continue
                 anchor_next = not anchor_next
                 print(f"next pose anchor={anchor_next}")
             elif key in (ord("u"), ord("U")):
+                if synchronized is not None:
+                    print("release the held arm before undoing a capture")
+                    continue
                 current = pose_store.load()
                 if not current.poses:
                     print("nothing to undo")
@@ -469,6 +521,35 @@ def run_teach_poses(args: argparse.Namespace) -> int:
                     history.pop()
                     capture_source.undo_last_signature()
                 print(f"undid final pose; {len(updated.poses)} remain")
+            elif key in (ord("r"), ord("R")):
+                if synchronized is None:
+                    print("arm_sdk is not holding; nothing to release")
+                    continue
+                print("operator confirmed physical arm support; releasing arm_sdk...")
+                synchronized.begin_clean_release(operator_confirmed=True)
+                _wait_for_driven_state(
+                    synchronized,
+                    driver,
+                    ExecutorState.STOPPED,
+                    rclpy=rclpy,
+                    node=node,
+                    timeout_s=executor_config.motion_timeout_s + 5.0,
+                )
+                driver.close()
+                driver.check()
+                watchdog.disarm()
+                driver = None
+                watchdog = None
+                synchronized = None
+                transport = None
+                handoff_reference_state = None
+                held_pose_saved = False
+                observer = UnitreeLowStateObserver(
+                    _transport_config(args), on_sample=states.add
+                )
+                _wait_for_state(observer, 5.0)
+                last_frame_key = None
+                print("arm_sdk released at terminal weight zero; manual positioning ready")
             elif key in (ord("s"), ord("S")) and latest_evaluation is not None:
                 quality = latest_evaluation[1]
                 if quality.grade is QualityGrade.RED:
@@ -480,20 +561,88 @@ def run_teach_poses(args: argparse.Namespace) -> int:
                 ):
                     print("pose not saved: yellow requires --yellow-override-reason")
                     continue
+                if synchronized is None:
+                    if observer is None:
+                        raise RuntimeError(
+                            "manual observer is unavailable before acquisition"
+                        )
+                    activation = _wait_for_activation_handoff(
+                        observer,
+                        states,
+                        pose_store.load(),
+                        recording,
+                    )
+                    report = _runtime_validation_report(
+                        pose_set=activation.pose_set,
+                        reference_full_q=activation.reference_state.position,
+                        directed_edges=((HANDOFF_POSE_ID, HANDOFF_POSE_ID),),
+                        hardware_config=args.hardware_config,
+                        collision_config=collision,
+                    )
+                    _print_dynamic_preflight(activation, report)
+                    handoff_reference_state = activation.reference_state
+                    transport = UnitreeArmSDKTransport(
+                        _transport_config(args), observer=observer
+                    )
+                    observer = None
+                    watchdog = _pc2_damping_watchdog(args, args.hardware_config)
+                    raw_executor = PoseExecutor(
+                        transport=transport,
+                        clock=SystemClock(),
+                        pose_set=activation.pose_set,
+                        handoff_q=activation.handoff_q,
+                        hold_q=activation.hold_q,
+                        approved_validation_report_sha256=report.content_sha256,
+                        config=executor_config,
+                    )
+                    synchronized = SynchronizedPoseExecutor(raw_executor)
+                    driver = ExecutorControlDriver(
+                        synchronized,
+                        rate_hz=rate_hz,
+                        safety_heartbeat=watchdog.pulse,
+                    )
+                    _wait_for_state(transport, 5.0)
+                    watchdog.start()
+                    driver.start()
+                    synchronized.acquire(operator_confirmed=True)
+                    _wait_for_driven_state(
+                        synchronized,
+                        driver,
+                        ExecutorState.READY,
+                        rclpy=rclpy,
+                        node=node,
+                        timeout_s=executor_config.motion_timeout_s + 5.0,
+                    )
+                    last_frame_key = None
+                    print(
+                        "HOLDING measured pose at arm_sdk weight 1; remove your "
+                        "hand, verify the preview, then press S again to save"
+                    )
+                    continue
+                if held_pose_saved:
+                    print(
+                        "this held pose is already saved; grip/support the arm and "
+                        "press R before teaching the next pose"
+                    )
+                    continue
                 pose_id = _next_pose_id(pose_store, args.first_pose_id)
                 capture_id = _next_manual_capture_id(session_store)
                 print(
                     f"collecting {thresholds.stationary_burst_frames} "
                     f"lossless stationary frames for {pose_id}..."
                 )
+                synchronized.begin_capture()
                 try:
                     burst = capture_source.capture_burst(
                         pose_id=pose_id,
                         capture_id=capture_id,
                     )
                 except RuntimeError as error:
+                    driver.check()
+                    synchronized.finish_capture(outcome="raw burst rejected")
                     print(f"pose not saved: {error}")
                     continue
+                synchronized.finish_capture(outcome="raw burst collected")
                 selected = SessionStore.select_medoid_frame(burst)
                 preview_directory.mkdir(parents=True, exist_ok=True)
                 preview_path = preview_directory / f"{pose_id}_{capture_id}.png"
@@ -542,6 +691,12 @@ def run_teach_poses(args: argparse.Namespace) -> int:
                         outcome="accepted",
                         reason="manual stationary burst passed",
                         frames=burst,
+                        metadata={
+                            "capture_phase": "arm_sdk_weight_1_hold",
+                            "pre_acquisition_supported_state": (
+                                handoff_reference_state.to_dict()
+                            ),
+                        },
                     )
                 except Exception:
                     rolled_back = pose_store.undo_last(
@@ -561,9 +716,23 @@ def run_teach_poses(args: argparse.Namespace) -> int:
                 if selected.quality.signature is not None:
                     history.append(selected.quality.signature)
                 anchor_next = False
+                held_pose_saved = True
+                supported_tau_est = handoff_reference_state.arm_tau_est(
+                    pose_set.calibration_arm
+                )
+                held_tau_est = selected.pairing.nearest.arm_tau_est(
+                    pose_set.calibration_arm
+                )
                 print(
                     f"saved {pose_id} with {len(burst)} raw frames; "
-                    f"total={len(updated.poses)}; hash={updated.content_sha256}"
+                    f"total={len(updated.poses)}; hash={updated.content_sha256}; "
+                    f"tau_est[{pose_set.calibration_arm}]="
+                    + ",".join(f"{value:.3f}" for value in held_tau_est)
+                    + "; delta_from_supported="
+                    + ",".join(
+                        f"{value:.3f}"
+                        for value in held_tau_est - supported_tau_est
+                    )
                 )
         if finalize_requested:
             session_store.validate_manual_alignment(pose_store.load())
@@ -586,6 +755,26 @@ def run_teach_poses(args: argparse.Namespace) -> int:
             )
         return 0
     finally:
+        if driver is not None and driver.is_alive:
+            try:
+                driver.close()
+            except RuntimeError:
+                # Stopping the heartbeat is deliberate; PC2 remains able to damp.
+                pass
+        if watchdog is not None and watchdog.armed:
+            if transport is not None and transport.command_count == 0:
+                watchdog.disarm()
+            elif synchronized is None or transport is None:
+                watchdog.damp("manual teaching cleanup before executor creation")
+            else:
+                _terminate_motion_safely(
+                    watchdog,
+                    synchronized,
+                    transport,
+                    reason="manual teaching failed or cleanup was required",
+                )
+        if transport is not None and transport.command_count == 0:
+            transport.close()
         if observer is not None:
             observer.close()
         if camera is not None:
@@ -593,6 +782,7 @@ def run_teach_poses(args: argparse.Namespace) -> int:
         node.destroy_node()
         rclpy.shutdown()
         cv2.destroyAllWindows()
+        command_lock.release()
 
 
 def run_commission_hold(args: argparse.Namespace) -> int:
@@ -1426,9 +1616,32 @@ def _pose_history(pose_set) -> list[ViewSignature]:
     return history
 
 
-def _spin_and_wait(rclpy, node, duration_s: float) -> None:
+def _spin_driver_and_wait(rclpy, node, duration_s: float, driver) -> None:
     rclpy.spin_once(node, timeout_sec=0.0)
+    if driver is not None:
+        driver.check()
     time.sleep(duration_s)
+
+
+def _wait_for_driven_state(
+    executor,
+    driver: ExecutorControlDriver,
+    desired: ExecutorState,
+    *,
+    rclpy,
+    node,
+    timeout_s: float,
+) -> None:
+    if timeout_s <= 0:
+        raise ValueError("executor wait timeout must be positive")
+    deadline = time.monotonic() + timeout_s
+    while executor.state is not desired:
+        if time.monotonic() >= deadline:
+            raise RuntimeError(f"timed out waiting for {desired.value}")
+        rclpy.spin_once(node, timeout_sec=0.0)
+        driver.check()
+        time.sleep(0.01)
+    driver.check()
 
 
 def _open_or_resume_manual_session(
@@ -1460,7 +1673,9 @@ def _open_or_resume_manual_session(
                 "ros_camera_reliability": args.ros_camera_reliability,
                 "network_interface": args.network_interface,
                 "yellow_override_reason": args.yellow_override_reason,
-                "arm_command_publisher_created": False,
+                "capture_control_mode": "arm_sdk_measured_pose_hold",
+                "capture_control_weight": 1.0,
+                "lowstate_fields": ["q", "dq", "tau_est"],
             },
             collection_method="manual_teaching",
         )
@@ -1478,6 +1693,13 @@ def _open_or_resume_manual_session(
         raise ValueError("--session-id does not match the resumable session")
     if manifest.provenance.get("collection_method") != "manual_teaching":
         raise ValueError("existing session was not created by manual teaching")
+    if (
+        manifest.provenance.get("capture_control_mode")
+        != "arm_sdk_measured_pose_hold"
+    ):
+        raise ValueError(
+            "existing session does not use the required arm_sdk measured-pose hold"
+        )
     if manifest.camera_profile_sha256 != camera_info.profile_sha256:
         raise ValueError("live camera profile changed from the resumable session")
     if manifest.pose_set_content_sha256 != pose_set.content_sha256:

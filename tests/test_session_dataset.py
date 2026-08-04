@@ -82,6 +82,7 @@ def frame(frame_id: str, center_s: float) -> CaptureFrameInput:
             5,
             np.arange(29, dtype=float) / 100.0,
             np.zeros(29),
+            np.arange(29, dtype=float) / 1000.0,
         )
         for offset in (0.0, 0.05, 0.1)
     )
@@ -232,7 +233,11 @@ def test_raw_first_manifest_second_and_offline_rebuild(tmp_path) -> None:
     dataset = DatasetBuilder(store.directory).build(output_path=output)
     sample = dataset.samples[0]
     assert dataset.calibration_arm == "left"
+    assert dataset.schema_version == 2
     assert sample.capture_id == "capture_001"
+    assert sample.measured_state["estimated_torque"] == list(
+        np.arange(29, dtype=float) / 1000.0
+    )
     assert sample.visible_tag_ids == (0,)
     assert sample.corner_tag_ids == (0, 0, 0, 0)
     assert len(sample.image_points_px) == len(sample.object_points_m) == 4
@@ -282,6 +287,12 @@ def test_manual_session_updates_undoes_resumes_and_builds(tmp_path) -> None:
         outcome="accepted",
         reason="manual stationary burst passed",
         frames=(frame("capture_002_000", 2.0),),
+        metadata={
+            "capture_phase": "arm_sdk_weight_1_hold",
+            "pre_acquisition_supported_state": frame("metadata_only_frame", 2.0)
+            .state_window[-1]
+            .to_dict(),
+        },
         recorded_at_utc=UTC,
     )
 
@@ -295,6 +306,8 @@ def test_manual_session_updates_undoes_resumes_and_builds(tmp_path) -> None:
         "accepted",
     ]
     assert [sample.capture_id for sample in dataset.samples] == ["capture_002"]
+    assert manifest.schema_version == 2
+    assert manifest.captures[-1].metadata["capture_phase"] == ("arm_sdk_weight_1_hold")
 
 
 def test_finalized_session_rejects_append(tmp_path) -> None:

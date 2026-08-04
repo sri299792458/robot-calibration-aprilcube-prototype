@@ -41,7 +41,7 @@ def recorder(tmp_path, *, hold_offset_rad: float = 0.0) -> PoseRecorder:
         q = np.arange(29, dtype=float) / 100.0
         q[15:22] += (index % 3 - 1) * 0.0005
         q[22:29] += hold_offset_rad
-        buffer.add(RobotStateSample(time_s, UTC, 5, q, np.zeros(29)))
+        buffer.add(RobotStateSample(time_s, UTC, 5, q, np.zeros(29), np.zeros(29)))
     return PoseRecorder(
         store=store,
         state_buffer=buffer,
@@ -120,7 +120,14 @@ def test_yellow_pose_requires_and_records_reason(tmp_path) -> None:
 def test_nonstationary_or_unpaired_state_cannot_be_recorded(tmp_path) -> None:
     subject = recorder(tmp_path)
     subject.state_buffer.add(
-        RobotStateSample(10.35, UTC, 5, np.zeros(29), np.ones(29) * 0.1)
+        RobotStateSample(
+            10.35,
+            UTC,
+            5,
+            np.zeros(29),
+            np.ones(29) * 0.1,
+            np.zeros(29),
+        )
     )
     assessment = subject.assess(
         request(image_timing=ImageTiming(10.34, UTC)), now_monotonic_s=10.36

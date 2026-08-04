@@ -161,11 +161,17 @@ def reorder_named_joint_state(
     names: Sequence[str],
     positions: Sequence[float],
     velocities: Sequence[float],
-) -> tuple[np.ndarray, np.ndarray]:
+    estimated_torques: Sequence[float],
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Convert a complete named state into authoritative mode-5 order."""
-    if len(names) != len(positions) or len(names) != len(velocities):
+    if (
+        len(names) != len(positions)
+        or len(names) != len(velocities)
+        or len(names) != len(estimated_torques)
+    ):
         raise ValueError(
-            "joint names, positions, and velocities must have equal length"
+            "joint names, positions, velocities, and estimated torques must "
+            "have equal length"
         )
     if len(set(names)) != len(names):
         raise ValueError("joint state contains duplicate names")
@@ -175,8 +181,10 @@ def reorder_named_joint_state(
     if missing:
         raise ValueError(f"joint state is missing required names: {', '.join(missing)}")
     by_name = {
-        name: (float(position), float(velocity))
-        for name, position, velocity in zip(names, positions, velocities, strict=True)
+        name: (float(position), float(velocity), float(estimated_torque))
+        for name, position, velocity, estimated_torque in zip(
+            names, positions, velocities, estimated_torques, strict=True
+        )
         if name in _NAME_TO_INDEX
     }
     ordered_positions = validate_full_joint_vector(
@@ -187,4 +195,8 @@ def reorder_named_joint_state(
         [by_name[name][1] for name in G1_29_JOINT_NAMES],
         name="ordered joint velocities",
     )
-    return ordered_positions, ordered_velocities
+    ordered_estimated_torques = validate_full_joint_vector(
+        [by_name[name][2] for name in G1_29_JOINT_NAMES],
+        name="ordered estimated joint torques",
+    )
+    return ordered_positions, ordered_velocities, ordered_estimated_torques

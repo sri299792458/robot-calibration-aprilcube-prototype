@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from dataclasses import dataclass, field
+from types import SimpleNamespace
 from typing import ClassVar
 
 import numpy as np
@@ -24,6 +25,7 @@ class Motor:
     q: float = 0.0
     dq: float = 0.0
     tau: float = 0.0
+    tau_est: float = 0.0
     kp: float = 0.0
     kd: float = 0.0
 
@@ -106,7 +108,10 @@ def state(*, mode=5, tick=17):
     return LowState(
         mode_machine=mode,
         tick=tick,
-        motor_state=[Motor(q=index / 10, dq=-index / 100) for index in range(35)],
+        motor_state=[
+            Motor(q=index / 10, dq=-index / 100, tau_est=index / 1000)
+            for index in range(35)
+        ],
     )
 
 
@@ -134,6 +139,7 @@ def test_read_only_observer_never_constructs_a_publisher(sdk):
     assert sample.mode_machine == 5
     np.testing.assert_allclose(sample.position, np.arange(29) / 10)
     np.testing.assert_allclose(sample.velocity, -np.arange(29) / 100)
+    np.testing.assert_allclose(sample.estimated_torque, np.arange(29) / 1000)
     observer.close()
     assert Subscriber.instances[0].closed
 
@@ -161,6 +167,19 @@ def test_invalid_lowstate_is_rejected_without_replacing_last_good_state(sdk):
     Subscriber.instances[0].emit(bad)
     assert observer.observe().source_sequence == 3
     assert "NaN" in observer.last_error
+    observer.close()
+
+
+def test_lowstate_without_tau_est_is_rejected(sdk):
+    bindings, _ = sdk
+    observer = UnitreeLowStateObserver(config(), bindings=bindings)
+    bad = state(tick=4)
+    bad.motor_state[4] = SimpleNamespace(q=0.0, dq=0.0)
+
+    Subscriber.instances[0].emit(bad)
+
+    with pytest.raises(RuntimeError, match="tau_est"):
+        observer.observe()
     observer.close()
 
 

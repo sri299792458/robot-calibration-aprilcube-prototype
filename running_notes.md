@@ -1,5 +1,54 @@
 # Running Notes
 
+## 2026-08-04 — Controller-held manual capture and torque evidence implemented
+
+### Decisions
+
+- Manual positioning remains the data-collection workflow; replay is not
+  required. At each configuration the operator presses `S` once to transfer the
+  stationary measured pose to `rt/arm_sdk`, removes their hand, and presses `S`
+  again to capture. After supporting the arm again, `R` performs the clean
+  weight-one-to-zero release.
+- Reuse the already commissioned `PoseExecutor`, measured-state activation
+  handoff, 250 Hz synchronized command driver, exclusive command-owner lock,
+  and PC2 damping watchdog. There is no IK, new trajectory generator, or
+  commanded pose change in this workflow.
+- Do not support the old state/session format. Complete 29-element `tau_est` is
+  mandatory alongside `q` and `dq`; the immutable session manifest and derived
+  dataset are now schema version 2.
+
+### Implemented
+
+- `teach-poses` now requires the same exact harness/workspace motion
+  acknowledgement as the tested hold commissioning command. The first `S`
+  derives a stationary median handoff before publisher creation, seeds the
+  measured dual-arm target at weight zero, and ramps ownership to one. `Q`,
+  pause, undo, and anchor changes are blocked while holding; a saved held pose
+  cannot be saved again before `R`.
+- The second `S` captures while the existing dedicated control thread continues
+  sending at 250 Hz and pulsing the PC2 watchdog. A rejected visual/stationary
+  burst can be retried at the same held pose. Unexpected exit or driver failure
+  follows the existing fail-closed PC2 whole-body damping path.
+- Native Unitree LowState conversion now requires `motor_state[i].tau_est` for
+  all 29 joints. Every raw state window and selected dataset state contains
+  receipt time, UTC time, sequence, mode, `q`, `dq`, and `estimated_torque`.
+- Each manual capture stores the median operator-supported pre-acquisition state
+  in hash-bound capture metadata and labels the raw frames as an
+  `arm_sdk_weight_1_hold` phase. The console reports held left-arm `tau_est` and
+  its per-joint delta from the supported handoff state.
+
+### Verification
+
+- 142 tests pass. Added coverage for mandatory torque, Unitree messages missing
+  `tau_est`, schema-v2 round trips, held-capture retry, dataset torque retention,
+  capture metadata, and the required teach-mode motion acknowledgement.
+- Ruff lint passes across source and tests. Six pre-existing files remain
+  nonconforming under the currently installed formatter; none is part of this
+  controller/torque change except the already nonconforming hardware CLI.
+- Hardware was not contacted for this implementation. The acquisition/release,
+  fixed-rate driver, and damping components are the same paths previously
+  commissioned on the G1; the new operator loop still needs an on-robot dry run.
+
 ## 2026-08-03 — Left-palm AprilCube configuration completed
 
 ### Decisions

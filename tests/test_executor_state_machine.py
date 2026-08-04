@@ -107,6 +107,35 @@ def advance_until(
     raise AssertionError(f"executor did not reach {desired}; state={executor.state}")
 
 
+def test_measured_handoff_changes_only_blend_weight() -> None:
+    initial = np.linspace(-0.2, 0.2, 29)
+    clock = ManualClock(1.0)
+    transport = FakeArmTransport(clock=clock, initial_full_q=initial)
+    executor = PoseExecutor(
+        transport=transport,
+        clock=clock,
+        pose_set=pose_set(),
+        handoff_q=initial[15:22],
+        hold_q=initial[22:29],
+        approved_validation_report_sha256=REPORT_HASH,
+        config=config(),
+    )
+    expected_q14 = tuple(initial[15:29])
+
+    executor.acquire(operator_confirmed=True)
+    advance_until(transport, executor, ExecutorState.READY)
+
+    assert transport.commands[0].weight == 0.0
+    assert transport.commands[-1].weight == 1.0
+    assert all(command.q14 == expected_q14 for command in transport.commands)
+    np.testing.assert_allclose(transport.position, initial)
+
+    executor.begin_clean_release(operator_confirmed=True)
+    advance_until(transport, executor, ExecutorState.STOPPED)
+    assert transport.commands[-1].weight == 0.0
+    assert all(command.q14 == expected_q14 for command in transport.commands)
+
+
 def test_acquisition_move_capture_handoff_and_clean_release() -> None:
     _, transport, executor = subject()
     assert transport.commands == []
@@ -141,6 +170,9 @@ def test_acquisition_move_capture_handoff_and_clean_release() -> None:
             operator_confirmed=True,
         )
     executor.finish_capture(outcome="accepted")
+    assert executor.state is ExecutorState.HOLDING
+    executor.begin_capture()
+    executor.finish_capture(outcome="retry accepted")
 
     executor.start_pose(
         HANDOFF_POSE_ID,
@@ -193,9 +225,7 @@ def test_every_move_requires_exact_approved_pose_and_hash() -> None:
     with pytest.raises(ValueError, match="did not pass"):
         executor.start_pose(
             "pose_001",
-            approval=approval(
-                executor, HANDOFF_POSE_ID, "pose_001", passed=False
-            ),
+            approval=approval(executor, HANDOFF_POSE_ID, "pose_001", passed=False),
             operator_confirmed=True,
         )
     assert executor.state is ExecutorState.READY

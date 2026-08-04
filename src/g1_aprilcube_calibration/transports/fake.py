@@ -29,6 +29,7 @@ class FakeArmTransport:
         self.clock = clock
         self.position = position
         self.velocity = np.zeros(29, dtype=np.float64)
+        self.estimated_torque = np.zeros(29, dtype=np.float64)
         self.tracking_velocity_rad_s = tracking_velocity_rad_s
         self.mode_machine = mode_machine
         self.commands: list[ArmCommand] = []
@@ -49,6 +50,7 @@ class FakeArmTransport:
             mode_machine=self.mode_machine,
             position=self.position,
             velocity=self.velocity,
+            estimated_torque=self.estimated_torque,
             source_sequence=self._sequence,
         )
 
