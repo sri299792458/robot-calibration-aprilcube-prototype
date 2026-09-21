@@ -1,0 +1,45 @@
+{
+  "name": "FIT_ONLY_lower_right",
+  "body_count": 1,
+  "is_solid": true,
+  "volume_cm3": 29.62006831119941,
+  "extents_mm": [
+    34.0,
+    34.0,
+    37.596768770427886
+  ],
+  "print_bounds_mm": [
+    [
+      -49.25,
+      -17.0,
+      0.0
+    ],
+    [
+      -15.25,
+      17.0,
+      37.596768770427886
+    ]
+  ],
+  "local_to_torso_mm": [
+    [
+      0,
+      0,
+      -1,
+      104
+    ],
+    [
+      1,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      -1,
+      0,
+      70.8961682
+    ]
+  ],
+  "feature_count": 2,
+  "stl": "FIT_ONLY_lower_right_PRINT.stl"
+}

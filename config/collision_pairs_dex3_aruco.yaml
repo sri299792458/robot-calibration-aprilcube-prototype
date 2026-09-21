@@ -1,0 +1,169 @@
+schema_version: 1
+
+# Palm-frame AABBs are derived from Unitree's official left/right Dex3 collision
+# meshes at NVIDIA GR00T WholeBodyControl's middle-close finger posture.
+# Every dimension includes 2.5 mm padding on both sides. Both palm boxes also
+# contain their complete revision-2 dorsal marker plates. Splitting palm,
+# thumb, middle, and index geometry avoids declaring the empty space between
+# fingers to be solid. This model is valid only while both physical hands are
+# in that fixed middle-close posture.
+hardware_ready: true
+blocking_reasons: []
+required_attached_boxes:
+  - left_dex3_marker_palm
+  - left_dex3_thumb
+  - left_dex3_middle
+  - left_dex3_index
+  - right_dex3_marker_palm
+  - right_dex3_thumb
+  - right_dex3_middle
+  - right_dex3_index
+attached_boxes:
+  - name: left_dex3_marker_palm
+    parent_link: left_rubber_hand
+    size_m: [0.091700, 0.053245, 0.092794]
+    xyz_m: [0.043350, 0.003804, 0.0]
+    rpy_rad: [0.0, 0.0, 0.0]
+  - name: left_dex3_thumb
+    parent_link: left_rubber_hand
+    size_m: [0.094281, 0.072961, 0.031000]
+    xyz_m: [0.058640, -0.033981, -0.000100]
+    rpy_rad: [0.0, 0.0, 0.0]
+  - name: left_dex3_middle
+    parent_link: left_rubber_hand
+    size_m: [0.060160, 0.084840, 0.031000]
+    xyz_m: [0.088947, -0.031328, -0.028400]
+    rpy_rad: [0.0, 0.0, 0.0]
+  - name: left_dex3_index
+    parent_link: left_rubber_hand
+    size_m: [0.060160, 0.084840, 0.031000]
+    xyz_m: [0.088947, -0.031328, 0.028600]
+    rpy_rad: [0.0, 0.0, 0.0]
+  - name: right_dex3_marker_palm
+    parent_link: right_rubber_hand
+    size_m: [0.091700, 0.053245, 0.092794]
+    xyz_m: [0.043350, -0.003804, 0.0]
+    rpy_rad: [0.0, 0.0, 0.0]
+  - name: right_dex3_thumb
+    parent_link: right_rubber_hand
+    size_m: [0.094281, 0.072961, 0.031000]
+    xyz_m: [0.058640, 0.033981, 0.000100]
+    rpy_rad: [0.0, 0.0, 0.0]
+  - name: right_dex3_middle
+    parent_link: right_rubber_hand
+    size_m: [0.060160, 0.084840, 0.031000]
+    xyz_m: [0.088947, 0.031328, -0.028600]
+    rpy_rad: [0.0, 0.0, 0.0]
+  - name: right_dex3_index
+    parent_link: right_rubber_hand
+    size_m: [0.060160, 0.084840, 0.031000]
+    xyz_m: [0.088947, 0.031328, 0.028400]
+    rpy_rad: [0.0, 0.0, 0.0]
+
+visual_fallback_links: []
+
+pairs:
+  # Exact proximal arm/torso pairs selected by the pinned G1Pilot controller.
+  # Their primitive geometry comes directly from its collision URDF overlay.
+  - [right_shoulder_yaw_link, torso_link]
+  - [right_elbow_link, torso_link]
+  - [right_wrist_roll_link, torso_link]
+  - [right_wrist_pitch_link, torso_link]
+  - [right_wrist_yaw_link, torso_link]
+  - [right_elbow_link, right_hip_yaw_link]
+  - [left_shoulder_yaw_link, torso_link]
+  - [left_elbow_link, torso_link]
+  - [left_wrist_roll_link, torso_link]
+  - [left_wrist_pitch_link, torso_link]
+  - [left_wrist_yaw_link, torso_link]
+
+  - [right_dex3_marker_palm, torso_link]
+  - [right_dex3_marker_palm, head_link]
+  - [right_dex3_marker_palm, pelvis_contour_link]
+  - [right_dex3_marker_palm, left_hip_yaw_link]
+  - [right_dex3_marker_palm, right_hip_yaw_link]
+  - [right_dex3_marker_palm, left_elbow_link]
+  - [right_dex3_marker_palm, left_wrist_roll_link]
+  - [right_dex3_marker_palm, left_wrist_pitch_link]
+  - [right_dex3_marker_palm, left_wrist_yaw_link]
+  - [right_dex3_thumb, torso_link]
+  - [right_dex3_thumb, head_link]
+  - [right_dex3_thumb, pelvis_contour_link]
+  - [right_dex3_thumb, left_hip_yaw_link]
+  - [right_dex3_thumb, right_hip_yaw_link]
+  - [right_dex3_thumb, left_elbow_link]
+  - [right_dex3_thumb, left_wrist_roll_link]
+  - [right_dex3_thumb, left_wrist_pitch_link]
+  - [right_dex3_thumb, left_wrist_yaw_link]
+  - [right_dex3_middle, torso_link]
+  - [right_dex3_middle, head_link]
+  - [right_dex3_middle, pelvis_contour_link]
+  - [right_dex3_middle, left_hip_yaw_link]
+  - [right_dex3_middle, right_hip_yaw_link]
+  - [right_dex3_middle, left_elbow_link]
+  - [right_dex3_middle, left_wrist_roll_link]
+  - [right_dex3_middle, left_wrist_pitch_link]
+  - [right_dex3_middle, left_wrist_yaw_link]
+  - [right_dex3_index, torso_link]
+  - [right_dex3_index, head_link]
+  - [right_dex3_index, pelvis_contour_link]
+  - [right_dex3_index, left_hip_yaw_link]
+  - [right_dex3_index, right_hip_yaw_link]
+  - [right_dex3_index, left_elbow_link]
+  - [right_dex3_index, left_wrist_roll_link]
+  - [right_dex3_index, left_wrist_pitch_link]
+  - [right_dex3_index, left_wrist_yaw_link]
+
+  - [left_dex3_marker_palm, torso_link]
+  - [left_dex3_marker_palm, head_link]
+  - [left_dex3_marker_palm, pelvis_contour_link]
+  - [left_dex3_marker_palm, left_hip_yaw_link]
+  - [left_dex3_marker_palm, right_hip_yaw_link]
+  - [left_dex3_marker_palm, right_elbow_link]
+  - [left_dex3_marker_palm, right_wrist_roll_link]
+  - [left_dex3_marker_palm, right_wrist_pitch_link]
+  - [left_dex3_marker_palm, right_wrist_yaw_link]
+  - [left_dex3_thumb, torso_link]
+  - [left_dex3_thumb, head_link]
+  - [left_dex3_thumb, pelvis_contour_link]
+  - [left_dex3_thumb, left_hip_yaw_link]
+  - [left_dex3_thumb, right_hip_yaw_link]
+  - [left_dex3_thumb, right_elbow_link]
+  - [left_dex3_thumb, right_wrist_roll_link]
+  - [left_dex3_thumb, right_wrist_pitch_link]
+  - [left_dex3_thumb, right_wrist_yaw_link]
+  - [left_dex3_middle, torso_link]
+  - [left_dex3_middle, head_link]
+  - [left_dex3_middle, pelvis_contour_link]
+  - [left_dex3_middle, left_hip_yaw_link]
+  - [left_dex3_middle, right_hip_yaw_link]
+  - [left_dex3_middle, right_elbow_link]
+  - [left_dex3_middle, right_wrist_roll_link]
+  - [left_dex3_middle, right_wrist_pitch_link]
+  - [left_dex3_middle, right_wrist_yaw_link]
+  - [left_dex3_index, torso_link]
+  - [left_dex3_index, head_link]
+  - [left_dex3_index, pelvis_contour_link]
+  - [left_dex3_index, left_hip_yaw_link]
+  - [left_dex3_index, right_hip_yaw_link]
+  - [left_dex3_index, right_elbow_link]
+  - [left_dex3_index, right_wrist_roll_link]
+  - [left_dex3_index, right_wrist_pitch_link]
+  - [left_dex3_index, right_wrist_yaw_link]
+
+  - [right_dex3_marker_palm, left_dex3_marker_palm]
+  - [right_dex3_marker_palm, left_dex3_thumb]
+  - [right_dex3_marker_palm, left_dex3_middle]
+  - [right_dex3_marker_palm, left_dex3_index]
+  - [right_dex3_thumb, left_dex3_marker_palm]
+  - [right_dex3_thumb, left_dex3_thumb]
+  - [right_dex3_thumb, left_dex3_middle]
+  - [right_dex3_thumb, left_dex3_index]
+  - [right_dex3_middle, left_dex3_marker_palm]
+  - [right_dex3_middle, left_dex3_thumb]
+  - [right_dex3_middle, left_dex3_middle]
+  - [right_dex3_middle, left_dex3_index]
+  - [right_dex3_index, left_dex3_marker_palm]
+  - [right_dex3_index, left_dex3_thumb]
+  - [right_dex3_index, left_dex3_middle]
+  - [right_dex3_index, left_dex3_index]

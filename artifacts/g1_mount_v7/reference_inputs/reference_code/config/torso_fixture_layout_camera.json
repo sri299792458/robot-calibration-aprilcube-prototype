@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "purpose": "Measured color-optical pose used only to lay out and validate the removable torso ChArUco fixture",
+  "source_repository": "https://github.com/sri299792458/g1-dex3-tabletop",
+  "source_commit": "a26cf3752a54e1aa7f42398e48a0b5e230bbda41",
+  "source_bundle_path": "config/calibrations/dex3_shared_20260812_selected_free.json",
+  "source_bundle_id": "dex3_shared_20260812_selected_free",
+  "source_bundle_content_sha256": "dae03341c35f7844cfb43cfee0a92386f2c508d26fa081f6683fb19ece99a2f3",
+  "camera_serial": "348522074178",
+  "parent_frame": "torso_link",
+  "child_frame": "camera_color_optical_frame",
+  "torso_T_camera": [
+    [-0.014972918768750815, -0.8467816213245607, 0.5317299102838702, 0.06986511495754122],
+    [-0.9997856610105821, 0.020283499821154783, 0.004148695293523939, 0.031131600000000002],
+    [-0.014298382467177306, -0.5315538217546305, -0.8469038262027565, 0.42080831483353104],
+    [0.0, 0.0, 0.0, 1.0]
+  ],
+  "rectified_color_profile": {
+    "width": 1280,
+    "height": 720,
+    "camera_matrix": [
+      [905.4686279296875, 0.0, 652.4732055664062],
+      [0.0, 905.5797729492188, 368.78778076171875],
+      [0.0, 0.0, 1.0]
+    ],
+    "distortion": [0.0, 0.0, 0.0, 0.0, 0.0]
+  },
+  "source_validation": {
+    "camera_pairwise_translation_max_mm": 1.188516858483714,
+    "camera_pairwise_rotation_max_deg": 0.2592523581620448,
+    "cv_holdout_radial_rms_px": 5.409130383257533,
+    "status": "analysis_candidate_not_physical_task_validation"
+  },
+  "scope_note": "The fitted torso-to-color-optical transform is sufficient for fixture visibility and obstruction layout. Final camera calibration still comes from the torso board itself, and the installed fixture must pass a live preview."
+}

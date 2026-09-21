@@ -1,0 +1,54 @@
+{
+  "standard_020": [
+    {
+      "part": "V7_side_left",
+      "total_seconds": 7507.49169921875,
+      "model_seconds": 7158.80126953125,
+      "grams": 93.56644439697266,
+      "bbox": null,
+      "warnings": "",
+      "feature_seconds": {
+        "Bottom surface": 626.8657836914062,
+        "Bridge": 808.2814331054688,
+        "Brim": 178.05970764160156,
+        "Custom": 296.9570007324219,
+        "Flush": 30.0,
+        "Gap infill": 1.1502163410186768,
+        "Inner wall": 572.7286987304688,
+        "Internal solid infill": 1375.39697265625,
+        "Outer wall": 764.1629638671875,
+        "Overhang wall": 4.8360276222229,
+        "Sparse infill": 1877.38427734375,
+        "Top surface": 325.9837341308594,
+        "Travel": 655.2803955078125,
+        "Undefined": 647.04443359375
+      }
+    }
+  ],
+  "standard_028": [
+    {
+      "part": "V7_side_left",
+      "total_seconds": 6465.904296875,
+      "model_seconds": 6117.2138671875,
+      "grams": 95.88009643554688,
+      "bbox": null,
+      "warnings": "",
+      "feature_seconds": {
+        "Bottom surface": 626.86572265625,
+        "Bridge": 814.7989501953125,
+        "Brim": 178.05970764160156,
+        "Custom": 296.968994140625,
+        "Flush": 30.0,
+        "Gap infill": 1.0008089542388916,
+        "Inner wall": 483.0838928222656,
+        "Internal solid infill": 1169.2838134765625,
+        "Outer wall": 556.2012939453125,
+        "Overhang wall": 4.904979705810547,
+        "Sparse infill": 1481.0400390625,
+        "Top surface": 341.4266052246094,
+        "Travel": 491.2810363769531,
+        "Undefined": 483.0330505371094
+      }
+    }
+  ]
+}

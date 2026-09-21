@@ -1,0 +1,82 @@
+{
+  "lower_left": {
+    "original_volume_cm3": 29.628798233569846,
+    "revised_volume_cm3": 9.06655171759841,
+    "volume_reduction_percent": 69.3995293156174,
+    "print_extents_mm": [
+      28.0,
+      28.0,
+      15.103418350219727
+    ],
+    "contact_samples": 1592,
+    "max_contact_mesh_difference_mm": 0.01829867339532143,
+    "contact_mesh_comparison_tolerance_mm": 0.05,
+    "reference": "Original native crossbar exported at 0.002 mm surface deviation and 2.5 mm maximum edge length",
+    "washer_samples": 96,
+    "max_washer_difference_mm": 0.0,
+    "screw_axis_clear": true,
+    "watertight": true,
+    "single_solid": true,
+    "original_nominal_center_stack_mm": 12
+  },
+  "lower_right": {
+    "original_volume_cm3": 29.62735326333607,
+    "revised_volume_cm3": 9.04821609651516,
+    "volume_reduction_percent": 69.45992436080223,
+    "print_extents_mm": [
+      28.0,
+      28.0,
+      15.085906982421875
+    ],
+    "contact_samples": 1592,
+    "max_contact_mesh_difference_mm": 0.014921325338654867,
+    "contact_mesh_comparison_tolerance_mm": 0.05,
+    "reference": "Original native crossbar exported at 0.002 mm surface deviation and 2.5 mm maximum edge length",
+    "washer_samples": 96,
+    "max_washer_difference_mm": 0.0,
+    "screw_axis_clear": true,
+    "watertight": true,
+    "single_solid": true,
+    "original_nominal_center_stack_mm": 12
+  },
+  "upper_left": {
+    "original_volume_cm3": 34.468248357159325,
+    "revised_volume_cm3": 9.351152850420641,
+    "volume_reduction_percent": 72.87024059498418,
+    "print_extents_mm": [
+      28.0,
+      28.0,
+      22.829477310180664
+    ],
+    "contact_samples": 1592,
+    "max_contact_mesh_difference_mm": 0.03782042654231077,
+    "contact_mesh_comparison_tolerance_mm": 0.05,
+    "reference": "Original native crossbar exported at 0.002 mm surface deviation and 2.5 mm maximum edge length",
+    "washer_samples": 96,
+    "max_washer_difference_mm": 0.0,
+    "screw_axis_clear": true,
+    "watertight": true,
+    "single_solid": true,
+    "original_nominal_center_stack_mm": 12
+  },
+  "upper_right": {
+    "original_volume_cm3": 34.457893658572424,
+    "revised_volume_cm3": 9.266727415598908,
+    "volume_reduction_percent": 73.10709845639816,
+    "print_extents_mm": [
+      28.0,
+      28.0,
+      22.53958511352539
+    ],
+    "contact_samples": 1592,
+    "max_contact_mesh_difference_mm": 0.027151547975769574,
+    "contact_mesh_comparison_tolerance_mm": 0.05,
+    "reference": "Original native crossbar exported at 0.002 mm surface deviation and 2.5 mm maximum edge length",
+    "washer_samples": 96,
+    "max_washer_difference_mm": 0.0,
+    "screw_axis_clear": true,
+    "watertight": true,
+    "single_solid": true,
+    "original_nominal_center_stack_mm": 12
+  }
+}

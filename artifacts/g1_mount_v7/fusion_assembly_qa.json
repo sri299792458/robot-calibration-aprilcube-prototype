@@ -1,0 +1,17 @@
+{
+  "timeline_entries": 221,
+  "feature_health_issues": [],
+  "components": [
+    "V7_side_left",
+    "V7_side_right",
+    "V7_crossbar_upper",
+    "V7_crossbar_lower",
+    "REFERENCE - existing printed carrier",
+    "REFERENCE - nominal torso",
+    "REFERENCE - nominal head",
+    "FIT_ONLY_upper_left",
+    "FIT_ONLY_upper_right",
+    "FIT_ONLY_lower_left",
+    "FIT_ONLY_lower_right"
+  ]
+}

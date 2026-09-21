@@ -1,0 +1,27 @@
+{
+  "original": {
+    "total_seconds": 5997.24365234375,
+    "model_seconds": 5648.5703125,
+    "filament_g": 61.64016342163086,
+    "warning": ""
+  },
+  "R2": {
+    "total_seconds": 2583.0546875,
+    "model_seconds": 2234.37548828125,
+    "filament_g": 19.83629608154297,
+    "warning": ""
+  },
+  "filament_reduction_percent": 67.81920264250631,
+  "time_reduction_percent": 56.929302238862164,
+  "settings": {
+    "printer": "Bambu Lab H2D, 0.4 mm standard nozzle",
+    "filament": "Bambu PLA Basic",
+    "layer_height_mm": 0.2,
+    "walls": 3,
+    "infill": "10% gyroid",
+    "top_bottom_layers": 4,
+    "brim": "none",
+    "supports": "none",
+    "scope": "Four coupons on one plate; both revisions use the same settings."
+  }
+}

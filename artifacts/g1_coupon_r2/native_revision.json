@@ -1,0 +1,49 @@
+{
+  "coupons": {
+    "upper_left": {
+      "front_cut_mm": 30.2928524,
+      "minimum_sampled_depth_mm": 4.868002397260668,
+      "full_contact_footprint_mm": [
+        28,
+        28
+      ],
+      "nominal_center_screw_stack_mm": 12,
+      "volume_cm3": 9.349645030546151,
+      "identity_dots": 1
+    },
+    "upper_right": {
+      "front_cut_mm": 30.4216719,
+      "minimum_sampled_depth_mm": 4.7134983807568815,
+      "full_contact_footprint_mm": [
+        28,
+        28
+      ],
+      "nominal_center_screw_stack_mm": 12,
+      "volume_cm3": 9.265857519547911,
+      "identity_dots": 2
+    },
+    "lower_left": {
+      "front_cut_mm": 22.4837287,
+      "minimum_sampled_depth_mm": 9.70788050832111,
+      "full_contact_footprint_mm": [
+        28,
+        28
+      ],
+      "nominal_center_screw_stack_mm": 12,
+      "volume_cm3": 9.064344050315238,
+      "identity_dots": 3
+    },
+    "lower_right": {
+      "front_cut_mm": 22.510859600000003,
+      "minimum_sampled_depth_mm": 9.691267683974942,
+      "full_contact_footprint_mm": [
+        28,
+        28
+      ],
+      "nominal_center_screw_stack_mm": 12,
+      "volume_cm3": 9.046171531407838,
+      "identity_dots": 4
+    }
+  },
+  "feature_health_issues": []
+}

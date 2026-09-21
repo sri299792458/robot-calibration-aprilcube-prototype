@@ -1,0 +1,35 @@
+schema_version: 1
+
+# Native joint/frame optimizer used after the G1-specific immutable capture step.
+robot_calibration:
+  url: https://github.com/mikeferguson/robot_calibration.git
+  branch: ros2
+  revision: db991b040d1dc28af09d8865fc72f09720e12b73
+
+# Built in a private prefix with Eigen dense/sparse backends; no system install.
+ceres_solver:
+  url: https://github.com/ceres-solver/ceres-solver.git
+  tag: 2.0.0
+  revision: 399cda773035d99eaf1f4a129a666b3c4df9d1b1
+
+# Read-only reference for the official G1 arm_sdk and debug-lowcmd paths.
+xr_teleoperate:
+  url: https://github.com/unitreerobotics/xr_teleoperate.git
+  revision: 845b25a32f7febedf220e830952a7134897adb9d
+  submodules:
+    dex_retargeting: d7753d38c9ff11f80bafea6cd168351fd3db9b0e
+    teleimager: 57cf2a40572227273fa001cd17833b755331ec97
+    televuer: 766de45e74373ae0ea66321d942ce538385655a5
+
+# Official SDK required by the current XR teleoperation checkout. Keep this
+# separate from the older lnotspotl fork pinned below for G1Pilot provenance.
+unitree_sdk2_python_xr_teleoperate:
+  url: https://github.com/unitreerobotics/unitree_sdk2_python.git
+  revision: 65691c8a8bc53b98d3976dba4dbf9d5d20b2e7f5
+
+# This is the exact fork/revision already used by the pinned G1Pilot checkout.
+# It remains outside the prototype package so importing offline modules never
+# imports CycloneDDS or opens a robot channel.
+unitree_sdk2_python:
+  url: https://github.com/lnotspotl/unitree_sdk2_python.git
+  revision: 7c661d27f4ae064ffd0dd633fd9d5b518ef0b508

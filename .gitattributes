@@ -1,0 +1,5 @@
+# Preserve exported CAD, meshes, package manifests and their recorded hashes.
+artifacts/** -text whitespace=trailing-space,space-before-tab,cr-at-eol
+artifacts/**/*.step binary
+scripts/*g1*.py text eol=lf
+scripts/G1_MOUNT_README.md text eol=lf

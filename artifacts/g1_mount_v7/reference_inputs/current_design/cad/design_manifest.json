@@ -1,0 +1,257 @@
+{
+  "board_connector_centers_local_mm": {
+    "lower_left": [
+      -8.5,
+      226.6865302522,
+      9.4
+    ],
+    "lower_right": [
+      188.5,
+      226.6865302522,
+      9.4
+    ],
+    "upper_left": [
+      -8.5,
+      22.4925663052,
+      9.4
+    ],
+    "upper_right": [
+      188.5,
+      22.4925663052,
+      9.4
+    ]
+  },
+  "board_connector_centers_torso_mm": {
+    "lower_left": [
+      220.91814216166964,
+      98.5,
+      38.53459125737677
+    ],
+    "lower_right": [
+      220.91814216166964,
+      -98.5,
+      38.53459125737677
+    ],
+    "upper_left": [
+      294.094714330883,
+      98.5,
+      229.1660792071712
+    ],
+    "upper_right": [
+      294.094714330883,
+      -98.5,
+      229.1660792071712
+    ]
+  },
+  "nominal_m6_root_centers_torso_mm": {
+    "lower_left": [
+      69.5162713,
+      32.25,
+      70.8961682
+    ],
+    "lower_right": [
+      69.4891404,
+      -32.25,
+      70.8961682
+    ],
+    "upper_left": [
+      61.7071476,
+      31.2,
+      265.09616819999997
+    ],
+    "upper_right": [
+      61.5783281,
+      -31.2,
+      265.09616819999997
+    ]
+  },
+  "nominal_root_contact_normals_torso": {
+    "lower_left": [
+      0.9916213467,
+      0.0955151656,
+      -0.0869710178
+    ],
+    "lower_right": [
+      0.9929173643,
+      -0.0956241074,
+      -0.0705062962
+    ],
+    "upper_left": [
+      0.8934860523,
+      0.0848042913,
+      0.4410112318
+    ],
+    "upper_right": [
+      0.8961632616,
+      -0.0589538262,
+      0.4397906944
+    ]
+  },
+  "multicolor_3mf": "carrier_multicolor_h2d.3mf",
+  "paper_attachment": "none; the active target is printed into the carrier",
+  "status": "accepted_printed_carrier_used_by_current_v7_mount",
+  "mount_design": "../../../README.md",
+  "mount_hardware_status": "../../../FIT_STATUS.md",
+  "parts": {
+    "carrier_black_inlay": {
+      "assembly_bounds_mm": [
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          180.0,
+          270.0,
+          0.6000000238418579
+        ]
+      ],
+      "assembly_part": true,
+      "exported_extents_mm": [
+        180.0,
+        270.0,
+        0.6000000238418579
+      ],
+      "file": "carrier_black_inlay.stl",
+      "material": "black PLA",
+      "oriented_print_footprint_mm": [
+        180.0,
+        270.0
+      ],
+      "print_group": "carrier_multicolor_h2d.3mf",
+      "print_quantity": 1,
+      "print_z_rotation_deg": 0.0,
+      "volume_cm3": 20.38506064912565,
+      "watertight": true
+    },
+    "carrier_white_body": {
+      "assembly_bounds_mm": [
+        [
+          -15.0,
+          -15.0,
+          0.0
+        ],
+        [
+          195.0,
+          285.0,
+          9.399999618530273
+        ]
+      ],
+      "assembly_part": true,
+      "exported_extents_mm": [
+        210.0,
+        300.0,
+        9.399999618530273
+      ],
+      "file": "carrier_white_body.stl",
+      "material": "white PLA or PLA+",
+      "oriented_print_footprint_mm": [
+        210.0,
+        300.0
+      ],
+      "print_group": "carrier_multicolor_h2d.3mf",
+      "print_quantity": 1,
+      "print_z_rotation_deg": 0.0,
+      "volume_cm3": 170.3433968026867,
+      "watertight": true
+    }
+  },
+  "design_basis": {
+    "active_target_mm": [
+      180.0,
+      270.0
+    ],
+    "board_center_torso_mm": [
+      245.0,
+      0.0,
+      127.5
+    ],
+    "board_tilt_y_deg": 21.0,
+    "carrier_interface": "Four frozen connector centers in the carrier frame. The printed carrier is unchanged; alternative board poses replace only the left and right side frames.",
+    "carrier_margin_mm": 15.0,
+    "carrier_outer_mm": [
+      210.0,
+      300.0
+    ],
+    "charuco_definition": {
+      "dictionary": "DICT_5X5_50",
+      "legacy_pattern": true,
+      "marker_ids": [
+        0,
+        26
+      ],
+      "marker_length_mm": 22.0,
+      "square_length_mm": 30.0,
+      "squares_x_y": [
+        6,
+        9
+      ]
+    },
+    "layout_camera": {
+      "camera_serial": "348522074178",
+      "child_frame": "camera_color_optical_frame",
+      "parent_frame": "torso_link",
+      "rectified_color_profile": {
+        "camera_matrix": [
+          [
+            905.4686279296875,
+            0.0,
+            652.4732055664062
+          ],
+          [
+            0.0,
+            905.5797729492188,
+            368.78778076171875
+          ],
+          [
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "distortion": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "height": 720,
+        "width": 1280
+      },
+      "scope_note": "The fitted torso-to-color-optical transform is sufficient for fixture visibility and obstruction layout. Final camera calibration still comes from the torso board itself, and the installed fixture must pass a live preview.",
+      "source_bundle_content_sha256": "dae03341c35f7844cfb43cfee0a92386f2c508d26fa081f6683fb19ece99a2f3",
+      "source_bundle_id": "dex3_shared_20260812_selected_free",
+      "source_commit": "a26cf3752a54e1aa7f42398e48a0b5e230bbda41",
+      "source_repository": "https://github.com/sri299792458/g1-dex3-tabletop",
+      "torso_T_camera": [
+        [
+          -0.014972918768750815,
+          -0.8467816213245607,
+          0.5317299102838702,
+          0.06986511495754122
+        ],
+        [
+          -0.9997856610105821,
+          0.020283499821154783,
+          0.004148695293523939,
+          0.031131600000000002
+        ],
+        [
+          -0.014298382467177306,
+          -0.5315538217546305,
+          -0.8469038262027565,
+          0.42080831483353104
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    "target_construction": "Flush 0.6 mm black PLA inlay in a white PLA carrier, printed optical-face down as one aligned dual-nozzle 3MF assembly."
+  },
+  "source_fixture_commit": "b555c3adea33966607c26837264230dbc1208c6c"
+}

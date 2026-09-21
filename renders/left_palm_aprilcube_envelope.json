@@ -1,0 +1,60 @@
+{
+  "frame": "left_rubber_hand",
+  "units": "mm",
+  "status": "nominal_visual_placement_not_physical_measurement",
+  "cube": {
+    "source": "aprilcube/models/dex3_safe_cube/cube.3mf",
+    "center": [
+      40.0,
+      -33.0,
+      0.0
+    ],
+    "size": [
+      40.0,
+      40.0,
+      40.0
+    ],
+    "hand_R_cube": [
+      [
+        1.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        1.0
+      ],
+      [
+        0.0,
+        -1.0,
+        0.0
+      ]
+    ],
+    "hidden_face": "+Z (tag 4)",
+    "outward_face": "-Z (tag 5)"
+  },
+  "conservative_aabb": {
+    "center": [
+      40.0,
+      -34.0,
+      0.0
+    ],
+    "size": [
+      60.0,
+      58.0,
+      60.0
+    ],
+    "min": [
+      10.0,
+      -63.0,
+      -30.0
+    ],
+    "max": [
+      70.0,
+      -5.0,
+      30.0
+    ],
+    "collision_allowance": "Padded beyond the 40 mm cube to include the mounting tape footprint numerically; tape is intentionally not rendered."
+  }
+}

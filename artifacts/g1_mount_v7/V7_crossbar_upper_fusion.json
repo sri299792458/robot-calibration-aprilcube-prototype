@@ -1,0 +1,45 @@
+{
+  "name": "V7_crossbar_upper",
+  "body_count": 1,
+  "is_solid": true,
+  "volume_cm3": 202.73584392506916,
+  "extents_mm": [
+    230.0,
+    40.0,
+    53.12232902464164
+  ],
+  "print_bounds_mm": [
+    [
+      -115.0,
+      -20.0,
+      0.0
+    ],
+    [
+      115.0,
+      20.0,
+      53.12232902464164
+    ]
+  ],
+  "local_to_torso_mm": [
+    [
+      0,
+      0,
+      -1,
+      104
+    ],
+    [
+      1,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      -1,
+      0,
+      265.0961682
+    ]
+  ],
+  "feature_count": 11,
+  "stl": "V7_crossbar_upper_PRINT.stl"
+}

@@ -1,0 +1,142 @@
+{
+  "checks": {
+    "active_target_ray_count": 49051,
+    "active_target_blocked_ray_count": 0,
+    "four_M6_14p4_mm_diameter_90_mm_access_corridors_clear": true,
+    "four_M4_optical_side_and_rear_nut_centerline_paths_clear": true,
+    "eight_M5_shared_axes_clear": true,
+    "nominal_contact_approximation": {
+      "lower_left": {
+        "sample_count": 96,
+        "minimum_fixture_minus_nominal_shell_x_mm": -0.03860604438847304,
+        "maximum_fixture_minus_nominal_shell_x_mm": 0.01111352337362348
+      },
+      "lower_right": {
+        "sample_count": 96,
+        "minimum_fixture_minus_nominal_shell_x_mm": -0.033386211226584805,
+        "maximum_fixture_minus_nominal_shell_x_mm": 0.02208613542694593
+      },
+      "upper_left": {
+        "sample_count": 96,
+        "minimum_fixture_minus_nominal_shell_x_mm": -0.11236757882667092,
+        "maximum_fixture_minus_nominal_shell_x_mm": 0.017541880070396587
+      },
+      "upper_right": {
+        "sample_count": 96,
+        "minimum_fixture_minus_nominal_shell_x_mm": -0.08888714700095335,
+        "maximum_fixture_minus_nominal_shell_x_mm": 0.04106809663067423
+      }
+    },
+    "frozen_board_transform_retained": true,
+    "no_mesh_topology_failures": true,
+    "compact_coupon_contact_and_washer_faces_preserved": true
+  },
+  "parts": {
+    "FIT_ONLY_lower_left": {
+      "watertight": true,
+      "single_body": true,
+      "extents_mm": [
+        28.0,
+        28.0,
+        15.103418350219727
+      ],
+      "volume_cm3": 9.06655171759841,
+      "sha256": "a874bc567577defd5fc62644edf034a881e7d288bd0ef11261e54d4bffd52c5f",
+      "revision": "R2 compact"
+    },
+    "FIT_ONLY_lower_right": {
+      "watertight": true,
+      "single_body": true,
+      "extents_mm": [
+        28.0,
+        28.0,
+        15.085906982421875
+      ],
+      "volume_cm3": 9.04821609651516,
+      "sha256": "5885016668e834a9a7997ca08c8b1666ff2159d9022475de01bb829f088781fb",
+      "revision": "R2 compact"
+    },
+    "FIT_ONLY_upper_left": {
+      "watertight": true,
+      "single_body": true,
+      "extents_mm": [
+        28.0,
+        28.0,
+        22.829477310180664
+      ],
+      "volume_cm3": 9.351152850420641,
+      "sha256": "41a47b05c053a680dfba75ccdf22fae7afd7be4136c93ee1d9c3c6352ee1138b",
+      "revision": "R2 compact"
+    },
+    "FIT_ONLY_upper_right": {
+      "watertight": true,
+      "single_body": true,
+      "extents_mm": [
+        28.0,
+        28.0,
+        22.53958511352539
+      ],
+      "volume_cm3": 9.266727415598908,
+      "sha256": "013776fe90409b67dc3a0575f51c435868bf60193c81912b27297a8bc8d413cd",
+      "revision": "R2 compact"
+    },
+    "V7_crossbar_lower": {
+      "watertight": true,
+      "single_body": true,
+      "extents_mm": [
+        230.0,
+        40.0,
+        37.59676742553711
+      ],
+      "volume_cm3": 193.1264648280514,
+      "sha256": "ba4cb19073724b1c14cf1a57cd7621ef52a11ad79ac79d4bbebd16e0390d9238"
+    },
+    "V7_crossbar_upper": {
+      "watertight": true,
+      "single_body": true,
+      "extents_mm": [
+        230.0,
+        40.0,
+        53.12232971191406
+      ],
+      "volume_cm3": 202.805761128061,
+      "sha256": "405a79ab1c98ad20eb2fd47b1b143586de1356b0b1b4488262c74d99f7eeb70a"
+    },
+    "V7_side_left": {
+      "watertight": true,
+      "single_body": true,
+      "extents_mm": [
+        238.074951171875,
+        271.40980339050293,
+        34.5
+      ],
+      "volume_cm3": 205.8481286132386,
+      "sha256": "145886d9ee7996d4e8615eea1202c1c03a2bbe4ae2f1bf34a6a0ecc51104e5de"
+    },
+    "V7_side_right": {
+      "watertight": true,
+      "single_body": true,
+      "extents_mm": [
+        238.074951171875,
+        271.40980339050293,
+        34.5
+      ],
+      "volume_cm3": 205.84812861323857,
+      "sha256": "76c5207017f60b82c89fa58a5876388ac829c31d461bae6ff710c0a825274608"
+    }
+  },
+  "limits": [
+    "No FEA, printer trial or physical load test has been performed.",
+    "Nominal shell fit does not establish physical calibration accuracy."
+  ],
+  "full_density_structure_upper_bound": {
+    "PLA_kg_at_1p25_g_per_cm3": 1.0095356039782373,
+    "center_of_mass_torso_mm": [
+      144.09852112273023,
+      0.00035081145153460953,
+      161.93792991150434
+    ],
+    "gravity_moment_about_M6_pattern_Nm": 0.7774183762707162,
+    "note": "Full CAD volume, including solid infill, excluding printed carrier and metal fasteners; not a slicer estimate or load rating."
+  }
+}

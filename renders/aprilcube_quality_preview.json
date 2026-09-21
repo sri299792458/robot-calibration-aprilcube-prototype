@@ -1,0 +1,57 @@
+{
+  "grade": "green",
+  "hard_failures": [],
+  "metrics": {
+    "duplicate_tag_ids": [],
+    "ignored_tag_ids": [
+      17
+    ],
+    "minimum_corner_image_margin_px": 221.55552673339844,
+    "minimum_quad_quality": 0.7568282471678762,
+    "minimum_tag_short_side_px": 101.88583382941245,
+    "novel_view": true,
+    "opencv_rejected_candidates": 714,
+    "pnp_depth_m": 0.16561906867720247,
+    "pnp_reprojection_error_px": 1.1102700271095882,
+    "quality_rejected_detections": 0,
+    "tag_count": 2,
+    "tag_ids": [
+      0,
+      5
+    ],
+    "visible_faces": [
+      "+X",
+      "-Z"
+    ]
+  },
+  "save_allowed": true,
+  "signature": {
+    "image_cell": [
+      1,
+      1
+    ],
+    "normalized_centroid": [
+      0.4339547812072064,
+      0.43119793719258803
+    ],
+    "rvec": [
+      -0.574264807835104,
+      0.25341149725882955,
+      0.9670520062702331
+    ],
+    "tag_ids": [
+      0,
+      5
+    ],
+    "tvec_m": [
+      -0.01811379017615988,
+      -0.010926775135322194,
+      0.16561906867720247
+    ],
+    "visible_faces": [
+      "+X",
+      "-Z"
+    ]
+  },
+  "warnings": []
+}

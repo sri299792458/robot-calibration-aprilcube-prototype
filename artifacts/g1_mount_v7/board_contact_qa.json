@@ -1,0 +1,50 @@
+{
+  "upper_left": {
+    "board_local_hole_center_mm": [
+      -8.5,
+      22.4925663052,
+      9.400000000000006
+    ],
+    "pad_samples": 72,
+    "matched_samples": 72,
+    "min_support_minus_carrier_z_mm": -1.063221375119383e-05,
+    "max_support_minus_carrier_z_mm": 1.3945373211754486e-05,
+    "shared_screw_centerline_clear": true
+  },
+  "lower_left": {
+    "board_local_hole_center_mm": [
+      -8.5,
+      226.68653025219993,
+      9.399999999999977
+    ],
+    "pad_samples": 72,
+    "matched_samples": 72,
+    "min_support_minus_carrier_z_mm": -4.938686213762367e-06,
+    "max_support_minus_carrier_z_mm": 6.341532891696033e-06,
+    "shared_screw_centerline_clear": true
+  },
+  "upper_right": {
+    "board_local_hole_center_mm": [
+      188.5,
+      22.4925663052,
+      9.400000000000006
+    ],
+    "pad_samples": 72,
+    "matched_samples": 72,
+    "min_support_minus_carrier_z_mm": -1.063221375119383e-05,
+    "max_support_minus_carrier_z_mm": 1.3945373211754486e-05,
+    "shared_screw_centerline_clear": true
+  },
+  "lower_right": {
+    "board_local_hole_center_mm": [
+      188.5,
+      226.68653025219993,
+      9.399999999999977
+    ],
+    "pad_samples": 72,
+    "matched_samples": 72,
+    "min_support_minus_carrier_z_mm": -4.938686213762367e-06,
+    "max_support_minus_carrier_z_mm": 6.341532891696033e-06,
+    "shared_screw_centerline_clear": true
+  }
+}

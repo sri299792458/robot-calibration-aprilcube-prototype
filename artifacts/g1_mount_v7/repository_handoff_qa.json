@@ -1,0 +1,55 @@
+{
+  "date": "2026-09-13",
+  "source_branch": "feature/dex3-aruco-calibration",
+  "source_commit": "b555c3adea33966607c26837264230dbc1208c6c",
+  "geometry_modified": false,
+  "checks": {
+    "unchanged_geometry_files": [
+      "artifacts/g1_mount_v7/cad/FIT_ONLY_lower_left_PRINT.stl",
+      "artifacts/g1_mount_v7/cad/FIT_ONLY_lower_right_PRINT.stl",
+      "artifacts/g1_mount_v7/cad/FIT_ONLY_upper_left_PRINT.stl",
+      "artifacts/g1_mount_v7/cad/FIT_ONLY_upper_right_PRINT.stl",
+      "artifacts/g1_mount_v7/cad/G1_calibration_mount_assembly.step",
+      "artifacts/g1_mount_v7/cad/G1_calibration_mount_native.f3d",
+      "artifacts/g1_mount_v7/cad/V7_crossbar_lower_PRINT.stl",
+      "artifacts/g1_mount_v7/cad/V7_crossbar_upper_PRINT.stl",
+      "artifacts/g1_mount_v7/cad/V7_side_left_PRINT.stl",
+      "artifacts/g1_mount_v7/cad/V7_side_right_PRINT.stl",
+      "artifacts/g1_mount_v7/print_parts/V7_crossbar_lower_PRINT.stl",
+      "artifacts/g1_mount_v7/print_parts/V7_crossbar_upper_PRINT.stl",
+      "artifacts/g1_mount_v7/print_parts/V7_side_left_PRINT.stl",
+      "artifacts/g1_mount_v7/print_parts/V7_side_right_PRINT.stl",
+      "artifacts/g1_mount_v7/fit_coupons/FIT_ONLY_lower_left_PRINT.stl",
+      "artifacts/g1_mount_v7/fit_coupons/FIT_ONLY_lower_right_PRINT.stl",
+      "artifacts/g1_mount_v7/fit_coupons/FIT_ONLY_upper_left_PRINT.stl",
+      "artifacts/g1_mount_v7/fit_coupons/FIT_ONLY_upper_right_PRINT.stl"
+    ],
+    "accepted_carrier_preserved": true,
+    "python_syntax_files": 14,
+    "json_files_parsed": 29,
+    "local_markdown_links": 28,
+    "obsolete_v6_files_removed": [
+      "cad/torso_charuco_fixture/side_frame_left.stl",
+      "cad/torso_charuco_fixture/side_frame_right.stl",
+      "cad/torso_charuco_fixture/m6_root_fit_coupon_lower.stl",
+      "cad/torso_charuco_fixture/m6_root_fit_coupon_upper.stl",
+      "docs/torso_charuco_attachment_v6.md",
+      "src/g1_aprilcube_calibration/torso_fixture_cad.py",
+      "tools/generate_torso_charuco_fixture.py",
+      "tests/test_torso_fixture_cad.py",
+      "tests/test_torso_fixture_generator.py",
+      "renders/torso_charuco_bolted_details.png",
+      "renders/torso_charuco_four_leg_fixture.png",
+      "renders/torso_charuco_side_frames_print.png"
+    ],
+    "rerun_validators": [
+      "validate_g1_coupons_r2.py: passed",
+      "check_g1_mount_v7_board_contact.py: passed"
+    ]
+  },
+  "unit_test_status": "Repository pytest tests were not run: this local runtime lacks pytest and package-import dependencies (jsonschema). Standalone mesh/contact validators were run successfully.",
+  "limits": [
+    "Full structural print, load, creep and calibration accuracy tests remain outstanding.",
+    "M6 x 25 upper fit is user reported; engagement and washer details are unmeasured. Lower M6 length remains unresolved."
+  ]
+}
