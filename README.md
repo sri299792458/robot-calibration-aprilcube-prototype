@@ -1,28 +1,27 @@
 # G1 camera calibration and fixtures
 
-Tools and printable fixtures developed for the head-mounted RealSense and
-Dex3 hands on the lab's Unitree G1. This repository contains the calibration
-capture/analysis implementation, both wrist-marker mounts, the selected August
-calibration bundle, and the current V7 torso mount with R2 fit coupons.
+Calibration capture and analysis tools, with printable marker mounts for the
+head-mounted RealSense and Dex3 hands on the Unitree G1.
 
-The [G1 research guide](https://sri299792458.github.io/g1-research-docs/)
-explains the system and its practical limitations. Physical cube stacking,
-control integration and episode recording live in
+[![CAD view of the Dex3 dorsal marker mount, fasteners and marker geometry](renders/dex3_dorsal_aruco_mount.png)](https://sri299792458.github.io/g1-research-docs/perception/targets.html#dex3-dorsal-markers)
+
+*Right-hand wrist-marker mount: CAD placement and attachment geometry. See the
+guide for photographs, print files and fitting details.*
+
+**[Calibration workflow](https://sri299792458.github.io/g1-research-docs/calibration/workflow.html)** ·
+[Full G1 guide](https://sri299792458.github.io/g1-research-docs/) ·
+[Documentation source](https://github.com/sri299792458/g1-research-docs)
+
+Use this repository to capture camera/joint observations, fit and evaluate a
+calibration, or reproduce the wrist-marker fixtures. It includes both wrist
+mounts, the selected August calibration bundle, and the later V7 torso mount
+with R2 fit coupons. The V7 assembly still has
+[physical fit limits](artifacts/g1_mount_v7/FIT_STATUS.md).
+
+Physical cube stacking, control integration and episode recording live in
 [g1-dex3-tabletop](https://github.com/sri299792458/g1-dex3-tabletop).
 Generic printed targets and detection live in the
 [AprilCube fork](https://github.com/sri299792458/aprilcube).
-
-```mermaid
-flowchart TD
-  accTitle: Calibration code and fixture entry points
-  accDescr: Wrist-marker geometry defines detector profiles for recorded calibration observations. Native fitting and evaluation produce a removable calibration bundle. The separate V7 torso fixture provides a nominal board reference whose physical fit remains incomplete.
-  W["Right ID 4 / left ID 5 wrist mounts"] --> P["Matched detector and hardware profiles"]
-  P --> C["Recorded images and measured joint states"]
-  C --> N["Native robot_calibration fit and evaluation"]
-  N --> B["Versioned calibration bundle"]
-  B --> U["Calibrated copy of the base URDF"]
-  T["V7 torso mount and R2 coupons"] --> F["Nominal board reference<br/>physical fit incomplete"]
-```
 
 ## Choose a starting point
 
